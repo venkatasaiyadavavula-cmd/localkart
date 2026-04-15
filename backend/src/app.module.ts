@@ -34,24 +34,23 @@ import { MediaModule } from './modules/media/media.module';
 import { ReturnsModule } from './modules/returns/returns.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AiModule } from './modules/ai/ai.module'; // <-- 1. AI మాడ్యూల్ ఇంపోర్ట్ చేశాం
 
 @Module({
   imports: [
-    // Rate Limiting (Throttler)
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,   // 1 minute
-        limit: 30,    // 30 requests per minute per IP
-      },
-    ]),
+    // 2. రేట్ లిమిటింగ్ కోసం ThrottlerModule (Brute Force రక్షణ)
+    ThrottlerModule.forRoot([{
+      ttl: 60000,   // 1 నిమిషం
+      limit: 30,    // ఒకే IP నుండి గరిష్టంగా 30 రిక్వెస్ట్లు
+    }]),
 
-    // Environment Variables
+    // 3. ఎన్విరాన్మెంట్ వేరియబుల్స్ సెటప్
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig, redisConfig],
     }),
 
-    // Database (PostgreSQL + PostGIS)
+    // 4. డేటాబేస్ కనెక్షన్ (PostgreSQL + PostGIS)
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -62,16 +61,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         password: configService.get('database.password'),
         database: configService.get('database.database'),
         entities: [
-          User,
-          Shop,
-          Product,
-          Category,
-          Order,
-          OrderItem,
-          Subscription,
-          Transaction,
-          ReturnRequest,
-          SponsoredProduct,
+          User, Shop, Product, Category, Order, OrderItem,
+          Subscription, Transaction, ReturnRequest, SponsoredProduct,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -80,7 +71,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
       inject: [ConfigService],
     }),
 
-    // Redis & Bull Queue
+    // 5. Redis & బుల్ క్యూ (క్యాషింగ్ & బ్యాక్గ్రౌండ్ జాబ్స్)
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -93,20 +84,18 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
       inject: [ConfigService],
     }),
 
-    // JWT Module (Global)
+    // 6. JWT ఆథెంటికేషన్ (గ్లోబల్ గా అందుబాటులో ఉంచడం)
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN') || '7d',
-        },
+        signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN') || '7d' },
       }),
       inject: [ConfigService],
       global: true,
     }),
 
-    // Feature Modules
+    // 7. అన్ని ఫీచర్ మాడ్యూల్స్
     AuthModule,
     UsersModule,
     LocationModule,
@@ -119,6 +108,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ReturnsModule,
     AdminModule,
     NotificationsModule,
+    AiModule, // <-- 8. AI మాడ్యూల్ ని చివరిలో యాడ్ చేశాం
   ],
 })
 export class AppModule {}
