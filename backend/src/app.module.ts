@@ -3,12 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Configurations
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
 
-// Core Entities (to be registered in TypeORM)
+// Core Entities
 import { User } from './core/entities/user.entity';
 import { Shop } from './core/entities/shop.entity';
 import { Product } from './core/entities/product.entity';
@@ -20,7 +21,7 @@ import { Transaction } from './core/entities/transaction.entity';
 import { ReturnRequest } from './core/entities/return-request.entity';
 import { SponsoredProduct } from './core/entities/sponsored-product.entity';
 
-// Feature Modules (will be added progressively)
+// Feature Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { LocationModule } from './modules/location/location.module';
@@ -36,6 +37,14 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 
 @Module({
   imports: [
+    // Rate Limiting (Throttler)
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,   // 1 minute
+        limit: 30,    // 30 requests per minute per IP
+      },
+    ]),
+
     // Environment Variables
     ConfigModule.forRoot({
       isGlobal: true,
