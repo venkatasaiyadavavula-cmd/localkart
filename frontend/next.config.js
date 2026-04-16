@@ -24,22 +24,14 @@ const nextConfig = {
       },
     ],
   },
-
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false, // Disabled to fix Vercel build timeout
   },
-
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-
-  // 🔥 IMPORTANT FIXES
   typescript: {
-    ignoreBuildErrors: true, // earlier false → now true
-  },
-
-  eslint: {
-    ignoreDuringBuilds: true, // add this
+    ignoreBuildErrors: false,
   },
 };
 
