@@ -34,7 +34,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAdminCommissions } from '@/hooks/use-admin-commissions';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
