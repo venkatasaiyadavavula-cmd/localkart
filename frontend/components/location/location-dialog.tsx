@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MapPin, MapPinOff, AlertTriangle, Loader2, CheckCircle, Store } from 'lucide-react';
+import { MapPin, MapPinOff, AlertTriangle, Loader2, CheckCircle, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useGeolocation } from '@/lib/hooks/use-geolocation';
-import { useLocationStore, KADAPA_CENTER, MAX_DELIVERY_RADIUS_KM } from '@/lib/store/location-store';
+import { useLocationStore, MAX_DELIVERY_RADIUS_KM, calculateDeliveryCharge, DELIVERY_CHARGES } from '@/lib/store/location-store';
 import { toast } from 'sonner';
 
 interface LocationDialogProps {
@@ -30,7 +30,7 @@ export function LocationDialog({
   locationError = null,
 }: LocationDialogProps) {
   const { latitude, longitude, loading, error, detectLocation } = useGeolocation();
-  const { setLocation, setPermissionStatus, permissionStatus, validateAndSetServiceability, isServiceable } = useLocationStore();
+  const { setLocation, setPermissionStatus, permissionStatus, validateAndSetServiceability, isServiceable, nearestShopDistance, deliveryCharge } = useLocationStore();
   const [step, setStep] = useState<'detect' | 'checking' | 'result' | 'blocked'>('detect');
   const [serviceError, setServiceError] = useState<string | null>(null);
 
@@ -52,7 +52,6 @@ export function LocationDialog({
     try {
       const coords = await detectLocation();
       if (coords) {
-        // ముందుగా లొకేషన్ ని స్టోర్ చేయండి
         setLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
@@ -62,7 +61,6 @@ export function LocationDialog({
         });
         setPermissionStatus('granted');
 
-        // దగ్గరలో షాపులు ఉన్నాయో లేదో చెక్ చేయండి
         const serviceable = await validateAndSetServiceability(coords.latitude, coords.longitude);
         
         if (serviceable) {
@@ -85,7 +83,6 @@ export function LocationDialog({
     toast.info('Please enter your complete address. We will check if any shops deliver to you.', {
       duration: 5000,
     });
-    // మీరు ఇక్కడ మాన్యువల్ అడ్రస్ ఫారం ఓపెన్ చేయవచ్చు
   };
 
   const renderBlockedState = () => (
@@ -165,8 +162,22 @@ export function LocationDialog({
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
           <DialogTitle className="text-xl">Great! We deliver to you! 🎉</DialogTitle>
-          <DialogDescription className="mt-2">
-            There are shops nearby that can deliver to your location.
+          <DialogDescription className="mt-2 space-y-2">
+            <p>There are shops nearby that can deliver to your location.</p>
+            {nearestShopDistance && (
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <Truck className="h-4 w-4 text-primary" />
+                  <span>Distance to nearest shop: <strong>{nearestShopDistance.toFixed(1)} km</strong></span>
+                </div>
+                <div className="mt-2 text-xl font-bold text-primary">
+                  Delivery Charge: ₹{deliveryCharge}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  (₹20 for 5km, ₹30 for 10km, ₹50 up to 20km)
+                </p>
+              </div>
+            )}
           </DialogDescription>
           <Button onClick={() => onOpenChange(false)} className="mt-6 w-full max-w-xs" size="lg">
             Continue Shopping
@@ -201,7 +212,6 @@ export function LocationDialog({
 
   return (
     <Dialog open={open} onOpenChange={(val) => {
-      // బ్లాక్ అయిన స్టేట్ లో యూజర్ డైలాగ్ క్లోజ్ చేయడానికి అనుమతించకూడదు
       if (step === 'blocked' || (step === 'result' && !isServiceable)) {
         return;
       }
