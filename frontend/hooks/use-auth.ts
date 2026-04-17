@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -24,31 +25,35 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (phone: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
-  sendOtp: (phone: string, mode?: string, orderId?: string) => Promise<void>;
-  verifyOtp: (phone: string, otp: string, mode?: string, orderId?: string) => Promise<any>;
-  refreshUser: () => Promise<void>;
+  sendOtp: (phone: string) => Promise<void>;
+  verifyOtp: (phone: string, otp: string) => Promise<any>;
+  setUser: (user: User | null) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
 
-      login: async (phone, password) => {
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+      login: async (phone, password, rememberMe = false) => {
         set({ isLoading: true });
         try {
-          const response = await apiClient.post('/auth/login', { phone, password });
-          const { accessToken, refreshToken, user } = response.data.data;
+          const { data } = await apiClient.post('/auth/login', { phone, password });
+          const { accessToken, refreshToken, user } = data.data;
           localStorage.setItem('accessToken', accessToken);
           if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error) {
+          toast.success('Login successful');
+        } catch (error: any) {
           set({ isLoading: false });
+          toast.error(error.response?.data?.message || 'Login failed');
           throw error;
         }
       },
@@ -58,8 +63,10 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await apiClient.post('/auth/register', data);
           set({ isLoading: false });
-        } catch (error) {
+          toast.success('Registration successful. Please verify OTP.');
+        } catch (error: any) {
           set({ isLoading: false });
+          toast.error(error.response?.data?.message || 'Registration failed');
           throw error;
         }
       },
@@ -75,39 +82,27 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      sendOtp: async (phone, mode, orderId) => {
-        await apiClient.post('/auth/send-otp', { phone, mode, orderId });
+      sendOtp: async (phone) => {
+        await apiClient.post('/auth/send-otp', { phone });
+        toast.success('OTP sent successfully');
       },
 
-      verifyOtp: async (phone, otp, mode, orderId) => {
+      verifyOtp: async (phone, otp) => {
         set({ isLoading: true });
         try {
-          const response = await apiClient.post('/auth/verify-otp', { phone, otp, mode, orderId });
-          const { accessToken, refreshToken, user } = response.data.data;
+          const { data } = await apiClient.post('/auth/verify-otp', { phone, otp });
+          const { accessToken, refreshToken, user } = data.data;
           if (accessToken) {
             localStorage.setItem('accessToken', accessToken);
             if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
             set({ user, isAuthenticated: true });
           }
           set({ isLoading: false });
-          return response.data.data;
-        } catch (error) {
+          return data.data;
+        } catch (error: any) {
           set({ isLoading: false });
+          toast.error(error.response?.data?.message || 'Invalid OTP');
           throw error;
-        }
-      },
-
-      refreshUser: async () => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) return;
-        try {
-          const response = await apiClient.get('/users/profile', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          set({ user: response.data.data, isAuthenticated: true });
-        } catch (error) {
-          localStorage.removeItem('accessToken');
-          set({ user: null, isAuthenticated: false });
         }
       },
     }),
