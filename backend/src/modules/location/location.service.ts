@@ -27,7 +27,6 @@ export class LocationService {
 
     const skip = (page - 1) * limit;
 
-    // Using PostGIS ST_DWithin for efficient geospatial query
     const queryBuilder = this.shopRepository
       .createQueryBuilder('shop')
       .where('shop.status = :status', { status: ShopStatus.APPROVED })
@@ -47,7 +46,6 @@ export class LocationService {
       queryBuilder.andWhere('product.categoryType = :categoryType', { categoryType });
     }
 
-    // Calculate distance for each shop
     queryBuilder.addSelect(
       `ST_Distance(
         shop.location,
@@ -64,10 +62,9 @@ export class LocationService {
       .take(limit)
       .getManyAndCount();
 
-    // Transform shops to include distance
     const shopsWithDistance = shops.map((shop: any) => ({
       ...shop,
-      distance: shop.distance ? Math.round(shop.distance) : null, // distance in meters
+      distance: shop.distance ? Math.round(shop.distance) : null,
     }));
 
     return {
@@ -151,7 +148,6 @@ export class LocationService {
     return result.map((r) => r.pincode);
   }
 
-  // Helper method to update shop location coordinates
   async updateShopLocation(shopId: string, latitude: number, longitude: number) {
     await this.shopRepository
       .createQueryBuilder()
@@ -163,5 +159,32 @@ export class LocationService {
       })
       .where('id = :id', { id: shopId })
       .execute();
+  }
+
+  /**
+   * యూజర్ లొకేషన్ కు దగ్గరలో డెలివరీ చేసే షాపులు ఉన్నాయో లేదో చెక్ చేస్తుంది
+   */
+  async checkServiceability(lat: number, lng: number, radius: number = 20): Promise<{ serviceable: boolean; shopsCount: number }> {
+    if (!lat || !lng) {
+      throw new BadRequestException('Latitude and longitude are required');
+    }
+
+    const shopsCount = await this.shopRepository
+      .createQueryBuilder('shop')
+      .where('shop.status = :status', { status: ShopStatus.APPROVED })
+      .andWhere(
+        `ST_DWithin(
+          shop.location,
+          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+          :radius * 1000
+        )`,
+        { lng, lat, radius },
+      )
+      .getCount();
+
+    return {
+      serviceable: shopsCount > 0,
+      shopsCount,
+    };
   }
 }
