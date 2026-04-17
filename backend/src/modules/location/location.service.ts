@@ -11,6 +11,9 @@ export class LocationService {
     private readonly shopRepository: Repository<Shop>,
   ) {}
 
+  /**
+   * దగ్గరలోని షాపులను వాటి దూరంతో సహా తిరిగి ఇస్తుంది
+   */
   async findNearbyShops(query: NearbyShopsDto) {
     const {
       latitude,
@@ -78,6 +81,9 @@ export class LocationService {
     };
   }
 
+  /**
+   * పేరు ఆధారంగా షాపులను వెతుకుతుంది
+   */
   async searchShopsByName(
     latitude: number,
     longitude: number,
@@ -125,6 +131,9 @@ export class LocationService {
     }));
   }
 
+  /**
+   * షాపులు ఉన్న నగరాల జాబితాను ఇస్తుంది
+   */
   async getAvailableCities() {
     const result = await this.shopRepository
       .createQueryBuilder('shop')
@@ -136,6 +145,9 @@ export class LocationService {
     return result.map((r) => r.city);
   }
 
+  /**
+   * ఒక నగరంలోని పిన్‌కోడ్‌లను ఇస్తుంది
+   */
   async getPincodesByCity(city: string) {
     const result = await this.shopRepository
       .createQueryBuilder('shop')
@@ -148,6 +160,9 @@ export class LocationService {
     return result.map((r) => r.pincode);
   }
 
+  /**
+   * షాపు లొకేషన్ అప్‌డేట్ చేస్తుంది
+   */
   async updateShopLocation(shopId: string, latitude: number, longitude: number) {
     await this.shopRepository
       .createQueryBuilder()
@@ -163,14 +178,27 @@ export class LocationService {
 
   /**
    * యూజర్ లొకేషన్ కు దగ్గరలో డెలివరీ చేసే షాపులు ఉన్నాయో లేదో చెక్ చేస్తుంది
+   * మరియు దగ్గరి షాపు దూరాన్ని (కి.మీ.లలో) కూడా ఇస్తుంది
    */
-  async checkServiceability(lat: number, lng: number, radius: number = 20): Promise<{ serviceable: boolean; shopsCount: number }> {
+  async checkServiceability(
+    lat: number,
+    lng: number,
+    radius: number = 20,
+  ): Promise<{ serviceable: boolean; shopsCount: number; maxDistance?: number }> {
     if (!lat || !lng) {
       throw new BadRequestException('Latitude and longitude are required');
     }
 
-    const shopsCount = await this.shopRepository
+    const result = await this.shopRepository
       .createQueryBuilder('shop')
+      .select('COUNT(*)', 'count')
+      .addSelect(
+        `MIN(ST_Distance(
+          shop.location,
+          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
+        ))`,
+        'minDistance',
+      )
       .where('shop.status = :status', { status: ShopStatus.APPROVED })
       .andWhere(
         `ST_DWithin(
@@ -180,11 +208,16 @@ export class LocationService {
         )`,
         { lng, lat, radius },
       )
-      .getCount();
+      .getRawOne();
+
+    const shopsCount = parseInt(result.count, 10);
+    const minDistanceMeters = result.minDistance ? parseFloat(result.minDistance) : null;
+    const maxDistanceKm = minDistanceMeters ? Math.round(minDistanceMeters / 1000) : undefined;
 
     return {
       serviceable: shopsCount > 0,
       shopsCount,
+      maxDistance: maxDistanceKm,
     };
   }
 }
