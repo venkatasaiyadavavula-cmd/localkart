@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, ParseFloatPipe, ParseIntPipe, Optional } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { NearbyShopsDto } from './dto/nearby-shops.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
@@ -18,17 +18,12 @@ export class LocationController {
   @Public()
   @Get('search-shops')
   async searchShops(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('radius') radius: string,
+    @Query('lat', ParseFloatPipe) lat: number,
+    @Query('lng', ParseFloatPipe) lng: number,
+    @Query('radius', ParseIntPipe) radius: number,
     @Query('q') query: string,
   ) {
-    return this.locationService.searchShopsByName(
-      parseFloat(lat),
-      parseFloat(lng),
-      parseInt(radius) || 5,
-      query || '',
-    );
+    return this.locationService.searchShopsByName(lat, lng, radius, query);
   }
 
   @Public()
@@ -41,5 +36,19 @@ export class LocationController {
   @Get('pincodes')
   async getPincodesByCity(@Query('city') city: string) {
     return this.locationService.getPincodesByCity(city);
+  }
+
+  /**
+   * ఇచ్చిన GPS కోఆర్డినేట్లకు సర్వీస్ అందుబాటులో ఉందో లేదో చెక్ చేస్తుంది
+   */
+  @Public()
+  @Get('check-serviceability')
+  async checkServiceability(
+    @Query('lat', ParseFloatPipe) lat: number,
+    @Query('lng', ParseFloatPipe) lng: number,
+    @Query('radius') @Optional() radius?: string,
+  ) {
+    const radiusNum = radius ? parseInt(radius, 10) : 20;
+    return this.locationService.checkServiceability(lat, lng, radiusNum);
   }
 }
