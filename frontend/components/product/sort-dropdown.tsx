@@ -14,11 +14,11 @@ interface SortDropdownProps {
 }
 
 const sortOptions = [
-  { value: 'createdAt-DESC', label: 'Newest First', sortBy: 'createdAt', sortOrder: 'DESC' },
-  { value: 'price-ASC', label: 'Price: Low to High', sortBy: 'price', sortOrder: 'ASC' },
-  { value: 'price-DESC', label: 'Price: High to Low', sortBy: 'price', sortOrder: 'DESC' },
-  { value: 'rating-DESC', label: 'Top Rated', sortBy: 'rating', sortOrder: 'DESC' },
-  { value: 'orderCount-DESC', label: 'Most Popular', sortBy: 'orderCount', sortOrder: 'DESC' },
+  { value: 'createdAt-DESC', label: 'Newest First', sortBy: 'createdAt', sortOrder: 'DESC' as const },
+  { value: 'price-ASC', label: 'Price: Low to High', sortBy: 'price', sortOrder: 'ASC' as const },
+  { value: 'price-DESC', label: 'Price: High to Low', sortBy: 'price', sortOrder: 'DESC' as const },
+  { value: 'rating-DESC', label: 'Top Rated', sortBy: 'rating', sortOrder: 'DESC' as const },
+  { value: 'orderCount-DESC', label: 'Most Popular', sortBy: 'orderCount', sortOrder: 'DESC' as const },
 ];
 
 export function SortDropdown({ value, onChange }: SortDropdownProps) {
@@ -27,7 +27,7 @@ export function SortDropdown({ value, onChange }: SortDropdownProps) {
   const handleChange = (val: string) => {
     const option = sortOptions.find((opt) => opt.value === val);
     if (option) {
-      onChange(option.sortBy, option.sortOrder as 'ASC' | 'DESC');
+      onChange(option.sortBy, option.sortOrder);
     }
   };
 
