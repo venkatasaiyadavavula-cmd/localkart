@@ -1,5 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import axios from 'axios';
+import { toast } from 'sonner';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
 
 interface CartItem {
   productId: string;
@@ -21,6 +30,7 @@ interface CartStore {
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   removeItem: (productId: string) => Promise<void>;
   clearCart: () => void;
+  syncWithServer: () => Promise<void>;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -31,65 +41,99 @@ export const useCartStore = create<CartStore>()(
       totalAmount: 0,
       isLoading: false,
 
-      addItem: async (productId: string, quantity = 1) => {
-        // Implement actual API call
+      addItem: async (productId, quantity = 1) => {
         set({ isLoading: true });
         try {
-          // Mock implementation
-          set((state) => {
-            const newItems = [...state.items];
-            const existingIndex = newItems.findIndex(item => item.productId === productId);
-            if (existingIndex >= 0) {
-              newItems[existingIndex].quantity += quantity;
-            } else {
-              newItems.push({
-                productId,
-                shopId: 'mock-shop',
-                shopName: 'Mock Shop',
-                name: 'Product',
-                price: 100,
-                quantity,
-                image: null,
-                maxQuantity: 10,
-              });
-            }
-            const totalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
-            const totalAmount = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            return { items: newItems, totalItems, totalAmount, isLoading: false };
+          const token = localStorage.getItem('accessToken');
+          const { data } = await apiClient.post('/cart/items', { productId, quantity }, {
+            headers: { Authorization: `Bearer ${token}` },
           });
-        } catch (error) {
+          const cart = data.data;
+          set({
+            items: cart.items,
+            totalItems: cart.totalItems,
+            totalAmount: cart.totalAmount,
+            isLoading: false,
+          });
+          toast.success('Added to cart');
+        } catch (error: any) {
           set({ isLoading: false });
+          toast.error(error.response?.data?.message || 'Failed to add item');
+          throw error;
         }
       },
 
-      updateQuantity: async (productId: string, quantity: number) => {
+      updateQuantity: async (productId, quantity) => {
         set({ isLoading: true });
-        set((state) => {
-          const newItems = state.items.map(item =>
-            item.productId === productId ? { ...item, quantity } : item
-          );
-          const totalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
-          const totalAmount = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          return { items: newItems, totalItems, totalAmount, isLoading: false };
-        });
+        try {
+          const token = localStorage.getItem('accessToken');
+          const { data } = await apiClient.put(`/cart/items/${productId}`, { quantity }, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const cart = data.data;
+          set({
+            items: cart.items,
+            totalItems: cart.totalItems,
+            totalAmount: cart.totalAmount,
+            isLoading: false,
+          });
+        } catch (error: any) {
+          set({ isLoading: false });
+          toast.error(error.response?.data?.message || 'Failed to update cart');
+          throw error;
+        }
       },
 
-      removeItem: async (productId: string) => {
+      removeItem: async (productId) => {
         set({ isLoading: true });
-        set((state) => {
-          const newItems = state.items.filter(item => item.productId !== productId);
-          const totalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
-          const totalAmount = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          return { items: newItems, totalItems, totalAmount, isLoading: false };
-        });
+        try {
+          const token = localStorage.getItem('accessToken');
+          const { data } = await apiClient.delete(`/cart/items/${productId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const cart = data.data;
+          set({
+            items: cart.items,
+            totalItems: cart.totalItems,
+            totalAmount: cart.totalAmount,
+            isLoading: false,
+          });
+          toast.success('Removed from cart');
+        } catch (error: any) {
+          set({ isLoading: false });
+          toast.error(error.response?.data?.message || 'Failed to remove item');
+          throw error;
+        }
       },
 
       clearCart: () => {
         set({ items: [], totalItems: 0, totalAmount: 0 });
       },
+
+      syncWithServer: async () => {
+        set({ isLoading: true });
+        try {
+          const token = localStorage.getItem('accessToken');
+          const { data } = await apiClient.get('/cart', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const cart = data.data;
+          set({
+            items: cart.items,
+            totalItems: cart.totalItems,
+            totalAmount: cart.totalAmount,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({ isLoading: false });
+        }
+      },
     }),
     {
       name: 'localkart-cart',
+      partialize: (state) => ({ items: state.items }),
     }
   )
 );
+
+export const useCart = () => useCartStore();
