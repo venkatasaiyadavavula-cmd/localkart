@@ -8,22 +8,14 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-interface AdminShopsParams {
-  status?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
-
-export function useAdminShops(params: AdminShopsParams = {}) {
+export function useAdminShops(params: { status?: string; search?: string } = {}) {
   return useQuery({
     queryKey: ['admin', 'shops', params],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
       const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) searchParams.append(key, String(value));
-      });
+      if (params.status) searchParams.append('status', params.status);
+      if (params.search) searchParams.append('search', params.search);
       const { data } = await apiClient.get(`/admin/shops?${searchParams.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -53,21 +45,6 @@ export function useRejectShop() {
     mutationFn: async ({ shopId, reason }: { shopId: string; reason: string }) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/shops/${shopId}/reject`, { reason }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
-    },
-  });
-}
-
-export function useSuspendShop() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (shopId: string) => {
-      const token = localStorage.getItem('accessToken');
-      return apiClient.put(`/admin/shops/${shopId}/suspend`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
