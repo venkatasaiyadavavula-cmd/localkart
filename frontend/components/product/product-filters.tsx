@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ProductCategoryType } from '@/types/product';
 
 interface ProductFiltersProps {
   filters: {
@@ -44,7 +43,7 @@ export function ProductFilters({ filters, onChange, onClear }: ProductFiltersPro
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             {categoryOptions.map((cat) => (
               <SelectItem key={cat.value} value={cat.value}>
                 {cat.label}
