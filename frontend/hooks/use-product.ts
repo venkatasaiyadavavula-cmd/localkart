@@ -8,19 +8,13 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-export function useProducts(params: any = {}) {
+export function useProduct(slug: string) {
   return useQuery({
-    queryKey: ['products', params],
+    queryKey: ['product', slug],
     queryFn: async () => {
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value));
-        }
-      });
-      const { data } = await apiClient.get(`/catalog/products?${searchParams.toString()}`);
+      const { data } = await apiClient.get(`/catalog/products/${slug}`);
       return data.data;
     },
-    keepPreviousData: true,
+    enabled: !!slug,
   });
 }
