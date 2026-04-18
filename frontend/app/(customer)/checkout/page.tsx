@@ -10,7 +10,6 @@ import {
   MapPin,
   Home,
   Building,
-  Plus,
   Phone,
   User,
   ChevronRight,
@@ -29,7 +28,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
+import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useCartStore } from '@/store/cart-store';
+import { useShop } from '@/hooks/use-shop';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocationStore } from '@/store/location-store';
 import { formatPrice } from '@/lib/utils';
@@ -54,6 +55,10 @@ export default function CheckoutPage() {
   const { items, totalAmount, clearCart } = useCartStore();
   const { location } = useLocationStore();
 
+  // Get shop details from first item
+  const shopId = items[0]?.shopId;
+  const { data: shopDetails } = useShop(shopId);
+
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'razorpay'>('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -63,7 +68,6 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
@@ -77,8 +81,6 @@ export default function CheckoutPage() {
     },
   });
 
-  const watchAddress = watch();
-
   useEffect(() => {
     if (items.length === 0) {
       toast.error('Your cart is empty');
@@ -88,7 +90,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (location) {
-      // Reverse geocode to fill address
       setValue('city', 'Kadapa');
       setValue('state', 'Andhra Pradesh');
     }
@@ -97,7 +98,6 @@ export default function CheckoutPage() {
   const onSubmit = async (data: AddressFormData) => {
     setIsSubmitting(true);
     try {
-      // Create order
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,12 +119,10 @@ export default function CheckoutPage() {
       }
 
       if (paymentMethod === 'cod') {
-        // Clear cart and redirect to order confirmation
         await clearCart();
         toast.success('Order placed successfully!');
         router.push(`/orders/${order.id}`);
       } else {
-        // Redirect to payment page
         router.push(`/checkout/payment?orderId=${order.id}&amount=${totalAmount}`);
       }
     } catch (error: any) {
@@ -145,6 +143,16 @@ export default function CheckoutPage() {
         <ChevronRight className="h-4 w-4" />
         <span className="font-medium text-foreground">Checkout</span>
       </div>
+
+      {/* Shop Status Banner */}
+      {shopDetails && (
+        <div className="mb-6">
+          <ShopStatusBanner
+            openingTime={shopDetails.openingTime}
+            closingTime={shopDetails.closingTime}
+          />
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Left Column - Address & Payment */}
@@ -239,7 +247,6 @@ export default function CheckoutPage() {
                   </RadioGroup>
                 </div>
 
-                {/* Location Picker Button */}
                 <Button
                   type="button"
                   variant="outline"
@@ -381,7 +388,7 @@ export default function CheckoutPage() {
           open={showLocationPicker}
           onClose={() => setShowLocationPicker(false)}
           onSelect={(lat, lng, address) => {
-            setValue('address', address || watchAddress.address);
+            setValue('address', address || '');
             setShowLocationPicker(false);
           }}
         />
