@@ -2,13 +2,14 @@
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { MapPin, Phone, Mail, Clock, Store, Star, ChevronRight, Package, Truck } from 'lucide-react';
+import { MapPin, Phone, Clock, Store, Star, Truck } from 'lucide-react';
+import Link from 'next/link';
 
 import { ProductGrid } from '@/components/product/product-grid';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useShop } from '@/hooks/use-shop';
 import { useProducts } from '@/hooks/use-products';
 import { formatDistance } from '@/lib/utils';
@@ -105,6 +106,14 @@ export default function ShopPage() {
                   </Button>
                 </div>
 
+                {/* Shop Status Banner */}
+                <div className="mt-4">
+                  <ShopStatusBanner
+                    openingTime={shop.openingTime}
+                    closingTime={shop.closingTime}
+                  />
+                </div>
+
                 <p className="mt-4 text-muted-foreground">{shop.description}</p>
 
                 <div className="mt-4 flex flex-wrap gap-4 text-sm">
@@ -144,14 +153,14 @@ export default function ShopPage() {
             )}
           </TabsContent>
           <TabsContent value="trending" className="pt-6">
-            <ProductGrid products={products?.data.slice(0, 4) || []} viewMode="grid" />
+            <ProductGrid products={products?.data?.slice(0, 4) || []} viewMode="grid" />
           </TabsContent>
           <TabsContent value="new" className="pt-6">
-            <ProductGrid products={products?.data.slice(0, 4) || []} viewMode="grid" />
+            <ProductGrid products={products?.data?.slice(0, 4) || []} viewMode="grid" />
           </TabsContent>
           <TabsContent value="offers" className="pt-6">
             <ProductGrid
-              products={products?.data.filter((p) => p.discountPercentage) || []}
+              products={products?.data?.filter((p: any) => p.discountPercentage) || []}
               viewMode="grid"
             />
           </TabsContent>
