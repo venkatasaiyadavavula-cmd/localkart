@@ -11,7 +11,7 @@ import { Order, OrderStatus, PaymentMethod, PaymentStatus } from '../../core/ent
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
-import { User } from '../../core/entities/user.entity';
+import { User, UserRole } from '../../core/entities/user.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -41,10 +41,47 @@ export class OrdersService {
     private readonly stateMachine: OrderStateMachine,
   ) {}
 
+  /**
+   * షాపు ప్రస్తుతం తెరిచి ఉందో లేదో చెక్ చేస్తుంది
+   */
+  private isShopOpen(shop: Shop): boolean {
+    if (!shop.openingTime || !shop.closingTime) {
+      return true; // టైమింగ్స్ సెట్ చేయకపోతే 24/7 ఓపెన్ అని అనుకుంటాం
+    }
+
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    const [openHour, openMinute] = shop.openingTime.split(':').map(Number);
+    const [closeHour, closeMinute] = shop.closingTime.split(':').map(Number);
+
+    const openTime = openHour * 60 + openMinute;
+    const closeTime = closeHour * 60 + closeMinute;
+
+    return currentTime >= openTime && currentTime <= closeTime;
+  }
+
+  /**
+   * తదుపరి షాపు తెరిచే సమయాన్ని లెక్కిస్తుంది
+   */
+  private getNextOpeningTime(shop: Shop): string {
+    if (!shop.openingTime) return 'tomorrow morning';
+    
+    const now = new Date();
+    const [openHour, openMinute] = shop.openingTime.split(':').map(Number);
+    const nextOpen = new Date(now);
+    
+    if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() >= openMinute)) {
+      nextOpen.setDate(nextOpen.getDate() + 1);
+    }
+    nextOpen.setHours(openHour, openMinute, 0, 0);
+    
+    return nextOpen.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  }
+
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
     const { paymentMethod = PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
 
-    // Validate cart and get items
     const { cart, products } = await this.cartService.validateCartForCheckout(userId);
     if (cart.items.length === 0) {
       throw new BadRequestException('Cart is empty');
@@ -58,30 +95,28 @@ export class OrdersService {
       throw new BadRequestException('Shop is not available');
     }
 
+    const isOpen = this.isShopOpen(shop);
+    const nextOpeningTime = this.getNextOpeningTime(shop);
+
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Calculate totals
     const subtotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const deliveryCharge = subtotal >= shop.freeDeliveryAbove ? 0 : shop.deliveryCharge;
     const totalAmount = subtotal + deliveryCharge;
 
-    // Determine commission based on product categories (simplified)
     const commissionRate = this.calculateCommissionRate(products);
     const commissionAmount = (subtotal * commissionRate) / 100;
 
-    // Generate order number
     const orderNumber = generateOrderNumber();
 
-    // Start transaction
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Create order
       const order = this.orderRepository.create({
         orderNumber,
         customerId: userId,
@@ -101,7 +136,6 @@ export class OrdersService {
 
       const savedOrder = await queryRunner.manager.save(order);
 
-      // Create order items and update product stock
       for (const item of cart.items) {
         const product = products.find((p) => p.id === item.productId);
         if (!product) continue;
@@ -119,35 +153,33 @@ export class OrdersService {
         });
         await queryRunner.manager.save(orderItem);
 
-        // Reduce stock
         product.stock -= item.quantity;
         product.orderCount += 1;
         await queryRunner.manager.save(product);
       }
 
-      // Update shop total orders
       shop.totalOrders += 1;
       await queryRunner.manager.save(shop);
 
-      // Clear cart
       await this.cartService.clearCart(userId);
 
-      // Send OTP for order confirmation (in production: SMS)
       this.logger.log(`Order OTP for ${orderNumber}: ${savedOrder.deliveryOtp}`);
 
       await queryRunner.commitTransaction();
 
-      // Return order with items
       const fullOrder = await this.orderRepository.findOne({
         where: { id: savedOrder.id },
         relations: ['items', 'shop', 'customer'],
       });
 
-      // Remove sensitive fields
       delete fullOrder.deliveryOtp;
       delete fullOrder.customer.password;
 
-      return fullOrder;
+      return {
+        ...fullOrder,
+        isShopOpen: isOpen,
+        shopClosedMessage: isOpen ? null : `Shop is currently closed. Your order will be processed after ${nextOpeningTime}.`,
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`Order creation failed: ${error.message}`, error.stack);
@@ -155,6 +187,23 @@ export class OrdersService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private calculateCommissionRate(products: Product[]): number {
+    const rates = products.map((p) => this.getProductCommissionRate(p));
+    return Math.max(...rates);
+  }
+
+  private getProductCommissionRate(product: Product): number {
+    const rates = {
+      groceries: 2,
+      fashion: 4,
+      electronics: 3,
+      home_essentials: 4,
+      beauty: 5,
+      accessories: 5,
+    };
+    return rates[product.categoryType] || 0;
   }
 
   async verifyDeliveryOtp(orderId: string, otp: string, currentUser: any) {
@@ -167,7 +216,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    // Check permissions
     if (currentUser.role === UserRole.CUSTOMER && order.customerId !== currentUser.id) {
       throw new ForbiddenException('You can only verify OTP for your own orders');
     }
@@ -179,9 +227,7 @@ export class OrdersService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    // Update order status based on role
     if (currentUser.role === UserRole.CUSTOMER) {
-      // Customer confirms delivery
       if (order.status !== OrderStatus.OUT_FOR_DELIVERY) {
         throw new BadRequestException('Order is not out for delivery');
       }
@@ -190,13 +236,12 @@ export class OrdersService {
       order.paymentStatus = PaymentStatus.PAID;
       order.deliveryOtp = null;
     } else if (currentUser.role === UserRole.SELLER) {
-      // Seller confirms order confirmation (COD fraud prevention)
       if (order.status !== OrderStatus.PENDING_OTP) {
         throw new BadRequestException('Order is not pending OTP');
       }
       order.status = OrderStatus.CONFIRMED;
       order.confirmedAt = new Date();
-      order.deliveryOtp = null; // OTP is used only once for confirmation
+      order.deliveryOtp = null;
     }
 
     await this.orderRepository.save(order);
@@ -233,7 +278,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    // Authorization
     if (role === UserRole.CUSTOMER && order.customerId !== userId) {
       throw new ForbiddenException('Access denied');
     }
@@ -241,7 +285,6 @@ export class OrdersService {
       throw new ForbiddenException('Access denied');
     }
 
-    // Remove sensitive data
     delete order.deliveryOtp;
     delete order.customer.password;
 
@@ -267,7 +310,6 @@ export class OrdersService {
     await queryRunner.startTransaction();
 
     try {
-      // Restore product stock
       for (const item of order.items) {
         await queryRunner.manager.increment(
           Product,
@@ -281,10 +323,8 @@ export class OrdersService {
       order.cancelledAt = new Date();
       order.cancellationReason = reason || 'Customer cancelled';
 
-      // If payment was online, initiate refund (handled by payments module)
       if (order.paymentMethod === PaymentMethod.RAZORPAY && order.paymentStatus === PaymentStatus.PAID) {
-        order.paymentStatus = PaymentStatus.PENDING; // Refund pending
-        // Refund will be processed by webhook/payment service
+        order.paymentStatus = PaymentStatus.PENDING;
       }
 
       await queryRunner.manager.save(order);
@@ -317,7 +357,6 @@ export class OrdersService {
       take: limit,
     });
 
-    // Remove customer sensitive data
     orders.forEach((order) => {
       delete order.customer?.password;
       delete order.deliveryOtp;
@@ -355,9 +394,7 @@ export class OrdersService {
 
     order.status = status;
     if (status === OrderStatus.OUT_FOR_DELIVERY && order.paymentMethod === PaymentMethod.COD) {
-      // Generate new OTP for delivery confirmation
       order.deliveryOtp = generateOtp();
-      // Send OTP to customer via SMS (in production)
       this.logger.log(`Delivery OTP for order ${order.orderNumber}: ${order.deliveryOtp}`);
     }
     if (notes) {
@@ -419,7 +456,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    // Return limited public info
     return {
       orderNumber: order.orderNumber,
       status: order.status,
@@ -432,27 +468,6 @@ export class OrdersService {
     };
   }
 
-  // Helper methods
-  private calculateCommissionRate(products: Product[]): number {
-    // Weighted average by price, or use highest category commission?
-    // For simplicity, take max commission among products
-    const rates = products.map((p) => this.getProductCommissionRate(p));
-    return Math.max(...rates);
-  }
-
-  private getProductCommissionRate(product: Product): number {
-    const rates = {
-      [ProductCategoryType.GROCERIES]: 2,
-      [ProductCategoryType.FASHION]: 4,
-      [ProductCategoryType.ELECTRONICS]: 3,
-      [ProductCategoryType.HOME_ESSENTIALS]: 4,
-      [ProductCategoryType.BEAUTY]: 5,
-      [ProductCategoryType.ACCESSORIES]: 5,
-    };
-    return rates[product.categoryType] || 0;
-  }
-
-  // For payments module integration
   async confirmPaidOrder(internalOrderId: string, razorpayPaymentId: string) {
     const order = await this.orderRepository.findOne({ where: { id: internalOrderId } });
     if (!order) {
@@ -472,13 +487,12 @@ export class OrdersService {
       { id: internalOrderId },
       { paymentStatus: PaymentStatus.PENDING } as any,
     );
-    // Create transaction record
     const transaction = this.transactionRepository.create({
       orderId: internalOrderId,
       razorpayOrderId,
       type: 'payment',
       status: 'pending',
-      amount: 0, // Will be updated later
+      amount: 0,
       currency: 'INR',
     });
     await this.transactionRepository.save(transaction);
