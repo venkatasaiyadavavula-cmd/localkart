@@ -12,6 +12,8 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -23,6 +25,7 @@ import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Public } from '../../core/decorators/public.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { Product } from '../../core/entities/product.entity';
 
 @Controller('catalog')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -30,9 +33,12 @@ export class CatalogController {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly searchService: SearchService,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
   ) {}
 
-  // Public endpoints
+  // ==================== PUBLIC ENDPOINTS ====================
+
   @Public()
   @Get('products')
   async getProducts(@Query() query: SearchQueryDto) {
@@ -73,7 +79,31 @@ export class CatalogController {
     return this.catalogService.getShopProducts(shopId, query);
   }
 
-  // Seller endpoints
+  @Public()
+  @Post('visual-search')
+  async visualSearch(@Body() body: { embedding: number[] }) {
+    const { embedding } = body;
+
+    if (!embedding || embedding.length !== 512) {
+      throw new ForbiddenException('Invalid embedding format');
+    }
+
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.shop', 'shop')
+      .leftJoinAndSelect('product.category', 'category')
+      .where('product.image_embedding IS NOT NULL')
+      .andWhere('product.status = :status', { status: 'approved' })
+      .orderBy('product.image_embedding <=> :embedding', 'ASC')
+      .setParameter('embedding', JSON.stringify(embedding))
+      .limit(20)
+      .getMany();
+
+    return { data: products };
+  }
+
+  // ==================== SELLER ENDPOINTS ====================
+
   @Post('seller/products')
   @Roles(UserRole.SELLER)
   async createProduct(@CurrentUser() user: any, @Body() createProductDto: CreateProductDto) {
@@ -103,7 +133,8 @@ export class CatalogController {
     return this.catalogService.getSellerProducts(user.id, query);
   }
 
-  // Admin endpoints
+  // ==================== ADMIN ENDPOINTS ====================
+
   @Put('admin/products/:id/approve')
   @Roles(UserRole.ADMIN)
   async approveProduct(@Param('id') id: string) {
