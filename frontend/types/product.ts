@@ -1,3 +1,5 @@
+// types/product.ts
+
 export type ProductCategoryType =
   | 'groceries'
   | 'fashion'
