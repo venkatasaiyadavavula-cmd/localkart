@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -25,6 +25,7 @@ import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Public } from '../../core/decorators/public.decorator';
 import { UserRole } from '../../core/entities/user.entity';
 import { Product } from '../../core/entities/product.entity';
+import { DailyOffer } from '../../core/entities/daily-offer.entity';
 
 @Controller('catalog')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,6 +35,8 @@ export class CatalogController {
     private readonly searchService: SearchService,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectRepository(DailyOffer)
+    private offerRepository: Repository<DailyOffer>,
   ) {}
 
   // ==================== PUBLIC ENDPOINTS ====================
@@ -76,6 +79,44 @@ export class CatalogController {
   @Get('shop/:shopId/products')
   async getShopProducts(@Param('shopId') shopId: string, @Query() query: SearchQueryDto) {
     return this.catalogService.getShopProducts(shopId, query);
+  }
+
+  @Public()
+  @Get('today-offers')
+  async getTodayOffers(@Query('lat') lat?: string, @Query('lng') lng?: string) {
+    const now = new Date();
+    const query = this.productRepository
+      .createQueryBuilder('product')
+      .innerJoin('daily_offers', 'offer', 'offer.productId = product.id')
+      .leftJoinAndSelect('product.shop', 'shop')
+      .where('offer.isActive = :isActive', { isActive: true })
+      .andWhere('offer.expiresAt > :now', { now })
+      .andWhere('product.status = :status', { status: 'approved' });
+
+    if (lat && lng) {
+      query
+        .addSelect(
+          `ST_Distance(shop.location, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography)`,
+          'distance',
+        )
+        .setParameters({ lng, lat })
+        .orderBy('distance', 'ASC');
+    } else {
+      query.orderBy('offer.createdAt', 'DESC');
+    }
+
+    query.limit(30);
+    const products = await query.getMany();
+
+    // Attach offer details to each product
+    for (const product of products) {
+      const offer = await this.offerRepository.findOne({
+        where: { productId: product.id, isActive: true, expiresAt: MoreThan(now) },
+      });
+      (product as any).daily_offer = offer;
+    }
+
+    return { data: products };
   }
 
   // ==================== SELLER ENDPOINTS ====================
