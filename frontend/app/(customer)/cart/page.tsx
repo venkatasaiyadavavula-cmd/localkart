@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +22,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useCartStore } from '@/store/cart-store';
+import { useShop } from '@/hooks/use-shop';
 import { formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -30,6 +32,10 @@ export default function CartPage() {
   const router = useRouter();
   const { items, updateQuantity, removeItem, clearCart, totalAmount, totalItems, isLoading } = useCartStore();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Get shop details from first item
+  const shopId = items[0]?.shopId;
+  const { data: shopDetails } = useShop(shopId);
 
   const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -99,6 +105,16 @@ export default function CartPage() {
       <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
         Shopping Cart ({totalItems} {totalItems === 1 ? 'item' : 'items'})
       </h1>
+
+      {/* Shop Status Banner */}
+      {shopDetails && (
+        <div className="mt-4">
+          <ShopStatusBanner
+            openingTime={shopDetails.openingTime}
+            closingTime={shopDetails.closingTime}
+          />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3 lg:gap-8">
         {/* Cart Items */}
