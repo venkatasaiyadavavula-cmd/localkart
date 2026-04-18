@@ -8,7 +8,6 @@ import {
   Param,
   Query,
   UseGuards,
-  ForbiddenException,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -77,29 +76,6 @@ export class CatalogController {
   @Get('shop/:shopId/products')
   async getShopProducts(@Param('shopId') shopId: string, @Query() query: SearchQueryDto) {
     return this.catalogService.getShopProducts(shopId, query);
-  }
-
-  @Public()
-  @Post('visual-search')
-  async visualSearch(@Body() body: { embedding: number[] }) {
-    const { embedding } = body;
-
-    if (!embedding || embedding.length !== 512) {
-      throw new ForbiddenException('Invalid embedding format');
-    }
-
-    const products = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.shop', 'shop')
-      .leftJoinAndSelect('product.category', 'category')
-      .where('product.image_embedding IS NOT NULL')
-      .andWhere('product.status = :status', { status: 'approved' })
-      .orderBy('product.image_embedding <=> :embedding', 'ASC')
-      .setParameter('embedding', JSON.stringify(embedding))
-      .limit(20)
-      .getMany();
-
-    return { data: products };
   }
 
   // ==================== SELLER ENDPOINTS ====================
