@@ -1,45 +1,33 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 1. Image Optimization
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'plus.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'localkart-media.s3.amazonaws.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'localkart-media.s3.ap-south-1.amazonaws.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'pub-*.r2.dev',
-      },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'plus.unsplash.com' },
+      { protocol: 'https', hostname: 'localkart-media.s3.amazonaws.com' },
+      { protocol: 'https', hostname: 'localkart-media.s3.ap-south-1.amazonaws.com' },
+      { protocol: 'https', hostname: 'pub-*.r2.dev' },
     ],
   },
-  experimental: {
-    optimizeCss: false, // Disabled to fix Vercel build timeout
-  },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
+  
+  // 2. Timeout Fix (ముఖ్యమైనది)
+  staticPageGenerationTimeout: 120,
+
+  // 3. Disable strict type/lint checks during build to save time (ముఖ్యమైనది)
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
     ignoreDuringBuilds: true,
+  },
+  
+  // 4. CSS fix
+  experimental: {
+    optimizeCss: false,
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 };
 
