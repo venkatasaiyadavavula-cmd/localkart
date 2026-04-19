@@ -1,6 +1,11 @@
+// 'use client';  <-- ఇది లేకుండా చూడండి, సర్వర్ కాంపోనెంట్ అవుతుంది
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PackageSearch } from "lucide-react";
+
+// ఈ ఎక్స్‌పోర్ట్ ఈ పేజీ స్టాటిక్‌గా జనరేట్ కాకుండా, రిక్వెస్ట్ టైమ్ లో రెండర్ అయ్యేలా చేస్తుంది
+export const dynamic = 'force-dynamic';
 
 export default function NotFound() {
   return (
