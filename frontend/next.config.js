@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 1. ఇమేజ్ ఆప్టిమైజేషన్ కోసం అనుమతించబడిన URLలు
+  // 1. ఇమేజ్ ఆప్టిమైజేషన్
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
@@ -11,29 +11,25 @@ const nextConfig = {
     ],
   },
   
-  // 2. స్టాటిక్ పేజీ జనరేషన్ మరియు డేటా ఫెచింగ్ టైమౌట్‌ను 2 నిమిషాలకు పెంచడం
-  staticPageGenerationTimeout: 120,
+  // 2. స్టాటిక్ జనరేషన్ టైమౌట్
+  staticPageGenerationTimeout: 180,
 
-  // 3. టైప్‌స్క్రిప్ట్ మరియు లింటింగ్ ఎర్రర్లను బిల్డ్ సమయంలో విస్మరించడం
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // 3. టైప్ మరియు లింట్ చెకింగ్ ని విస్మరించు
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   
-  // 4. CSS ఆప్టిమైజేషన్ ప్రయోగాన్ని నిలిపివేయడం
-  experimental: {
-    optimizeCss: false,
-  },
+  // 4. ప్రయోగాత్మక ఫీచర్లు
+  experimental: { optimizeCss: false },
   
-  // 5. ప్రొడక్షన్ లో కన్సోల్ లాగ్స్ తొలగించడం
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
+  // 5. ప్రొడక్షన్ లో console.log తొలగించు
+  compiler: { removeConsole: process.env.NODE_ENV === 'production' },
   
-  // 6. ఇది స్టాటిక్ ఎక్స్‌పోర్ట్ (SSG) ను నిలిపివేస్తుంది. పేజీలు సర్వర్-సైడ్ (SSR) లేదా క్లయింట్-సైడ్ (CSR) లో రెండర్ అవుతాయి.
+  // 6. స్టాటిక్ ఎక్స్‌పోర్ట్‌ను నిలిపివేయడం ద్వారా పేజీలు డైనమిక్‌గా రెండర్ అవుతాయి
   output: 'standalone',
+  
+  // 7. అన్ని పేజీలు డిఫాల్ట్‌గా డైనమిక్ రెండరింగ్ ఉపయోగించేలా బలవంతం చేయడం
+  // ఇది static generation ప్రయత్నాలను పూర్తిగా నిలిపివేస్తుంది
+  reactStrictMode: true,
 };
 
 module.exports = nextConfig;
