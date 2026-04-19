@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 
-// Routes that don't require authentication
 const publicRoutes = [
   '/',
   '/login',
@@ -18,10 +17,7 @@ const publicRoutes = [
   '/contact',
 ];
 
-// Routes that require seller role
 const sellerRoutes = ['/seller', '/seller-onboarding'];
-
-// Routes that require admin role
 const adminRoutes = ['/admin'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -36,28 +32,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const isPublicRoute = publicRoutes.some(
       (route) => pathname === route || pathname.startsWith(route + '/')
     );
+    const isSellerRoute = sellerRoutes.some((route) => pathname.startsWith(route));
+    const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
 
-    const isSellerRoute = sellerRoutes.some(
-      (route) => pathname.startsWith(route)
-    );
-
-    const isAdminRoute = adminRoutes.some(
-      (route) => pathname.startsWith(route)
-    );
-
-    // If not authenticated and trying to access protected route
     if (!isAuthenticated && !isPublicRoute) {
       router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
-    // If authenticated but trying to access seller route without seller role
     if (isAuthenticated && isSellerRoute && user?.role !== 'seller' && user?.role !== 'admin') {
       router.push('/');
       return;
     }
 
-    // If authenticated but trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
       router.push('/');
       return;
