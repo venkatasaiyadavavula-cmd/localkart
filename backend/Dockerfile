@@ -1,31 +1,16 @@
 # Use Node.js LTS version
-FROM node:20-slim AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies (including dev dependencies for build)
-RUN npm install
-
-# Copy source code
-COPY . .
-
-# Build the application with increased memory
-RUN NODE_OPTIONS="--max-old-space-size=512" npm run build
-
-# Production stage
 FROM node:20-slim
 
 WORKDIR /app
 
-# Copy built application and production dependencies
-COPY --from=builder /app/dist ./dist
+# Copy the pre-built 'dist' folder and package files
+COPY dist ./dist
 COPY package*.json ./
+
+# Install ONLY production dependencies
 RUN npm install --omit=dev
 
-# Expose the port (adjust if needed)
+# Expose the port
 EXPOSE 3001
 
 # Start the server
