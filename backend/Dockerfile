@@ -1,18 +1,13 @@
-FROM node:20-slim
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files first
 COPY package*.json ./
+RUN npm install
 
-# Install only production dependencies
-RUN npm install --omit=dev
+COPY . .
+RUN npm run build
 
-# Copy the pre-built 'dist' folder
-COPY dist ./dist
-
-# Expose the port
 EXPOSE 3001
 
-# Start the server
 CMD ["node", "dist/main.js"]
