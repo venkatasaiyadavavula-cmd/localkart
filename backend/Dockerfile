@@ -1,12 +1,13 @@
-FROM node:18-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
+# Copy the pre-built 'dist' folder and package files
+COPY dist ./dist
 COPY package*.json ./
-RUN npm install
 
-COPY . .
-RUN npm run build
+# Install ONLY production dependencies
+RUN npm install --omit=dev
 
 EXPOSE 3001
 
