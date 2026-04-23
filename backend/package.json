@@ -23,6 +23,7 @@
     "migration:revert": "npm run typeorm -- migration:revert -d ./src/config/database.config.ts"
   },
   "dependencies": {
+    "@nestjs/schedule": "^5.0.0",
     "@nestjs/throttler": "^5.2.0",
     "@nestjs/cli": "^10.3.0",
     "@bull-board/express": "^5.15.1",
