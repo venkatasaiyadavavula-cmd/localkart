@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { ScheduleModule } from '@nestjs/schedule';
 
 // Configurations
 import databaseConfig from './config/database.config';
@@ -114,7 +113,6 @@ import { OfferCleanupService } from './modules/seller/offer-cleanup.service';
     }),
 
     // Schedule Module (for cron jobs)
-    ScheduleModule.forRoot(),
 
     // Feature Modules
     AuthModule,
