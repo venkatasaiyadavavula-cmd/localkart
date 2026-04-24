@@ -5,7 +5,6 @@ import { Repository, LessThan } from 'typeorm';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
 
 @Injectable()
-export class OfferCleanupService {
   private readonly logger = new Logger(OfferCleanupService.name);
 
   constructor(
