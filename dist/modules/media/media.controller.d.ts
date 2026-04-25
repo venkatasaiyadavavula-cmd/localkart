@@ -6,7 +6,7 @@ export declare class MediaController {
         uploadUrl: string;
         key: string;
         publicUrl: string;
-        fileType: any;
+        fileType: string;
     }>;
     uploadVideo(user: any, file: Express.Multer.File): Promise<{
         uploadUrl: string;
