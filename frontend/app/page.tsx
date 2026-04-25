@@ -13,6 +13,10 @@ import { NearbyShopsSection } from '@/components/home/nearby-shops-section';
 import { CategoriesSection } from '@/components/home/categories-section';
 import { TrendingProductsSection } from '@/components/home/trending-products-section';
 import { HowItWorksSection } from '@/components/home/how-it-works-section';
+import { FounderSection } from '@/components/home/founder-section';
+
+// ... Inside the page, after HowItWorksSection:
+<FounderSection />
 import { LocationDialog } from '@/components/location/location-dialog';
 
 const fadeUpVariants = {
