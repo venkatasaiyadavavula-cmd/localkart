@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "noEmitOnError": false
+    "skipLibCheck": true,
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
