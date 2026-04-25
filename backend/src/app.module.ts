@@ -35,10 +35,8 @@ import { MediaModule } from './modules/media/media.module';
 import { ReturnsModule } from './modules/returns/returns.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { AiModule } from './modules/ai/ai.module';
-
-// Services
-import { OfferCleanupService } from './modules/seller/offer-cleanup.service';
+// AiModule తీసివేయబడింది
+// OfferCleanupService తీసివేయబడింది
 
 @Module({
   imports: [
@@ -112,8 +110,6 @@ import { OfferCleanupService } from './modules/seller/offer-cleanup.service';
       global: true,
     }),
 
-    // Schedule Module (for cron jobs)
-
     // Feature Modules
     AuthModule,
     UsersModule,
@@ -127,8 +123,6 @@ import { OfferCleanupService } from './modules/seller/offer-cleanup.service';
     ReturnsModule,
     AdminModule,
     NotificationsModule,
-    AiModule,
   ],
-  providers: [OfferCleanupService],
 })
 export class AppModule {}
