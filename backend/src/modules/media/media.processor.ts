@@ -1,7 +1,7 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
-import * as ffmpeg from 'fluent-ffmpeg';
+import ffmpeg = require('fluent-ffmpeg');
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -97,7 +97,7 @@ export class MediaProcessor {
             '-movflags +faststart',
           ])
           .output(outputFile)
-          .on('end', resolve)
+          .on('end', () => resolve())
           .on('error', reject)
           .run();
       });
