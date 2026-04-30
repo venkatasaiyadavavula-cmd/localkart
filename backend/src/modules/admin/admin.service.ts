@@ -41,11 +41,11 @@ export class AdminService {
       .getRawOne();
 
     const pendingShops = await this.shopRepository.count({
-      where: { status: 'pending' },
+      where: { status: 'pending' as any },
     });
 
     const pendingProducts = await this.productRepository.count({
-      where: { status: 'pending' },
+      where: { status: 'pending' as any },
     });
 
     const todayOrders = await this.orderRepository
