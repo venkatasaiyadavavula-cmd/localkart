@@ -6,9 +6,10 @@ import { SearchService } from './search.service';
 import { Product } from '../../core/entities/product.entity';
 import { Category } from '../../core/entities/category.entity';
 import { Shop } from '../../core/entities/shop.entity';
+import { DailyOffer } from '../../core/entities/daily-offer.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Category, Shop])],
+  imports: [TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer])],
   controllers: [CatalogController],
   providers: [CatalogService, SearchService],
   exports: [CatalogService],
