@@ -69,7 +69,7 @@ export class SellerService {
       slug,
       ownerId,
       status: ShopStatus.PENDING,
-      location: () => `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)`,
+      location: `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)` as any,
     });
 
     await this.shopRepository.save(shop);
@@ -94,7 +94,7 @@ export class SellerService {
     }
 
     if (shopProfileDto.latitude && shopProfileDto.longitude) {
-      shop.location = () => `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)`;
+      (shop as any).location = `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)`;
     }
 
     Object.assign(shop, shopProfileDto);
