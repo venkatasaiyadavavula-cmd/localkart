@@ -140,7 +140,7 @@ async function seed() {
         slug: shopData.shop.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
         ownerId: owner.id,
         status: ShopStatus.APPROVED,
-        location: () => `ST_SetSRID(ST_MakePoint(${shopData.shop.longitude}, ${shopData.shop.latitude}), 4326)`,
+        location: `ST_SetSRID(ST_MakePoint(${shopData.shop.longitude}, ${shopData.shop.latitude}), 4326)` as any,
       });
       await shopRepo.save(shop);
       console.log(`✅ Shop "${shop.name}" created`);
