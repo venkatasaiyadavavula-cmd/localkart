@@ -12,6 +12,7 @@ import { User } from '../../core/entities/user.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { ReturnRequest } from '../../core/entities/return-request.entity';
 import { Subscription } from '../../core/entities/subscription.entity';
+import { Category } from '../../core/entities/category.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Transaction,
       ReturnRequest,
       Subscription,
+      Category,
     ]),
     NotificationsModule,
   ],
