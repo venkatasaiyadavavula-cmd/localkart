@@ -487,7 +487,7 @@ export class OrdersService {
       { id: internalOrderId },
       { paymentStatus: PaymentStatus.PENDING } as any,
     );
-    const transaction = this.transactionRepository.create({
+    const transaction = (this.transactionRepository.create as any)({
       orderId: internalOrderId,
       razorpayOrderId,
       type: 'payment',
