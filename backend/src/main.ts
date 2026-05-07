@@ -2,22 +2,30 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  let httpsOptions = undefined;
+  
+  if (process.env.SSL_CERT && process.env.SSL_KEY) {
+    try {
+      httpsOptions = {
+        cert: fs.readFileSync(process.env.SSL_CERT),
+        key: fs.readFileSync(process.env.SSL_KEY),
+      };
+    } catch(e) {
+      console.log('SSL files not found, running HTTP');
+    }
+  }
 
-  // Global Prefix
+  const app = await NestFactory.create(AppModule, { httpsOptions });
   app.setGlobalPrefix('api/v1');
-
-  // Enable CORS
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   });
-
-  // Global Validation Pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -28,9 +36,8 @@ async function bootstrap() {
       },
     }),
   );
-
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`🚀 LocalKart API running on http://localhost:${port}/api/v1`);
+  console.log(`♦ LocalKart API running on port ${port}/api/v1`);
 }
 bootstrap();
