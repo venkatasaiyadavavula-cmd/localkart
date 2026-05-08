@@ -1,7 +1,5 @@
-// app/layout.tsx లో ఈ లైన్ జోడించండి
 export const dynamic = 'force-dynamic';
 
-// మీ మిగతా కోడ్ యథాతథంగా ఉంచండి
 import type { Metadata } from 'next';
 import { Inter, Manrope } from 'next/font/google';
 import './globals.css';
@@ -12,7 +10,20 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/api/query-client';
 
-// ... మీ ఫాంట్లు మరియు మెటాడేటా యథాతథంగా ఉంచండి ...
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+});
+
+export const metadata: Metadata = {
+  title: 'LocalKart - Shop Local',
+  description: 'Your local shopping destination',
+};
 
 export default function RootLayout({
   children,
