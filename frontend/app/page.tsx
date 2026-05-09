@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Search, Store, Package, Truck, Shield, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
+import { MapPin, Search, Store, Truck, Shield, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useGeolocation } from '@/hooks/use-geolocation';
@@ -13,10 +12,6 @@ import { NearbyShopsSection } from '@/components/home/nearby-shops-section';
 import { CategoriesSection } from '@/components/home/categories-section';
 import { TrendingProductsSection } from '@/components/home/trending-products-section';
 import { HowItWorksSection } from '@/components/home/how-it-works-section';
-import { FounderSection } from '@/components/home/founder-section';
-
-// ... Inside the page, after HowItWorksSection:
-<FounderSection />
 import { LocationDialog } from '@/components/location/location-dialog';
 
 const fadeUpVariants = {
@@ -24,11 +19,149 @@ const fadeUpVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
 };
 
+function WelcomeScreen({ onEnter }: { onEnter: () => void }) {
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowButton(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, scale: 1.1 }}
+      transition={{ duration: 0.8 }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]"
+    >
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(50)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute h-1 w-1 rounded-full bg-white"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{ opacity: [0.2, 1, 0.2] }}
+            transition={{
+              duration: 2 + Math.random() * 3,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 text-center px-6">
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.4 }}
+          className="mb-8 flex justify-center"
+        >
+          <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 to-orange-500 shadow-2xl">
+            <Store className="h-12 w-12 text-white" />
+          </div>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-2xl text-yellow-400 font-medium mb-2"
+        >
+          🙏 Namaskaram!
+        </motion.p>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="text-5xl sm:text-6xl font-bold text-white mb-4"
+        >
+          Local<span className="text-orange-400">Kart</span>
+        </motion.h1>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className="mb-8"
+        >
+          <p className="text-xl text-blue-300 font-medium">
+            Kadapa's Own Shopping App
+          </p>
+          <p className="mt-2 text-gray-400 text-base">
+            Mee inti dooralo unna shops • Same Day Delivery
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          className="flex justify-center gap-2 mb-10"
+        >
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="h-2 w-2 rounded-full bg-orange-400"
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+            />
+          ))}
+        </motion.div>
+
+        <AnimatePresence>
+          {showButton && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <button
+                onClick={onEnter}
+                className="group relative overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-orange-500 px-10 py-4 text-lg font-semibold text-white shadow-2xl transition-all hover:shadow-orange-500/25 hover:scale-105"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  Shopping Start Cheyandi
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function HomePage() {
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { latitude, longitude, loading: locationLoading, error: locationError, detectLocation } = useGeolocation();
   const { location: savedLocation, setLocation } = useLocationStore();
+
+  useEffect(() => {
+    const hasSeenWelcome = sessionStorage.getItem('localkart_welcome');
+    if (!hasSeenWelcome) {
+      setShowWelcome(true);
+    }
+  }, []);
+
+  const handleEnter = () => {
+    sessionStorage.setItem('localkart_welcome', 'true');
+    setShowWelcome(false);
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    if (!token) {
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 600);
+    }
+  };
 
   useEffect(() => {
     if (latitude && longitude && !savedLocation) {
@@ -50,6 +183,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <AnimatePresence>
+        {showWelcome && <WelcomeScreen onEnter={handleEnter} />}
+      </AnimatePresence>
+
       <LocationDialog
         open={showLocationDialog}
         onOpenChange={setShowLocationDialog}
@@ -58,9 +195,7 @@ export default function HomePage() {
         locationError={locationError}
       />
 
-      {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
         <div className="container relative mx-auto px-4 py-12 md:py-20 lg:py-28">
           <motion.div
             initial="hidden"
@@ -68,7 +203,6 @@ export default function HomePage() {
             variants={fadeUpVariants}
             className="mx-auto max-w-4xl text-center"
           >
-            {/* Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -95,7 +229,6 @@ export default function HomePage() {
               Support your neighborhood businesses with every purchase.
             </p>
 
-            {/* Search Bar */}
             <motion.form
               onSubmit={handleSearch}
               initial={{ opacity: 0, y: 20 }}
@@ -118,7 +251,6 @@ export default function HomePage() {
               </Button>
             </motion.form>
 
-            {/* Location Button */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -140,7 +272,6 @@ export default function HomePage() {
             </motion.div>
           </motion.div>
 
-          {/* Hero Image / Illustration */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -149,7 +280,6 @@ export default function HomePage() {
           >
             <div className="relative h-64 w-full max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 p-[2px] shadow-soft-xl">
               <div className="relative h-full w-full overflow-hidden rounded-3xl bg-background">
-                <div className="absolute inset-0 bg-[url('/hero-pattern.svg')] opacity-10" />
                 <div className="flex h-full items-center justify-center gap-8 p-8">
                   <div className="hidden sm:block">
                     <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-soft">
@@ -185,14 +315,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Section */}
       <section className="py-16">
         <div className="container">
           <CategoriesSection />
         </div>
       </section>
 
-      {/* Nearby Shops Section (Location Based) */}
       {savedLocation && (
         <section className="bg-muted/30 py-16">
           <div className="container">
@@ -201,21 +329,18 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Trending Products */}
       <section className="py-16">
         <div className="container">
           <TrendingProductsSection />
         </div>
       </section>
 
-      {/* How It Works */}
       <section className="bg-gradient-to-b from-muted/50 to-background py-20">
         <div className="container">
           <HowItWorksSection />
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="pb-20 pt-8">
         <div className="container">
           <motion.div
@@ -229,8 +354,7 @@ export default function HomePage() {
                 Are you a local shop owner?
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                Join LocalKart and grow your business online. Reach more customers in your neighborhood with zero
-                commission on your first 30 products.
+                Join LocalKart and grow your business online. Reach more customers in your neighborhood.
               </p>
               <Button asChild size="lg" className="mt-8">
                 <Link href="/seller-onboarding">
