@@ -1,22 +1,25 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import { LatLngExpression, LeafletMouseEvent } from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Search, MapPin, Loader2 } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import dynamic from 'next/dynamic';
 
-// Fix Leaflet default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// Dynamic import - SSR disable cheyyadam
+const MapContainer = dynamic(
+  () => import('react-leaflet').then(mod => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import('react-leaflet').then(mod => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import('react-leaflet').then(mod => mod.Marker),
+  { ssr: false }
+);
 
 interface LocationPickerProps {
   open: boolean;
@@ -25,44 +28,38 @@ interface LocationPickerProps {
   defaultLocation?: { lat: number; lng: number };
 }
 
-// Kadapa default coordinates
-const DEFAULT_CENTER: LatLngExpression = [14.4673, 78.8242];
-
-function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click(e: LeafletMouseEvent) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
-
-function MapController({ center }: { center: LatLngExpression }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center);
-  }, [center, map]);
-  return null;
-}
+const DEFAULT_LAT = 14.4673;
+const DEFAULT_LNG = 78.8242;
 
 export function LocationPicker({ open, onClose, onSelect, defaultLocation }: LocationPickerProps) {
-  const [position, setPosition] = useState<LatLngExpression>(
-    defaultLocation ? [defaultLocation.lat, defaultLocation.lng] : DEFAULT_CENTER
+  const [position, setPosition] = useState<[number, number]>(
+    defaultLocation ? [defaultLocation.lat, defaultLocation.lng] : [DEFAULT_LAT, DEFAULT_LNG]
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [address, setAddress] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== 'undefined') {
+      import('leaflet').then(L => {
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        });
+      });
+      import('leaflet/dist/leaflet.css');
+    }
+  }, []);
 
   useEffect(() => {
     if (defaultLocation) {
       setPosition([defaultLocation.lat, defaultLocation.lng]);
     }
   }, [defaultLocation]);
-
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    setPosition([lat, lng]);
-    fetchAddress(lat, lng);
-  }, []);
 
   const fetchAddress = async (lat: number, lng: number) => {
     try {
@@ -100,13 +97,12 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
   };
 
   const handleConfirm = () => {
-    const [lat, lng] = position as [number, number];
-    onSelect(lat, lng, address);
+    onSelect(position[0], position[1], address);
     onClose();
   };
 
   const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) return;
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
     setIsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -115,10 +111,7 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
         fetchAddress(latitude, longitude);
         setIsLoading(false);
       },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setIsLoading(false);
-      }
+      () => setIsLoading(false)
     );
   };
 
@@ -130,7 +123,6 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
         </DialogHeader>
         
         <div className="p-4 space-y-4">
-          {/* Search Bar */}
           <div className="flex gap-2">
             <Input
               placeholder="Search for area, street..."
@@ -147,24 +139,22 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
             </Button>
           </div>
 
-          {/* Map */}
           <div className="relative h-[400px] w-full overflow-hidden rounded-lg border">
-            <MapContainer
-              center={position}
-              zoom={14}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <Marker position={position} />
-              <MapEvents onMapClick={handleMapClick} />
-              <MapController center={position} />
-            </MapContainer>
+            {isMounted && (
+              <MapContainer
+                center={position}
+                zoom={14}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  attribution='&copy; OpenStreetMap'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={position} />
+              </MapContainer>
+            )}
           </div>
 
-          {/* Selected Address */}
           {address && (
             <div className="rounded-lg bg-muted/30 p-3">
               <p className="text-sm font-medium">Selected Location:</p>
@@ -174,12 +164,8 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
         </div>
 
         <div className="flex justify-end gap-2 p-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm}>
-            Confirm Location
-          </Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleConfirm}>Confirm Location</Button>
         </div>
       </DialogContent>
     </Dialog>
