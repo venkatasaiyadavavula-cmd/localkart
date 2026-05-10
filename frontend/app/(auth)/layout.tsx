@@ -32,13 +32,7 @@ export default function AuthLayout({
           {/* Logo */}
           <div className="mb-8 flex justify-center">
             <Link href="/" className="inline-block">
-              <Image
-                src="/logo.svg"
-                alt="LocalKart"
-                width={160}
-                height={40}
-                className="h-10 w-auto"
-              />
+            <span className="text-2xl font-bold">Local<span className="text-orange-500">Kart</span></span>
             </Link>
           </div>
 
