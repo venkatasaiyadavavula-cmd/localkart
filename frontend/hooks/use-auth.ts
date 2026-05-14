@@ -1,119 +1,142 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import axios from 'axios';
+'use client';
+
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Eye, EyeOff, Phone, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuthStore } from '@/hooks/use-auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
+const loginSchema = z.object({
+  phone: z.string().min(10, 'Phone number must be 10 digits').max(10),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  rememberMe: z.boolean().optional(),
 });
 
-interface User {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  role: 'customer' | 'seller' | 'admin';
-  isPhoneVerified: boolean;
-  profileImage?: string;
-  shopId?: string;
-}
+type LoginFormData = z.infer<typeof loginSchema>;
 
-interface AuthStore {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (phone: string, password: string, rememberMe?: boolean) => Promise<void>;
-  register: (data: any) => Promise<void>;
-  logout: () => Promise<void>;
-  sendOtp: (phone: string) => Promise<void>;
-  verifyOtp: (phone: string, otp: string) => Promise<any>;
-  setUser: (user: User | null) => void;
-}
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
+  const { login, isLoading } = useAuthStore();
+  const [showPassword, setShowPassword] = useState(false);
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { phone: '', password: '', rememberMe: false },
+  });
 
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+  const rememberMe = watch('rememberMe');
 
-      login: async (phone, password, rememberMe = false) => {
-        set({ isLoading: true });
-        try {
-          const { data } = await apiClient.post('/auth/login', { phone, password });
-          const { accessToken, refreshToken, user } = data.data;
-          localStorage.setItem('accessToken', accessToken);
-          if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-          set({ user, isAuthenticated: true, isLoading: false });
-          toast.success('Login successful');
-        } catch (error: any) {
-          set({ isLoading: false });
-          toast.error(error.response?.data?.message || 'Login failed');
-          throw error;
-        }
-      },
-
-      register: async (data) => {
-        set({ isLoading: true });
-        try {
-          await apiClient.post('/auth/register', data);
-          set({ isLoading: false });
-          toast.success('Registration successful. Please verify OTP.');
-        } catch (error: any) {
-          set({ isLoading: false });
-          toast.error(error.response?.data?.message || 'Registration failed');
-          throw error;
-        }
-      },
-
-      logout: async () => {
-        set({ isLoading: true });
-        try {
-          await apiClient.post('/auth/logout');
-        } finally {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          set({ user: null, isAuthenticated: false, isLoading: false });
-        }
-      },
-
-      sendOtp: async (phone) => {
-        await apiClient.post('/auth/send-otp', { phone });
-        toast.success('OTP sent successfully');
-      },
-
-      verifyOtp: async (phone, otp) => {
-        set({ isLoading: true });
-        try {
-          const { data } = await apiClient.post('/auth/verify-otp', { phone, otp });
-          const { accessToken, refreshToken, user } = data.data;
-          if (accessToken) {
-            localStorage.setItem('accessToken', accessToken);
-            if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-            set({ user, isAuthenticated: true });
-          }
-          set({ isLoading: false });
-          return data.data;
-        } catch (error: any) {
-          set({ isLoading: false });
-          toast.error(error.response?.data?.message || 'Invalid OTP');
-          throw error;
-        }
-      },
-    }),
-    {
-      name: 'localkart-auth',
-      partialize: (state) => ({ user: state.user }),
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      await login(data.phone, data.password, data.rememberMe);
+      toast.success('Welcome back!');
+      router.push(redirectTo);
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed');
     }
-  )
-);
+  };
 
-export const useAuth = () => {
-  const store = useAuthStore();
-  return store;
-};
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="mb-8 text-center">
+        <h1 className="font-heading text-2xl font-bold sm:text-3xl">Welcome Back</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Sign in to your account to continue</p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input id="phone" type="tel" placeholder="9876543210" className="pl-10" {...register('phone')} />
+          </div>
+          {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link href="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              className="pl-10 pr-10"
+              {...register('password')}
+            />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="remember"
+            checked={rememberMe}
+            onCheckedChange={(checked) => setValue('rememberMe', !!checked)}
+          />
+          <Label htmlFor="remember" className="cursor-pointer font-normal">Remember me for 30 days</Label>
+        </div>
+
+        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || isLoading}>
+          {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : <>Sign In<ArrowRight className="ml-2 h-4 w-4" /></>}
+        </Button>
+      </form>
+
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or</span>
+          </div>
+        </div>
+        <Button variant="outline" className="mt-4 w-full" size="lg" onClick={() => router.push('/verify-otp?mode=login')}>
+          Login with OTP
+        </Button>
+      </div>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{' '}
+        <Link href="/register" className="font-medium text-primary hover:underline">Create account</Link>
+      </p>
+    </motion.div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
