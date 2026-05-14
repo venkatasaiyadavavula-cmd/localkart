@@ -64,6 +64,7 @@ export default function LoginPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
+      style={{ pointerEvents: 'auto', position: 'relative', zIndex: 10 }}
     >
       <div className="mb-8 text-center">
         <h1 className="font-heading text-2xl font-bold sm:text-3xl">Welcome Back</h1>
