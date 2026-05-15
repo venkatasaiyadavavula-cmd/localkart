@@ -3,12 +3,11 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Loader2, ArrowRight, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthStore } from '@/hooks/use-auth';
 
 function VerifyOtpForm() {
   const router = useRouter();
@@ -16,7 +15,7 @@ function VerifyOtpForm() {
   const phone = searchParams.get('phone') || '';
   const mode = searchParams.get('mode') || 'register';
   const orderId = searchParams.get('orderId');
-  const { verifyOtp, sendOtp, isLoading } = useAuth();
+  const { verifyOtp, sendOtp, isLoading } = useAuthStore();
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -57,7 +56,7 @@ function VerifyOtpForm() {
       else if (mode === 'login') { toast.success('Login successful!'); router.push('/'); }
       else if (mode === 'order') { toast.success('Order confirmed!'); router.push(`/orders/${orderId}`); }
     } catch (error: any) {
-      toast.error(error.message || 'Invalid OTP. Please try again.');
+      toast.error(error?.response?.data?.message || 'Invalid OTP. Please try again.');
     } finally { setIsVerifying(false); }
   };
 
@@ -69,7 +68,7 @@ function VerifyOtpForm() {
       toast.success('OTP resent successfully');
       startCountdown();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to resend OTP');
+      toast.error(error?.response?.data?.message || 'Failed to resend OTP');
     } finally { setIsResending(false); }
   };
 
@@ -85,14 +84,19 @@ function VerifyOtpForm() {
   const { title, description } = getTitleAndDescription();
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+    <div style={{ position: 'relative', zIndex: 10 }}>
       <div className="mb-8 text-center">
         <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         {phone && (
           <p className="mt-1 text-sm font-medium text-primary">
             Sent to +91 {phone}
-            <button onClick={() => router.push(mode === 'order' ? '/checkout' : '/login')} className="ml-2 text-xs text-muted-foreground hover:underline">(Change)</button>
+            <button
+              onClick={() => router.push(mode === 'order' ? '/checkout' : '/login')}
+              className="ml-2 text-xs text-muted-foreground hover:underline"
+            >
+              (Change)
+            </button>
           </p>
         )}
       </div>
@@ -119,11 +123,18 @@ function VerifyOtpForm() {
           <p className="text-sm text-muted-foreground">
             Didn&apos;t receive the code?{' '}
             {canResend ? (
-              <button onClick={handleResendOtp} disabled={isResending} className="font-medium text-primary hover:underline disabled:opacity-50">
+              <button
+                onClick={handleResendOtp}
+                disabled={isResending}
+                className="font-medium text-primary hover:underline disabled:opacity-50 cursor-pointer"
+                style={{ pointerEvents: 'auto', zIndex: 10, position: 'relative' }}
+              >
                 {isResending ? <><Loader2 className="mr-1 inline h-3 w-3 animate-spin" />Sending...</> : 'Resend OTP'}
               </button>
             ) : (
-              <span className="inline-flex items-center gap-1"><RotateCw className="h-3 w-3" />Resend in {countdown}s</span>
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <RotateCw className="h-3 w-3" />Resend in {countdown}s
+              </span>
             )}
           </p>
         </div>
@@ -132,7 +143,7 @@ function VerifyOtpForm() {
       <p className="mt-6 text-center text-sm text-muted-foreground">
         <Link href={mode === 'order' ? '/checkout' : '/login'} className="hover:text-primary hover:underline">← Back</Link>
       </p>
-    </motion.div>
+    </div>
   );
 }
 
