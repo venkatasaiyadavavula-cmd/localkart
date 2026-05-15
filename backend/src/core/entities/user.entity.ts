@@ -55,10 +55,10 @@ export class User {
   @Column({ nullable: true })
   profileImage: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'lastotp' })
   lastOtp: string;
 
-  @Column({ nullable: true, type: 'timestamp' })
+  @Column({ nullable: true, type: 'timestamp', name: 'lastotpsentat' })
   lastOtpSentAt: Date;
 
   @OneToOne(() => Shop, (shop) => shop.owner)
