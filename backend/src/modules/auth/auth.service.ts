@@ -136,7 +136,7 @@ export class AuthService {
       throw new BadRequestException('OTP expired. Please request a new one.');
     }
 
-    if (user.lastOtp !== otp) {
+    if (String(user.lastOtp).trim() !== String(otp).trim()) {
       throw new BadRequestException('Invalid OTP');
     }
 
