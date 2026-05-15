@@ -1,35 +1,49 @@
 import { Injectable, Logger } from '@nestjs/common';
-import twilio = require('twilio');
 
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
-  private readonly twilioClient: twilio.Twilio | null = null;
+  private readonly fast2smsApiKey: string | null = null;
 
   constructor() {
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-      this.twilioClient = twilio(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN,
-      );
+    if (process.env.FAST2SMS_API_KEY) {
+      this.fast2smsApiKey = process.env.FAST2SMS_API_KEY;
+      this.logger.log('Fast2SMS configured successfully.');
     } else {
-      this.logger.warn('Twilio credentials not configured. SMS will be logged only.');
+      this.logger.warn('Fast2SMS API key not configured. SMS will be logged only.');
     }
   }
 
   async sendSms(to: string, message: string): Promise<boolean> {
     try {
-      if (this.twilioClient) {
-        await this.twilioClient.messages.create({
-          body: message,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: this.formatPhoneNumber(to),
+      if (this.fast2smsApiKey) {
+        const phone = this.formatPhoneNumber(to);
+        const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+          method: 'POST',
+          headers: {
+            'authorization': this.fast2smsApiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            route: 'q',
+            message: message,
+            language: 'english',
+            flash: 0,
+            numbers: phone,
+          }),
         });
-        this.logger.log(`SMS sent to ${to}`);
+        const data = await response.json();
+        if (data.return === true) {
+          this.logger.log(`SMS sent to ${to}`);
+          return true;
+        } else {
+          this.logger.error(`Fast2SMS error: ${JSON.stringify(data)}`);
+          return false;
+        }
       } else {
         this.logger.log(`[MOCK SMS] To: ${to} - ${message}`);
+        return true;
       }
-      return true;
     } catch (error) {
       this.logger.error(`Failed to send SMS to ${to}: ${error.message}`);
       return false;
@@ -37,8 +51,9 @@ export class SmsService {
   }
 
   private formatPhoneNumber(phone: string): string {
-    if (phone.startsWith('+')) return phone;
-    if (phone.length === 10) return `+91${phone}`;
+    if (phone.startsWith('+91')) return phone.replace('+91', '');
+    if (phone.startsWith('+')) return phone.slice(3);
+    if (phone.length === 10) return phone;
     return phone;
   }
 }
