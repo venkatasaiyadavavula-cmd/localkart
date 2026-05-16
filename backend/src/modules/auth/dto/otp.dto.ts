@@ -1,9 +1,17 @@
-import { IsString, IsNotEmpty, Length, IsPhoneNumber } from 'class-validator';
+import { IsString, IsNotEmpty, Length, IsPhoneNumber, IsOptional } from 'class-validator';
 
 export class SendOtpDto {
   @IsPhoneNumber('IN')
   @IsNotEmpty()
   phone: string;
+
+  @IsString()
+  @IsOptional()
+  mode?: string;
+
+  @IsString()
+  @IsOptional()
+  orderId?: string;
 }
 
 export class VerifyOtpDto {
@@ -15,4 +23,12 @@ export class VerifyOtpDto {
   @IsNotEmpty()
   @Length(6, 6)
   otp: string;
+
+  @IsString()
+  @IsOptional()
+  mode?: string;
+
+  @IsString()
+  @IsOptional()
+  orderId?: string;
 }
