@@ -21,11 +21,19 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
+  
   app.setGlobalPrefix('api/v1');
+  
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+      'https://localkart.store',
+      'https://www.localkart.store',
+      /\.vercel\.app$/,
+      'http://localhost:3000',
+    ],
     credentials: true,
   });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -36,8 +44,10 @@ async function bootstrap() {
       },
     }),
   );
-  const port = process.env.PORT || 3001;
+
+  const port = process.env.PORT || 443;
   await app.listen(port);
   console.log(`♦ LocalKart API running on port ${port}/api/v1`);
 }
+
 bootstrap();
