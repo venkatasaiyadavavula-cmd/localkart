@@ -2,7 +2,6 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
-  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,8 +9,9 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../../core/entities/user.entity';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { VerifyOtpDto } from './dto/otp.dto';
+import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -26,68 +26,61 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { phone, email, password, name, role } = registerDto;
 
-    // Check existing user
     const existingUser = await this.userRepository.findOne({
-      where: [{ phone }, { email }],
+      where: [{ phone }, ...(email ? [{ email }] : [])],
     });
+
     if (existingUser) {
-      throw new ConflictException('User with this phone or email already exists');
+      throw new BadRequestException('User with this phone or email already exists');
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = this.userRepository.create({
-      phone,
-      email,
       name,
+      phone,
+      email: email || null,
       password: hashedPassword,
-      role: role || UserRole.CUSTOMER,
-      isPhoneVerified: false,
+      role: role as UserRole || UserRole.CUSTOMER,
     });
 
     await this.userRepository.save(user);
 
-    // Send OTP for verification
-    await this.sendOtp(phone);
-
-    const { password: _, ...userWithoutPassword } = user;
     return {
       message: 'Registration successful. Please verify your phone number with OTP.',
-      user: userWithoutPassword,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 
-  async validateUser(phone: string, password: string): Promise<any> {
+  async login(loginDto: LoginDto) {
+    const { phone, password } = loginDto;
+
     const user = await this.userRepository.findOne({ where: { phone } });
+
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid phone number or password');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException('Please login with OTP');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid phone number or password');
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
-    }
-
-    const { password: _, ...result } = user;
-    return result;
-  }
-
-  async login(user: any) {
-    const payload = {
-      sub: user.id,
-      phone: user.phone,
-      role: user.role,
-      email: user.email,
-    };
+    const tokens = await this.generateTokens(user);
 
     return {
-      accessToken: this.jwtService.sign(payload),
+      ...tokens,
       user: {
         id: user.id,
         name: user.name,
@@ -99,22 +92,24 @@ export class AuthService {
     };
   }
 
-  async sendOtp(phone: string) {
+  async sendOtp(sendOtpDto: SendOtpDto) {
+    const { phone } = sendOtpDto;
+
     const user = await this.userRepository.findOne({ where: { phone } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // In production: Send SMS via Twilio/Fast2SMS
     this.logger.log(`OTP for ${phone}: ${otp}`);
 
-    // Save OTP in database (with expiry)
-    user.lastOtp = otp;
-    user.lastOtpSentAt = new Date();
-    await this.userRepository.save(user);
+    await this.userRepository.update(
+      { phone },
+      {
+        lastOtp: otp,
+        lastOtpSentAt: new Date(),
+      }
+    );
 
     return { message: 'OTP sent successfully' };
   }
@@ -127,7 +122,6 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
-    // Check OTP expiry (5 minutes)
     const otpExpiryTime = 5 * 60 * 1000;
     if (
       !user.lastOtpSentAt ||
@@ -140,23 +134,20 @@ export class AuthService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    // Mark phone as verified
     user.isPhoneVerified = true;
-    user.lastOtp = null;
-    user.lastOtpSentAt = null;
-    await this.userRepository.save(user);
+    await this.userRepository.update(
+      { phone },
+      {
+        isPhoneVerified: true,
+        lastOtp: null,
+        lastOtpSentAt: null,
+      }
+    );
 
-    // Generate token for auto-login after verification
-    const payload = {
-      sub: user.id,
-      phone: user.phone,
-      role: user.role,
-      email: user.email,
-    };
+    const tokens = await this.generateTokens(user);
 
     return {
-      message: 'Phone verified successfully',
-      accessToken: this.jwtService.sign(payload),
+      ...tokens,
       user: {
         id: user.id,
         name: user.name,
@@ -168,15 +159,37 @@ export class AuthService {
     };
   }
 
-  async refreshToken(user: any) {
+  async logout(userId: string) {
+    return { message: 'Logged out successfully' };
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return this.generateTokens(user);
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  private async generateTokens(user: User) {
     const payload = {
       sub: user.id,
       phone: user.phone,
       role: user.role,
-      email: user.email,
     };
-    return {
-      accessToken: this.jwtService.sign(payload),
-    };
+
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
+
+    return { accessToken, refreshToken };
   }
 }
