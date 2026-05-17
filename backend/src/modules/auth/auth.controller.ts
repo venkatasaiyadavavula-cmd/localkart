@@ -36,7 +36,7 @@ export class AuthController {
   @Post('send-otp')
   @HttpCode(HttpStatus.OK)
   async sendOtp(@Body() sendOtpDto: SendOtpDto) {
-    return this.authService.sendOtp(sendOtpDto.phone);
+    return this.authService.sendOtp(sendOtpDto);
   }
 
   @Public()
@@ -49,7 +49,6 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Request() req) {
-    // In JWT, logout is handled client-side by discarding token
     return { message: 'Logged out successfully' };
   }
 
