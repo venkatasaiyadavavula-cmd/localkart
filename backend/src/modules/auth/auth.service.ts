@@ -92,6 +92,15 @@ export class AuthService {
     };
   }
 
+  async validateUser(phone: string, password: string) {
+    const user = await this.userRepository.findOne({ where: { phone } });
+    if (!user) return null;
+    if (!user.password) return null;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) return null;
+    return user;
+  }
+
   async sendOtp(sendOtpDto: SendOtpDto) {
     const { phone } = sendOtpDto;
 
@@ -134,7 +143,6 @@ export class AuthService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    user.isPhoneVerified = true;
     await this.userRepository.update(
       { phone },
       {
