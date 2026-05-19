@@ -112,12 +112,9 @@ export class AuthService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.logger.log(`OTP for ${phone}: ${otp}`);
 
-    await this.userRepository.update(
-      { phone },
-      {
-        lastOtp: otp,
-        lastOtpSentAt: new Date(),
-      }
+    await this.userRepository.query(
+      `UPDATE users SET "lastOtp" = $1, "lastOtpSentAt" = $2 WHERE phone = $3`,
+      [otp, new Date(), phone]
     );
 
     return { message: 'OTP sent successfully' };
@@ -126,15 +123,21 @@ export class AuthService {
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { phone, otp } = verifyOtpDto;
 
-    const user = await this.userRepository.findOne({ where: { phone } });
-    if (!user) {
+    const users = await this.userRepository.query(
+      `SELECT * FROM users WHERE phone = $1`,
+      [phone]
+    );
+
+    if (!users || users.length === 0) {
       throw new BadRequestException('User not found');
     }
+
+    const user = users[0];
 
     const otpExpiryTime = 5 * 60 * 1000;
     if (
       !user.lastOtpSentAt ||
-      Date.now() - user.lastOtpSentAt.getTime() > otpExpiryTime
+      Date.now() - new Date(user.lastOtpSentAt).getTime() > otpExpiryTime
     ) {
       throw new BadRequestException('OTP expired. Please request a new one.');
     }
@@ -143,16 +146,13 @@ export class AuthService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    await this.userRepository.update(
-      { phone },
-      {
-        isPhoneVerified: true,
-        lastOtp: null,
-        lastOtpSentAt: null,
-      }
+    await this.userRepository.query(
+      `UPDATE users SET "isPhoneVerified" = true, "lastOtp" = null, "lastOtpSentAt" = null WHERE phone = $1`,
+      [phone]
     );
 
-    const tokens = await this.generateTokens(user);
+    const userEntity = await this.userRepository.findOne({ where: { phone } });
+    const tokens = await this.generateTokens(userEntity);
 
     return {
       ...tokens,
