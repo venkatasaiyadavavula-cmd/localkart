@@ -58,39 +58,42 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
-    const { phone, password } = loginDto;
+async login(loginDto: LoginDto) {
+  const { phone, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where: { phone } });
+  console.log('PHONE=', phone);
+  console.log('PASSWORD=', password);
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid phone number or password');
-    }
+  const user = await this.userRepository.findOne({
+    where: { phone },
+  });
 
-    if (!user.password) {
-      throw new UnauthorizedException('Please login with OTP');
-    }
+  console.log('USER=', user);
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid phone number or password');
-    }
-
-    const tokens = await this.generateTokens(user);
-
-    return {
-      ...tokens,
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-        isPhoneVerified: user.isPhoneVerified,
-      },
-    };
+  if (!user) {
+    console.log('USER NOT FOUND');
+    throw new UnauthorizedException(
+      'Invalid phone number or password',
+    );
   }
+
+  console.log('DB HASH=', user.password);
+
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    user.password,
+  );
+
+  console.log('MATCH=', isPasswordValid);
+
+  if (!isPasswordValid) {
+    throw new UnauthorizedException(
+      'Invalid phone number or password',
+    );
+  }
+
+  ...
+}
 
 async validateUser(phone: string, password: string) {
   console.log('PHONE=', phone);
