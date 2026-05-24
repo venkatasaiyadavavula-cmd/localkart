@@ -92,9 +92,10 @@ async login(loginDto: LoginDto) {
     );
   }
 
-  ...
+  return {
+    success: true,
+  };
 }
-
 async validateUser(phone: string, password: string) {
   console.log('PHONE=', phone);
 
