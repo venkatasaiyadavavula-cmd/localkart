@@ -60,15 +60,17 @@ export class LocationService {
     queryBuilder.orderBy('distance', 'ASC');
     queryBuilder.setParameters({ longitude, latitude, radius });
 
-    const [shops, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+   const { entities, raw } = await queryBuilder
+  .skip(skip)
+  .take(limit)
+  .getRawAndEntities();
 
-    const shopsWithDistance = shops.map((shop: any) => ({
-      ...shop,
-      distance: shop.distance ? Math.round(shop.distance) : null,
-    }));
+   const total = await queryBuilder.getCount();
+
+    const shopsWithDistance = entities.map((shop: any, index) => ({
+  ...shop,
+  distance: Math.round(Number(raw[index].distance)),
+  }));
 
     return {
       data: shopsWithDistance,
