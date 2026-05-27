@@ -15,73 +15,105 @@ export class LocationService {
    * దగ్గరలోని షాపులను వాటి దూరంతో సహా తిరిగి ఇస్తుంది
    */
   async findNearbyShops(query: NearbyShopsDto) {
-    const {
-      latitude,
-      longitude,
-      radius = 5,
-      categoryType,
-      limit = 20,
-      page = 1,
-    } = query;
+  const {
+    latitude,
+    longitude,
+    radius = 5,
+    categoryType,
+    limit = 20,
+    page = 1,
+  } = query;
 
-    if (!latitude || !longitude) {
-      throw new BadRequestException('Latitude and longitude are required');
-    }
+  if (!latitude || !longitude) {
+    throw new BadRequestException(
+      'Latitude and longitude are required',
+    );
+  }
 
-    const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-    const queryBuilder = this.shopRepository
-      .createQueryBuilder('shop')
-      .where('shop.status = :status', { status: ShopStatus.APPROVED })
-      .andWhere(
-        `ST_DWithin(
-          shop.location,
-          ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,
-          :radius * 1000
-        )`,
-        { longitude, latitude, radius },
-      )
-      .leftJoinAndSelect('shop.products', 'product', 'product.status = :productStatus', {
-        productStatus: 'approved',
-      });
-
-    if (categoryType) {
-      queryBuilder.andWhere('product.categoryType = :categoryType', { categoryType });
-    }
-
-    queryBuilder.addSelect(
-      `ST_Distance(
+  const queryBuilder = this.shopRepository
+    .createQueryBuilder('shop')
+    .where('shop.status = :status', {
+      status: ShopStatus.APPROVED,
+    })
+    .andWhere(
+      `ST_DWithin(
         shop.location,
-        ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography
+        ST_SetSRID(
+          ST_MakePoint(:longitude, :latitude),
+          4326
+        )::geography,
+        :radius * 1000
       )`,
-      'distance',
+      {
+        longitude,
+        latitude,
+        radius,
+      },
+    )
+    .leftJoinAndSelect(
+      'shop.products',
+      'product',
+      'product.status = :productStatus',
+      {
+        productStatus: 'approved',
+      },
     );
 
-    queryBuilder.orderBy('distance', 'ASC');
-    queryBuilder.setParameters({ longitude, latitude, radius });
-
-   const { entities, raw } = await queryBuilder
-  .skip(skip)
-  .take(limit)
-  .getRawAndEntities();
-
-   const total = await queryBuilder.getCount();
-
-    const shopsWithDistance = entities.map((shop: any, index) => ({
-  ...shop,
-  distance: Math.round(Number(raw[index].distance)),
-  }));
-
-    return {
-      data: shopsWithDistance,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+  if (categoryType) {
+    queryBuilder.andWhere(
+      'product.categoryType = :categoryType',
+      { categoryType },
+    );
   }
+
+  queryBuilder.addSelect(
+    `ST_Distance(
+      shop.location,
+      ST_SetSRID(
+        ST_MakePoint(:longitude, :latitude),
+        4326
+      )::geography
+    )`,
+    'distance',
+  );
+
+  queryBuilder.orderBy('distance', 'ASC');
+  queryBuilder.setParameters({
+    longitude,
+    latitude,
+    radius,
+  });
+
+  const { entities, raw } = await queryBuilder
+    .skip(skip)
+    .take(limit)
+    .getRawAndEntities();
+
+  const total = await queryBuilder.getCount();
+
+  console.log('RAW DISTANCES:', raw);
+
+  const shopsWithDistance = entities.map(
+    (shop: any, index) => ({
+      ...shop,
+      distance: raw[index]?.distance
+        ? Math.round(Number(raw[index].distance))
+        : null,
+    }),
+  );
+
+  return {
+    data: shopsWithDistance,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
 
   /**
    * పేరు ఆధారంగా షాపులను వెతుకుతుంది
