@@ -78,20 +78,16 @@ async login(loginDto: LoginDto) {
     );
   }
 
-  console.log('DB HASH=', user.password);
+console.log('INPUT PASSWORD =', password);
+console.log('DB HASH =', user.password);
 
-  const isPasswordValid = await bcrypt.compare(
-    password,
-    user.password,
-  );
+const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  console.log('MATCH=', isPasswordValid);
+console.log('COMPARE RESULT =', isPasswordValid);
 
-  if (!isPasswordValid) {
-    throw new UnauthorizedException(
-      'Invalid phone number or password',
-    );
-  }
+if (!isPasswordValid) {
+  throw new UnauthorizedException('Invalid phone number or password');
+}
 
   return {
     success: true,
