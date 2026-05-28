@@ -37,12 +37,13 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = this.userRepository.create({
-      name,
-      phone,
-      email: email || null,
-      password: hashedPassword,
-      role: role as UserRole || UserRole.CUSTOMER,
-    });
+  name,
+  phone,
+  email: email || null,
+  password: hashedPassword,
+  role: role as UserRole || UserRole.CUSTOMER,
+  isPhoneVerified: true,
+});
 
     await this.userRepository.save(user);
 
