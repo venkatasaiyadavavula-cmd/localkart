@@ -1,3 +1,4 @@
+```ts
 import {
   Injectable,
   BadRequestException,
@@ -8,8 +9,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+
 import { User, UserRole } from '../../core/entities/user.entity';
-import { LoginDto } from './dto/login.dto';
+
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 
@@ -23,77 +25,88 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // ================= REGISTER =================
+
   async register(registerDto: RegisterDto) {
-  const { phone, email, password, name, role } = registerDto;
+    const { phone, email, password, name, role } = registerDto;
 
-  const existingUser = await this.userRepository.findOne({
-    where: [{ phone }, ...(email ? [{ email }] : [])],
-  });
+    const existingUser = await this.userRepository.findOne({
+      where: [{ phone }, ...(email ? [{ email }] : [])],
+    });
 
-  if (existingUser) {
-    throw new BadRequestException(
-      'User with this phone or email already exists',
-    );
+    if (existingUser) {
+      throw new BadRequestException(
+        'User with this phone or email already exists',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = this.userRepository.create({
+      name,
+      phone,
+      email: email || null,
+      password: hashedPassword,
+      role: (role as UserRole) || UserRole.CUSTOMER,
+      isPhoneVerified: true,
+    });
+
+    await this.userRepository.save(user);
+
+    return {
+      message: 'Registration successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // ================= LOGIN =================
 
-  // IMPORTANT
-  const user = this.userRepository.create({
-    name,
-    phone,
-    email: email || null,
-    password: hashedPassword,
-    role: (role as UserRole) || UserRole.CUSTOMER,
-    isPhoneVerified: true,
-  });
+  async login(user: User) {
+    const tokens = await this.generateTokens(user);
 
-  await this.userRepository.save(user);
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+    };
+  }
 
-  return {
-    message: 'Registration successful',
-    user: {
-      id: user.id,
-      name: user.name,
-      phone: user.phone,
-      email: user.email,
-      role: user.role,
-    },
-  };
-}
+  // ================= VALIDATE USER =================
 
-async login(user: User) {
-  const tokens = await this.generateTokens(user);
+  async validateUser(phone: string, password: string) {
+    const user = await this.userRepository.findOne({
+      where: { phone },
+    });
 
-  return {
-    ...tokens,
-    user: {
-      id: user.id,
-      name: user.name,
-      phone: user.phone,
-      email: user.email,
-      role: user.role,
-      isPhoneVerified: user.isPhoneVerified,
-    },
-  };
-}
+    if (!user) {
+      return null;
+    }
 
-async validateUser(phone: string, password: string) {
-  const user = await this.userRepository.findOne({
-    where: { phone },
-  });
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password,
+    );
 
-  if (!user) return null;
+    if (!isPasswordValid) {
+      return null;
+    }
 
-  const isPasswordValid = await bcrypt.compare(
-    password,
-    user.password,
-  );
+    return user;
+  }
 
-  if (!isPasswordValid) return null;
-
-  return user;
-}
+  // ================= SEND OTP =================
 
   async sendOtp(sendOtpDto: SendOtpDto) {
     const { phone } = sendOtpDto;
@@ -123,6 +136,8 @@ async validateUser(phone: string, password: string) {
       message: 'OTP sent successfully',
     };
   }
+
+  // ================= VERIFY OTP =================
 
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { phone, otp } = verifyOtpDto;
@@ -167,26 +182,34 @@ async validateUser(phone: string, password: string) {
       where: { phone },
     });
 
+    if (!userEntity) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const tokens = await this.generateTokens(userEntity);
 
     return {
       ...tokens,
       user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
+        id: userEntity.id,
+        name: userEntity.name,
+        phone: userEntity.phone,
+        email: userEntity.email,
+        role: userEntity.role,
         isPhoneVerified: true,
       },
     };
   }
+
+  // ================= LOGOUT =================
 
   async logout(userId: string) {
     return {
       message: 'Logged out successfully',
     };
   }
+
+  // ================= REFRESH TOKEN =================
 
   async refreshToken(refreshToken: string) {
     try {
@@ -207,6 +230,8 @@ async validateUser(phone: string, password: string) {
       );
     }
   }
+
+  // ================= GENERATE TOKENS =================
 
   private async generateTokens(user: User) {
     const payload = {
@@ -229,3 +254,4 @@ async validateUser(phone: string, password: string) {
     };
   }
 }
+```
