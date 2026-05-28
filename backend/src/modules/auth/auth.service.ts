@@ -62,55 +62,53 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
-    const { phone, password } = loginDto;
+async login(loginDto: LoginDto) {
+  const { phone, password } = loginDto;
 
-    console.log('PHONE=', phone);
+  console.log('PHONE=', phone);
+  console.log('PLAIN PASSWORD=', password);
 
-    const user = await this.userRepository.findOne({
-      where: { phone },
-    });
+  const user = await this.userRepository.findOne({
+    where: { phone },
+  });
 
-    console.log('LOGIN USER=', user);
+  console.log('USER=', user);
 
-    if (!user) {
-      console.log('USER NOT FOUND');
-      throw new UnauthorizedException(
-        'Invalid phone number or password',
-      );
-    }
-
-    // IMPORTANT FIX
-    // compare plain password with hashed password
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.password,
+  if (!user) {
+    throw new UnauthorizedException(
+      'Invalid phone number or password',
     );
-
-    console.log('INPUT PASSWORD=', password);
-    console.log('DB PASSWORD=', user.password);
-    console.log('COMPARE RESULT=', isPasswordValid);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        'Invalid phone number or password',
-      );
-    }
-
-    const tokens = await this.generateTokens(user);
-
-    return {
-      ...tokens,
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-        isPhoneVerified: user.isPhoneVerified,
-      },
-    };
   }
+
+  console.log('DB HASH=', user.password);
+
+  // IMPORTANT
+  const isPasswordValid = await bcrypt.compare(
+    String(password),
+    String(user.password),
+  );
+
+  console.log('COMPARE RESULT=', isPasswordValid);
+
+  if (!isPasswordValid) {
+    throw new UnauthorizedException(
+      'Invalid phone number or password',
+    );
+  }
+
+  const tokens = await this.generateTokens(user);
+
+  return {
+    ...tokens,
+    user: {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      role: user.role,
+    },
+  };
+}
 
   async validateUser(phone: string, password: string) {
     console.log('PHONE=', phone);
