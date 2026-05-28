@@ -62,40 +62,7 @@ export class AuthService {
     };
   }
 
-async login(loginDto: LoginDto) {
-  const { phone, password } = loginDto;
-
-  console.log('PHONE=', phone);
-  console.log('PLAIN PASSWORD=', password);
-
-  const user = await this.userRepository.findOne({
-    where: { phone },
-  });
-
-  console.log('USER=', user);
-
-  if (!user) {
-    throw new UnauthorizedException(
-      'Invalid phone number or password',
-    );
-  }
-
-  console.log('DB HASH=', user.password);
-
-  // IMPORTANT
-  const isPasswordValid = await bcrypt.compare(
-    String(password),
-    String(user.password),
-  );
-
-  console.log('COMPARE RESULT=', isPasswordValid);
-
-  if (!isPasswordValid) {
-    throw new UnauthorizedException(
-      'Invalid phone number or password',
-    );
-  }
-
+async login(user: User) {
   const tokens = await this.generateTokens(user);
 
   return {
@@ -106,6 +73,7 @@ async login(loginDto: LoginDto) {
       phone: user.phone,
       email: user.email,
       role: user.role,
+      isPhoneVerified: user.isPhoneVerified,
     },
   };
 }
