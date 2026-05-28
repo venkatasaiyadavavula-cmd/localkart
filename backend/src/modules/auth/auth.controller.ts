@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
+import { LocalAuthGuard } from './local-auth.guard';
 import { Public } from '../../core/decorators/public.decorator';
 
 @Controller('auth')
