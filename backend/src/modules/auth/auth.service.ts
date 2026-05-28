@@ -24,43 +24,43 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { phone, email, password, name, role } = registerDto;
+  const { phone, email, password, name, role } = registerDto;
 
-    const existingUser = await this.userRepository.findOne({
-      where: [{ phone }, ...(email ? [{ email }] : [])],
-    });
+  const existingUser = await this.userRepository.findOne({
+    where: [{ phone }, ...(email ? [{ email }] : [])],
+  });
 
-    if (existingUser) {
-      throw new BadRequestException(
-        'User with this phone or email already exists',
-      );
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = this.userRepository.create({
-      name,
-      phone,
-      email: email || null,
-      password: hashedPassword,
-      role: (role as UserRole) || UserRole.CUSTOMER,
-      isPhoneVerified: true,
-    });
-
-    await this.userRepository.save(user);
-
-    return {
-      message:
-        'Registration successful. Please verify your phone number with OTP.',
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-      },
-    };
+  if (existingUser) {
+    throw new BadRequestException(
+      'User with this phone or email already exists',
+    );
   }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // IMPORTANT
+  const user = this.userRepository.create({
+    name,
+    phone,
+    email: email || null,
+    password: hashedPassword,
+    role: (role as UserRole) || UserRole.CUSTOMER,
+    isPhoneVerified: true,
+  });
+
+  await this.userRepository.save(user);
+
+  return {
+    message: 'Registration successful',
+    user: {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      role: user.role,
+    },
+  };
+}
 
 async login(user: User) {
   const tokens = await this.generateTokens(user);
