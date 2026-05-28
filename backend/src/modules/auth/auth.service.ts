@@ -1,4 +1,3 @@
-```ts
 import {
   Injectable,
   BadRequestException,
@@ -11,7 +10,6 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { User, UserRole } from '../../core/entities/user.entity';
-
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 
@@ -24,8 +22,6 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
   ) {}
-
-  // ================= REGISTER =================
 
   async register(registerDto: RegisterDto) {
     const { phone, email, password, name, role } = registerDto;
@@ -65,8 +61,6 @@ export class AuthService {
     };
   }
 
-  // ================= LOGIN =================
-
   async login(user: User) {
     const tokens = await this.generateTokens(user);
 
@@ -82,8 +76,6 @@ export class AuthService {
       },
     };
   }
-
-  // ================= VALIDATE USER =================
 
   async validateUser(phone: string, password: string) {
     const user = await this.userRepository.findOne({
@@ -106,8 +98,6 @@ export class AuthService {
     return user;
   }
 
-  // ================= SEND OTP =================
-
   async sendOtp(sendOtpDto: SendOtpDto) {
     const { phone } = sendOtpDto;
 
@@ -126,8 +116,9 @@ export class AuthService {
     this.logger.log(`OTP for ${phone}: ${otp}`);
 
     await this.userRepository.query(
-      `UPDATE users 
-       SET "lastOtp" = $1, "lastOtpSentAt" = $2 
+      `UPDATE users
+       SET "lastOtp" = $1,
+           "lastOtpSentAt" = $2
        WHERE phone = $3`,
       [otp, new Date(), phone],
     );
@@ -136,8 +127,6 @@ export class AuthService {
       message: 'OTP sent successfully',
     };
   }
-
-  // ================= VERIFY OTP =================
 
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { phone, otp } = verifyOtpDto;
@@ -170,7 +159,7 @@ export class AuthService {
     }
 
     await this.userRepository.query(
-      `UPDATE users 
+      `UPDATE users
        SET "isPhoneVerified" = true,
            "lastOtp" = null,
            "lastOtpSentAt" = null
@@ -191,25 +180,21 @@ export class AuthService {
     return {
       ...tokens,
       user: {
-        id: userEntity.id,
-        name: userEntity.name,
-        phone: userEntity.phone,
-        email: userEntity.email,
-        role: userEntity.role,
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
         isPhoneVerified: true,
       },
     };
   }
-
-  // ================= LOGOUT =================
 
   async logout(userId: string) {
     return {
       message: 'Logged out successfully',
     };
   }
-
-  // ================= REFRESH TOKEN =================
 
   async refreshToken(refreshToken: string) {
     try {
@@ -230,8 +215,6 @@ export class AuthService {
       );
     }
   }
-
-  // ================= GENERATE TOKENS =================
 
   private async generateTokens(user: User) {
     const payload = {
@@ -254,4 +237,3 @@ export class AuthService {
     };
   }
 }
-```
