@@ -41,21 +41,14 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: '',
-      phone: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      role: 'customer',
-    },
+    defaultValues: { name: '', phone: '', email: '', password: '', confirmPassword: '', role: 'customer' },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
       await registerUser({ ...data, role: selectedRole });
-      toast.success('Account created! Please verify your phone number.');
-      router.push(`/verify-otp?phone=${encodeURIComponent(data.phone)}&mode=register`);
+      toast.success('Account created successfully! Please login.');
+      router.push('/login');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Registration failed. Please try again.');
     }
@@ -64,7 +57,7 @@ export default function RegisterPage() {
   return (
     <div style={{ position: 'relative', zIndex: 10 }}>
       <div className="mb-8 text-center">
-        <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">Create Account</h1>
+        <h1 className="font-heading text-2xl font-bold sm:text-3xl">Create Account</h1>
         <p className="mt-2 text-sm text-muted-foreground">Join LocalKart and start shopping or selling</p>
       </div>
 
@@ -120,32 +113,17 @@ export default function RegisterPage() {
           {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
         </div>
 
-        {/* Role Selection - Simple buttons instead of RadioGroup */}
         <div className="space-y-3">
           <Label>I want to</Label>
           <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('customer'); setValue('role', 'customer'); }}
-              className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center transition-all ${
-                selectedRole === 'customer'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-muted bg-card hover:bg-muted/50'
-              }`}
-            >
+            <button type="button" onClick={() => { setSelectedRole('customer'); setValue('role', 'customer'); }}
+              className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center transition-all ${selectedRole === 'customer' ? 'border-primary bg-primary/5' : 'border-muted bg-card hover:bg-muted/50'}`}>
               <User className="mb-2 h-6 w-6" />
               <span className="font-medium">Customer</span>
               <span className="text-xs text-muted-foreground">Shop from local stores</span>
             </button>
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('seller'); setValue('role', 'seller'); }}
-              className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center transition-all ${
-                selectedRole === 'seller'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-muted bg-card hover:bg-muted/50'
-              }`}
-            >
+            <button type="button" onClick={() => { setSelectedRole('seller'); setValue('role', 'seller'); }}
+              className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center transition-all ${selectedRole === 'seller' ? 'border-primary bg-primary/5' : 'border-muted bg-card hover:bg-muted/50'}`}>
               <Store className="mb-2 h-6 w-6" />
               <span className="font-medium">Seller</span>
               <span className="text-xs text-muted-foreground">Sell products online</span>
