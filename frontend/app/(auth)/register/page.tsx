@@ -44,15 +44,25 @@ export default function RegisterPage() {
     defaultValues: { name: '', phone: '', email: '', password: '', confirmPassword: '', role: 'customer' },
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
-    try {
-      await registerUser({ ...data, role: selectedRole });
-      toast.success('Account created successfully! Please login.');
-      router.push('/login');
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Registration failed. Please try again.');
-    }
-  };
+ const onSubmit = async (data: RegisterFormData) => {
+  try {
+    const { confirmPassword, ...registerData } = data;
+
+    await registerUser({
+      ...registerData,
+      role: selectedRole,
+    });
+
+    toast.success('Account created successfully! Please login.');
+    router.push('/login');
+
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message ||
+      'Registration failed. Please try again.'
+    );
+  }
+};
 
   return (
     <div style={{ position: 'relative', zIndex: 10 }}>
