@@ -23,7 +23,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+async register(registerDto: RegisterDto) {
   const { phone, email, password, name, role } = registerDto;
 
   const existingUser = await this.userRepository.findOne({
@@ -38,7 +38,6 @@ export class AuthService {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // THIS PART IS IMPORTANT
   const user = this.userRepository.create({
     name,
     phone,
@@ -61,7 +60,6 @@ export class AuthService {
     },
   };
 }
-
  async login(user: User) {
     const tokens = await this.generateTokens(user);
 
