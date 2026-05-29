@@ -8,9 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+
 import { User, UserRole } from '../../core/entities/user.entity';
-import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -30,53 +31,37 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new BadRequestException('User with this phone or email already exists');
+      throw new BadRequestException(
+        'User with this phone or email already exists',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = this.userRepository.create({
+    const user = this.userRepository.create({
       name,
       phone,
       email: email || null,
       password: hashedPassword,
-      role: role as UserRole || UserRole.CUSTOMER,
+      role: (role as UserRole) || UserRole.CUSTOMER,
       isPhoneVerified: true,
     });
 
-    await this.userRepository.save(newUser);
+    await this.userRepository.save(user);
 
     return {
-      message: 'Registration successful. Please login.',
+      message: 'Registration successful',
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        phone: newUser.phone,
-        email: newUser.email,
-        role: newUser.role,
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
       },
     };
   }
 
-  async login(loginDto: LoginDto) {
-    const { phone, password } = loginDto;
-
-    const user = await this.userRepository.findOne({ where: { phone } });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid phone number or password');
-    }
-
-    if (!user.password) {
-      throw new UnauthorizedException('Invalid phone number or password');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid phone number or password');
-    }
-
+  async login(user: User) {
     const tokens = await this.generateTokens(user);
 
     return {
@@ -93,21 +78,128 @@ export class AuthService {
   }
 
   async validateUser(phone: string, password: string) {
-    const user = await this.userRepository.findOne({ where: { phone } });
-    if (!user) return null;
-    if (!user.password) return null;
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) return null;
+    const user = await this.userRepository.findOne({
+      where: { phone },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
     return user;
   }
 
+  async sendOtp(sendOtpDto: SendOtpDto) {
+    const { phone } = sendOtpDto;
+
+    const user = await this.userRepository.findOne({
+      where: { phone },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const otp = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
+
+    this.logger.log(`OTP for ${phone}: ${otp}`);
+
+    await this.userRepository.query(
+      `UPDATE users
+       SET "lastOtp" = $1,
+           "lastOtpSentAt" = $2
+       WHERE phone = $3`,
+      [otp, new Date(), phone],
+    );
+
+    return {
+      message: 'OTP sent successfully',
+    };
+  }
+
+  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+    const { phone, otp } = verifyOtpDto;
+
+    const users = await this.userRepository.query(
+      `SELECT * FROM users WHERE phone = $1`,
+      [phone],
+    );
+
+    if (!users || users.length === 0) {
+      throw new BadRequestException('User not found');
+    }
+
+    const user = users[0];
+
+    const otpExpiryTime = 5 * 60 * 1000;
+
+    if (
+      !user.lastOtpSentAt ||
+      Date.now() - new Date(user.lastOtpSentAt).getTime() >
+        otpExpiryTime
+    ) {
+      throw new BadRequestException(
+        'OTP expired. Please request a new one.',
+      );
+    }
+
+    if (String(user.lastOtp).trim() !== String(otp).trim()) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    await this.userRepository.query(
+      `UPDATE users
+       SET "isPhoneVerified" = true,
+           "lastOtp" = null,
+           "lastOtpSentAt" = null
+       WHERE phone = $1`,
+      [phone],
+    );
+
+    const userEntity = await this.userRepository.findOne({
+      where: { phone },
+    });
+
+    if (!userEntity) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const tokens = await this.generateTokens(userEntity);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        isPhoneVerified: true,
+      },
+    };
+  }
+
   async logout(userId: string) {
-    return { message: 'Logged out successfully' };
+    return {
+      message: 'Logged out successfully',
+    };
   }
 
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken);
+
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
       });
@@ -118,7 +210,9 @@ export class AuthService {
 
       return this.generateTokens(user);
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(
+        'Invalid refresh token',
+      );
     }
   }
 
@@ -129,9 +223,18 @@ export class AuthService {
       role: user.role,
     };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '7d',
+    });
 
-    return { accessToken, refreshToken };
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: '30d',
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 }
+
