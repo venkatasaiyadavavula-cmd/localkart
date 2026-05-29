@@ -1,3 +1,4 @@
+```ts
 import {
   Injectable,
   BadRequestException,
@@ -237,4 +238,5 @@ export class AuthService {
     };
   }
 }
+```
 
