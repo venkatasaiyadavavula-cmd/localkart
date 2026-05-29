@@ -53,6 +53,20 @@ export default function RegisterPage() {
       toast.error(error?.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
+  try {
+    await registerUser({ ...data, role: selectedRole });
+
+    toast.success('Account created successfully!');
+    router.push('/login');
+
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message || 
+      'Registration failed. Please try again.'
+    );
+  }
+};
+ (final ssl and api fix)
 
   return (
     <div style={{ position: 'relative', zIndex: 10 }}>
