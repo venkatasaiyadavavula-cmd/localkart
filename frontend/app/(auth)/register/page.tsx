@@ -45,14 +45,7 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    try {
-      await registerUser({ ...data, role: selectedRole });
-      toast.success('Account created successfully! Please login.');
-      router.push('/login');
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Registration failed. Please try again.');
-    }
-  };
+
   try {
     await registerUser({ ...data, role: selectedRole });
 
@@ -66,7 +59,6 @@ export default function RegisterPage() {
     );
   }
 };
- (final ssl and api fix)
 
   return (
     <div style={{ position: 'relative', zIndex: 10 }}>
