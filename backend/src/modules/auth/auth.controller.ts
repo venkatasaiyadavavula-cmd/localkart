@@ -32,20 +32,6 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
-  @Public()
-  @Post('send-otp')
-  @HttpCode(HttpStatus.OK)
-  async sendOtp(@Body() sendOtpDto: SendOtpDto) {
-    return this.authService.sendOtp(sendOtpDto);
-  }
-
-  @Public()
-  @Post('verify-otp')
-  @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
-    return this.authService.verifyOtp(verifyOtpDto);
-  }
-
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Request() req) {
