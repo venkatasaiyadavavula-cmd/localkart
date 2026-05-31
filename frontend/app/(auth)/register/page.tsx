@@ -44,17 +44,20 @@ export default function RegisterPage() {
     defaultValues: { name: '', phone: '', email: '', password: '', confirmPassword: '', role: 'customer' },
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
-
+const onSubmit = async (data: RegisterFormData) => {
   try {
-    await registerUser({ ...data, role: selectedRole });
+    const { confirmPassword, ...payload } = data;
+
+    await registerUser({
+      ...payload,
+      role: selectedRole,
+    });
 
     toast.success('Account created successfully!');
     router.push('/login');
-
   } catch (error: any) {
     toast.error(
-      error?.response?.data?.message || 
+      error?.response?.data?.message ||
       'Registration failed. Please try again.'
     );
   }
