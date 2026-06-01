@@ -41,6 +41,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: false,
       setUser: (user) => set({ user, isAuthenticated: !!user }),
+
       login: async (phone, password, rememberMe = false) => {
         set({ isLoading: true });
         try {
@@ -54,16 +55,23 @@ export const useAuthStore = create<AuthStore>()(
           throw error;
         }
       },
+
       register: async (data) => {
         set({ isLoading: true });
         try {
-          await apiClient.post('/auth/register', data);
+          const response = await apiClient.post('/auth/register', data);
+          // ✅ Response check chestunnam — error vasina throw avutundi
+          if (!response.data) {
+            throw new Error('Registration failed');
+          }
           set({ isLoading: false });
         } catch (error: any) {
           set({ isLoading: false });
+          // ✅ Error ni re-throw chestunnam so UI lo correct error vastundi
           throw error;
         }
       },
+
       logout: async () => {
         set({ isLoading: true });
         try {
@@ -74,10 +82,12 @@ export const useAuthStore = create<AuthStore>()(
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },
+
       sendOtp: async (phone, mode = 'register', orderId = null) => {
         await apiClient.post('/auth/send-otp', { phone, mode, orderId });
         toast.success('OTP sent successfully');
       },
+
       verifyOtp: async (phone, otp, mode = 'register', orderId = null) => {
         set({ isLoading: true });
         try {
