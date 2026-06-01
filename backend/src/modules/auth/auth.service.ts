@@ -78,20 +78,25 @@ export class AuthService {
   }
 
 async validateUser(phone: string, password: string) {
-
-  console.log('PHONE=', phone);
-  console.log('PASSWORD=', password);
+  // ✅ Phone normalize — both formats handle avutayi
+  const normalizedPhone = phone.startsWith('+91') 
+    ? phone 
+    : `+91${phone}`;
 
   const user = await this.userRepository.findOne({
-    where: { phone },
+    where: [
+      { phone: normalizedPhone },
+      { phone: phone }, // fallback — 10 digit format lo save ayyuntey kuda work avutundi
+    ],
   });
 
-  console.log('USER FOUND=', !!user);
+  if (!user) return null;
 
-  if (!user) {
-    return null;
-  }
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) return null;
 
+  return user;
+}
   const isPasswordValid = await bcrypt.compare(
     password,
     user.password,
