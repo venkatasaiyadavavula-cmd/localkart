@@ -23,11 +23,21 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // ✅ Helper — phone ni always +91 format lo normalize chestundi
+  private normalizePhone(phone: string): string {
+    if (phone.startsWith('+91')) return phone;
+    if (phone.startsWith('91') && phone.length === 12) return `+${phone}`;
+    return `+91${phone}`;
+  }
+
   async register(registerDto: RegisterDto) {
     const { phone, email, password, name, role } = registerDto;
 
+    // ✅ Phone normalize chesi +91 format lo save cheyyandi
+    const normalizedPhone = this.normalizePhone(phone);
+
     const existingUser = await this.userRepository.findOne({
-      where: [{ phone }, ...(email ? [{ email }] : [])],
+      where: [{ phone: normalizedPhone }, ...(email ? [{ email }] : [])],
     });
 
     if (existingUser) {
@@ -40,7 +50,7 @@ export class AuthService {
 
     const user = this.userRepository.create({
       name,
-      phone,
+      phone: normalizedPhone, // ✅ Always +91 format
       email: email || null,
       password: hashedPassword,
       role: (role as UserRole) || UserRole.CUSTOMER,
@@ -77,63 +87,54 @@ export class AuthService {
     };
   }
 
-async validateUser(phone: string, password: string) {
-  // ✅ Phone normalize — both formats handle avutayi
-  const normalizedPhone = phone.startsWith('+91') 
-    ? phone 
-    : `+91${phone}`;
+  async validateUser(phone: string, password: string) {
+    // ✅ Login lo kuda normalize — DB lo +91 format lo undi, so match avutundi
+    const normalizedPhone = this.normalizePhone(phone);
 
-  const user = await this.userRepository.findOne({
-    where: [
-      { phone: normalizedPhone },
-      { phone: phone }, // fallback — 10 digit format lo save ayyuntey kuda work avutundi
-    ],
-  });
+    const user = await this.userRepository.findOne({
+      where: [
+        { phone: normalizedPhone },
+        { phone: phone }, // fallback — old users kosam
+      ],
+    });
 
-  if (!user) return null;
+    if (!user) {
+      return null;
+    }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) return null;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  return user;
-}
-  const isPasswordValid = await bcrypt.compare(
-    password,
-    user.password,
-  );
+    if (!isPasswordValid) {
+      return null;
+    }
 
-  console.log('PASSWORD MATCH=', isPasswordValid);
-
-  if (!isPasswordValid) {
-    return null;
+    return user;
   }
-
-  return user;
-}
 
   async sendOtp(sendOtpDto: SendOtpDto) {
     const { phone } = sendOtpDto;
 
+    // ✅ OTP send lo kuda normalize
+    const normalizedPhone = this.normalizePhone(phone);
+
     const user = await this.userRepository.findOne({
-      where: { phone },
+      where: { phone: normalizedPhone },
     });
 
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    const otp = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    this.logger.log(`OTP for ${phone}: ${otp}`);
+    this.logger.log(`OTP for ${normalizedPhone}: ${otp}`);
 
     await this.userRepository.query(
       `UPDATE users
        SET "lastOtp" = $1,
            "lastOtpSentAt" = $2
        WHERE phone = $3`,
-      [otp, new Date(), phone],
+      [otp, new Date(), normalizedPhone],
     );
 
     return {
@@ -144,9 +145,12 @@ async validateUser(phone: string, password: string) {
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { phone, otp } = verifyOtpDto;
 
+    // ✅ OTP verify lo kuda normalize
+    const normalizedPhone = this.normalizePhone(phone);
+
     const users = await this.userRepository.query(
       `SELECT * FROM users WHERE phone = $1`,
-      [phone],
+      [normalizedPhone],
     );
 
     if (!users || users.length === 0) {
@@ -159,12 +163,9 @@ async validateUser(phone: string, password: string) {
 
     if (
       !user.lastOtpSentAt ||
-      Date.now() - new Date(user.lastOtpSentAt).getTime() >
-        otpExpiryTime
+      Date.now() - new Date(user.lastOtpSentAt).getTime() > otpExpiryTime
     ) {
-      throw new BadRequestException(
-        'OTP expired. Please request a new one.',
-      );
+      throw new BadRequestException('OTP expired. Please request a new one.');
     }
 
     if (String(user.lastOtp).trim() !== String(otp).trim()) {
@@ -177,11 +178,11 @@ async validateUser(phone: string, password: string) {
            "lastOtp" = null,
            "lastOtpSentAt" = null
        WHERE phone = $1`,
-      [phone],
+      [normalizedPhone],
     );
 
     const userEntity = await this.userRepository.findOne({
-      where: { phone },
+      where: { phone: normalizedPhone },
     });
 
     if (!userEntity) {
@@ -223,9 +224,7 @@ async validateUser(phone: string, password: string) {
 
       return this.generateTokens(user);
     } catch {
-      throw new UnauthorizedException(
-        'Invalid refresh token',
-      );
+      throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
@@ -250,4 +249,3 @@ async validateUser(phone: string, password: string) {
     };
   }
 }
-
