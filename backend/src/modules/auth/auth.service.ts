@@ -77,26 +77,34 @@ export class AuthService {
     };
   }
 
-  async validateUser(phone: string, password: string) {
-    const user = await this.userRepository.findOne({
-      where: { phone },
-    });
+async validateUser(phone: string, password: string) {
 
-    if (!user) {
-      return null;
-    }
+  console.log('PHONE=', phone);
+  console.log('PASSWORD=', password);
 
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.password,
-    );
+  const user = await this.userRepository.findOne({
+    where: { phone },
+  });
 
-    if (!isPasswordValid) {
-      return null;
-    }
+  console.log('USER FOUND=', !!user);
 
-    return user;
+  if (!user) {
+    return null;
   }
+
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    user.password,
+  );
+
+  console.log('PASSWORD MATCH=', isPasswordValid);
+
+  if (!isPasswordValid) {
+    return null;
+  }
+
+  return user;
+}
 
   async sendOtp(sendOtpDto: SendOtpDto) {
     const { phone } = sendOtpDto;
