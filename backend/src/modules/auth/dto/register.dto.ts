@@ -1,12 +1,12 @@
 import {
   IsString,
   IsNotEmpty,
-  IsPhoneNumber,
   IsEmail,
   IsOptional,
   MinLength,
   MaxLength,
   IsEnum,
+  Matches,
 } from 'class-validator';
 import { UserRole } from '../../../core/entities/user.entity';
 
@@ -16,8 +16,9 @@ export class RegisterDto {
   @MaxLength(100)
   name: string;
 
-  @IsPhoneNumber('IN')
+  @IsString()
   @IsNotEmpty()
+  @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' })
   phone: string;
 
   @IsEmail()
