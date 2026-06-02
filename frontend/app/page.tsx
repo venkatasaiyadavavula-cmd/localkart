@@ -1,173 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Search, Store, Truck, Shield, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
+import { Search, MapPin, ChevronRight, Bell, Tag, Truck, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useGeolocation } from '@/hooks/use-geolocation';
 import { useLocationStore } from '@/store/location-store';
+import { useGeolocation } from '@/hooks/use-geolocation';
 import { NearbyShopsSection } from '@/components/home/nearby-shops-section';
 import { CategoriesSection } from '@/components/home/categories-section';
 import { TrendingProductsSection } from '@/components/home/trending-products-section';
-import { HowItWorksSection } from '@/components/home/how-it-works-section';
 import { LocationDialog } from '@/components/location/location-dialog';
 
-const fadeUpVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-};
-
-function WelcomeScreen({ onEnter }: { onEnter: () => void }) {
-  const [showButton, setShowButton] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowButton(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]"
-      style={{ pointerEvents: 'auto' }}
-    >
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(50)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute h-1 w-1 rounded-full bg-white"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{ opacity: [0.2, 1, 0.2] }}
-            transition={{
-              duration: 2 + Math.random() * 3,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 text-center px-6">
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 0.8, type: 'spring', bounce: 0.4 }}
-          className="mb-8 flex justify-center"
-        >
-          <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 to-orange-500 shadow-2xl">
-            <Store className="h-12 w-12 text-white" />
-          </div>
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="text-2xl text-yellow-400 font-medium mb-2"
-        >
-          🙏 Namaskaram!
-        </motion.p>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="text-5xl sm:text-6xl font-bold text-white mb-4"
-        >
-          Local<span className="text-orange-400">Kart</span>
-        </motion.h1>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2 }}
-          className="mb-8"
-        >
-          <p className="text-xl text-blue-300 font-medium">
-            Kadapa's Own Shopping App
-          </p>
-          <p className="mt-2 text-gray-400 text-base">
-            Mee inti dooralo unna shops • Same Day Delivery
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="flex justify-center gap-2 mb-10"
-        >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="h-2 w-2 rounded-full bg-orange-400"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-            />
-          ))}
-        </motion.div>
-
-        <AnimatePresence>
-          {showButton && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <button
-                onClick={onEnter}
-                className="group relative overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-orange-500 px-10 py-4 text-lg font-semibold text-white shadow-2xl transition-all hover:scale-105"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  Shopping Start Cheyandi
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </span>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function HomePage() {
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [welcomeDone, setWelcomeDone] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { latitude, longitude, loading: locationLoading, error: locationError, detectLocation } = useGeolocation();
   const { location: savedLocation, setLocation } = useLocationStore();
-
-  useEffect(() => {
-    const hasSeenWelcome = sessionStorage.getItem('localkart_welcome');
-    if (!hasSeenWelcome) {
-      setShowWelcome(true);
-    } else {
-      setWelcomeDone(true);
-    }
-  }, []);
-
-  const handleEnter = () => {
-    sessionStorage.setItem('localkart_welcome', 'true');
-    setShowWelcome(false);
-    // Wait for exit animation then redirect
-    setTimeout(() => {
-      setWelcomeDone(true);
-      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      if (!token) {
-        window.location.href = '/login';
-      }
-    }, 400);
-  };
 
   useEffect(() => {
     if (latitude && longitude && !savedLocation) {
@@ -187,194 +34,155 @@ export default function HomePage() {
     setShowLocationDialog(false);
   };
 
+  const banners = [
+    { bg: 'from-orange-400 to-pink-500', text: '70% OFF', sub: 'Fashion & Clothing', emoji: '👗' },
+    { bg: 'from-blue-400 to-purple-500', text: 'NEW ARRIVALS', sub: 'Electronics & Gadgets', emoji: '📱' },
+    { bg: 'from-green-400 to-teal-500', text: 'FRESH DAILY', sub: 'Groceries & Veggies', emoji: '🥦' },
+  ];
+
+  const [activeBanner, setActiveBanner] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setActiveBanner(p => (p + 1) % banners.length), 3000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <div className="min-h-screen">
-      {/* Welcome Screen - blocks nothing after exit */}
-      <AnimatePresence onExitComplete={() => setWelcomeDone(true)}>
-        {showWelcome && <WelcomeScreen onEnter={handleEnter} />}
-      </AnimatePresence>
+    <div className="min-h-screen bg-gray-50">
+      <LocationDialog
+        open={showLocationDialog}
+        onOpenChange={setShowLocationDialog}
+        onDetectLocation={handleDetectLocation}
+        locationLoading={locationLoading}
+        locationError={locationError}
+      />
 
-      {/* Main content - pointer events only after welcome done */}
-      <div style={{ pointerEvents: showWelcome ? 'none' : 'auto' }}>
-        <LocationDialog
-          open={showLocationDialog}
-          onOpenChange={setShowLocationDialog}
-          onDetectLocation={handleDetectLocation}
-          locationLoading={locationLoading}
-          locationError={locationError}
-        />
+      {/* Top Header */}
+      <div className="sticky top-0 z-40 bg-white shadow-sm">
+        <div className="bg-primary px-4 py-2 flex items-center justify-between">
+          <button
+            onClick={() => setShowLocationDialog(true)}
+            className="flex items-center gap-1 text-white text-sm"
+          >
+            <MapPin className="h-4 w-4" />
+            <span className="font-medium truncate max-w-[200px]">
+              {savedLocation ? 'Kadapa, Andhra Pradesh' : 'Set Delivery Location'}
+            </span>
+            <ChevronRight className="h-3 w-3" />
+          </button>
+          <Link href="/orders" className="text-white">
+            <Bell className="h-5 w-5" />
+          </Link>
+        </div>
 
-        <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-          <div className="container relative mx-auto px-4 py-12 md:py-20 lg:py-28">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={fadeUpVariants}
-              className="mx-auto max-w-4xl text-center"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary"
-              >
-                <Sparkles className="h-4 w-4" />
-                Now in Kadapa, Andhra Pradesh
-              </motion.div>
-
-              <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-                Shop <span className="text-gradient">Local</span>,
-                <br className="hidden sm:block" /> Delivered{' '}
-                <span className="relative inline-block">
-                  Same Day
-                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 10" preserveAspectRatio="none">
-                    <path d="M0,5 Q100,0 200,5" fill="none" stroke="#FF6B35" strokeWidth="3" />
-                  </svg>
-                </span>
-              </h1>
-
-              <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
-                Discover thousands of products from trusted local shops near you.
-                Support your neighborhood businesses with every purchase.
-              </p>
-
-              <motion.form
-                onSubmit={handleSearch}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-              >
-                <div className="relative w-full max-w-md">
-                  <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder='Search "groceries", "mobile phones", "sarees"...'
-                    className="h-14 pl-12 pr-4 text-base shadow-soft"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" size="lg" className="h-14 px-8 shadow-soft">
-                  Search
-                </Button>
-              </motion.form>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mt-6"
-              >
-                <button
-                  onClick={() => setShowLocationDialog(true)}
-                  className="group inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
-                >
-                  <MapPin className="h-4 w-4" />
-                  {savedLocation ? (
-                    <span>📍 Location set · Tap to change</span>
-                  ) : (
-                    <span>📍 Set your location for accurate delivery</span>
-                  )}
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </button>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.7 }}
-              className="mt-16 flex justify-center"
-            >
-              <div className="relative h-64 w-full max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 p-[2px] shadow-soft-xl">
-                <div className="relative h-full w-full overflow-hidden rounded-3xl bg-background">
-                  <div className="flex h-full items-center justify-center gap-8 p-8">
-                    <div className="hidden sm:block">
-                      <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-soft">
-                        <Store className="h-8 w-8 text-primary" />
-                        <div>
-                          <p className="font-semibold">Local Shops</p>
-                          <p className="text-sm text-muted-foreground">100+ in Kadapa</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="hidden md:block">
-                      <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-soft">
-                        <Truck className="h-8 w-8 text-accent" />
-                        <div>
-                          <p className="font-semibold">Same Day Delivery</p>
-                          <p className="text-sm text-muted-foreground">Within 5 km</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="hidden lg:block">
-                      <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-soft">
-                        <Shield className="h-8 w-8 text-green-500" />
-                        <div>
-                          <p className="font-semibold">Secure Payments</p>
-                          <p className="text-sm text-muted-foreground">COD & Online</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+        <form onSubmit={handleSearch} className="px-4 py-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search sarees, mobiles, groceries..."
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-        </section>
-
-        <section className="py-16">
-          <div className="container">
-            <CategoriesSection />
-          </div>
-        </section>
-
-        {savedLocation && (
-          <section className="bg-muted/30 py-16">
-            <div className="container">
-              <NearbyShopsSection latitude={savedLocation.latitude} longitude={savedLocation.longitude} />
-            </div>
-          </section>
-        )}
-
-        <section className="py-16">
-          <div className="container">
-            <TrendingProductsSection />
-          </div>
-        </section>
-
-        <section className="bg-gradient-to-b from-muted/50 to-background py-20">
-          <div className="container">
-            <HowItWorksSection />
-          </div>
-        </section>
-
-        <section className="pb-20 pt-8">
-          <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-accent p-[2px] shadow-soft-xl"
-            >
-              <div className="relative rounded-3xl bg-background p-12 text-center">
-                <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
-                  Are you a local shop owner?
-                </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                  Join LocalKart and grow your business online. Reach more customers in your neighborhood.
-                </p>
-                <Button asChild size="lg" className="mt-8">
-                  <Link href="/seller-onboarding">
-                    Start Selling <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        </section>
+        </form>
       </div>
+
+      {/* Banner Carousel */}
+      <div className="px-4 pt-3 pb-2">
+        <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${banners[activeBanner].bg} p-5 text-white`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-3xl font-black">{banners[activeBanner].text}</p>
+              <p className="text-sm opacity-90 mt-1">{banners[activeBanner].sub}</p>
+              <Link href="/browse">
+                <button className="mt-3 bg-white text-gray-800 text-xs font-bold px-4 py-1.5 rounded-full">
+                  Shop Now →
+                </button>
+              </Link>
+            </div>
+            <span className="text-6xl">{banners[activeBanner].emoji}</span>
+          </div>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {banners.map((_, i) => (
+              <div key={i} className={`h-1.5 rounded-full transition-all ${i === activeBanner ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Trust Badges */}
+      <div className="px-4 py-2 grid grid-cols-3 gap-2">
+        {[
+          { icon: Truck, text: 'Same Day', sub: 'Delivery' },
+          { icon: RotateCcw, text: 'Easy', sub: 'Returns' },
+          { icon: Tag, text: 'Best', sub: 'Prices' },
+        ].map(({ icon: Icon, text, sub }) => (
+          <div key={text} className="bg-white rounded-xl p-2.5 flex items-center gap-2 shadow-sm">
+            <div className="bg-primary/10 p-1.5 rounded-lg">
+              <Icon className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-800">{text}</p>
+              <p className="text-xs text-gray-500">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Categories */}
+      <div className="pt-3 pb-2">
+        <div className="px-4 flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-gray-800">Shop by Category</h2>
+          <Link href="/browse" className="text-xs text-primary font-medium flex items-center gap-0.5">
+            See all <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <CategoriesSection />
+      </div>
+
+      {/* Trending Products */}
+      <div className="pt-2 pb-3 bg-white mt-2">
+        <div className="px-4 flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-gray-800">🔥 Trending Now</h2>
+          <Link href="/browse" className="text-xs text-primary font-medium flex items-center gap-0.5">
+            See all <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <TrendingProductsSection />
+      </div>
+
+      {/* Nearby Shops */}
+      {savedLocation && (
+        <div className="pt-2 pb-3 mt-2 bg-white">
+          <div className="px-4 flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-gray-800">🏪 Shops Near You</h2>
+            <Link href="/browse" className="text-xs text-primary font-medium flex items-center gap-0.5">
+              See all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <NearbyShopsSection latitude={savedLocation.latitude} longitude={savedLocation.longitude} />
+        </div>
+      )}
+
+      {/* Sell on LocalKart */}
+      <div className="px-4 py-4 mt-2">
+        <div className="bg-gradient-to-r from-primary to-accent rounded-xl p-5 text-white flex items-center justify-between">
+          <div>
+            <p className="font-bold text-lg">Sell on LocalKart</p>
+            <p className="text-sm opacity-90 mt-0.5">Grow your local business online</p>
+            <Link href="/seller-onboarding">
+              <button className="mt-3 bg-white text-primary text-xs font-bold px-4 py-1.5 rounded-full">
+                Start Selling →
+              </button>
+            </Link>
+          </div>
+          <span className="text-5xl">🏪</span>
+        </div>
+      </div>
+
+      <div className="h-20" />
     </div>
   );
 }
