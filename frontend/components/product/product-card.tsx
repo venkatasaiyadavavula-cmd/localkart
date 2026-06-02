@@ -1,246 +1,81 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Star, MapPin, ShoppingBag, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { formatPrice, formatDistance } from '@/lib/utils';
-import { useCartStore } from '@/store/cart-store';
-import { cn } from '@/lib/utils';
+import { ShoppingBag, Star, Heart } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
+import { useState } from 'react';
 
 interface ProductCardProps {
   product: {
     id: string;
-    slug: string;
     name: string;
     price: number;
-    mrp?: number;
+    originalPrice?: number;
     images?: string[];
-    shop?: {
-      name: string;
-      slug: string;
-      distance?: number;
-    };
+    slug: string;
+    categoryType?: string;
     rating?: number;
-    reviewCount?: number;
-    isSponsored?: boolean;
-    stock: number;
+    shop?: { name: string };
   };
-  viewMode?: 'grid' | 'list';
-  className?: string;
 }
 
-export function ProductCard({ product, viewMode = 'grid', className }: ProductCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const { addItem } = useCartStore();
+export function ProductCard({ product }: ProductCardProps) {
+  const [wishlisted, setWishlisted] = useState(false);
 
-  const discount = product.mrp
-    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+  const discount = product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await addItem(product.id, 1);
-  };
-
-  if (viewMode === 'list') {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className={cn(
-          'group relative flex gap-4 rounded-xl border bg-card p-4 transition-shadow hover:shadow-soft',
-          className
-        )}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* Image */}
-        <Link href={`/product/${product.slug}`} className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-          {product.images?.[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <ShoppingBag className="absolute inset-0 m-auto h-8 w-8 text-muted-foreground" />
-          )}
-          {product.isSponsored && (
-            <Badge className="absolute left-2 top-2 bg-accent text-white">Sponsored</Badge>
-          )}
-        </Link>
-
-        {/* Content */}
-        <div className="flex flex-1 flex-col">
-          <div className="flex justify-between">
-            <div>
-              <Link href={`/product/${product.slug}`} className="font-medium hover:text-primary">
-                {product.name}
-              </Link>
-              {product.shop && (
-                <Link
-                  href={`/shop/${product.shop.slug}`}
-                  className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                >
-                  <MapPin className="h-3 w-3" />
-                  {product.shop.name}
-                  {product.shop.distance && <span>• {formatDistance(product.shop.distance)}</span>}
-                </Link>
-              )}
-            </div>
-            <button
-              onClick={() => setIsWishlisted(!isWishlisted)}
-              className="text-muted-foreground hover:text-red-500"
-            >
-              <Heart className={cn('h-5 w-5', isWishlisted && 'fill-red-500 text-red-500')} />
-            </button>
-          </div>
-
-          <div className="mt-2 flex items-center gap-2">
-            {product.rating && (
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{product.rating}</span>
-                <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-auto flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-primary">{formatPrice(product.price)}</span>
-              {product.mrp && product.mrp > product.price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  {formatPrice(product.mrp)}
-                </span>
-              )}
-              {discount > 0 && (
-                <Badge variant="success" className="text-xs">
-                  {discount}% OFF
-                </Badge>
-              )}
-            </div>
-            <Button size="sm" onClick={handleAddToCart} disabled={product.stock === 0}>
-              {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-            </Button>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
+  const href = product.categoryType
+    ? `/browse/${product.categoryType}/product/${product.slug}`
+    : `/browse/product/${product.slug}`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        'group relative overflow-hidden rounded-xl border bg-card transition-all duration-300 hover:shadow-soft-lg hover:-translate-y-1',
-        className
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`/product/${product.slug}`}>
+    <div className="bg-white flex flex-col relative">
+      {/* Wishlist */}
+      <button
+        onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted); }}
+        className="absolute top-2 right-2 z-10 bg-white rounded-full p-1 shadow-sm"
+      >
+        <Heart className={`h-3.5 w-3.5 ${wishlisted ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+      </button>
+
+      <Link href={href}>
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-muted">
+        <div className="relative aspect-square bg-gray-100">
           {product.images?.[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
-            />
+            <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
           ) : (
-            <ShoppingBag className="absolute inset-0 m-auto h-12 w-12 text-muted-foreground" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ShoppingBag className="h-8 w-8 text-gray-300" />
+            </div>
           )}
-          
-          {/* Badges */}
-          <div className="absolute left-2 top-2 flex flex-col gap-1">
-            {product.isSponsored && (
-              <Badge className="bg-accent text-white">Sponsored</Badge>
-            )}
-            {discount > 0 && (
-              <Badge variant="success">{discount}% OFF</Badge>
-            )}
-          </div>
-
-          {/* Wishlist Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsWishlisted(!isWishlisted);
-            }}
-            className="absolute right-2 top-2 rounded-full bg-white/80 p-1.5 backdrop-blur-sm transition-all hover:bg-white"
-          >
-            <Heart className={cn('h-4 w-4', isWishlisted && 'fill-red-500 text-red-500')} />
-          </button>
-
-          {/* Quick Add to Cart - Hover */}
-          {product.stock > 0 && (
-            <div
-              className={cn(
-                'absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 transition-all duration-300',
-                isHovered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-              )}
-            >
-              <Button
-                size="sm"
-                className="w-full"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleAddToCart(e);
-                }}
-              >
-                Add to Cart
-              </Button>
+          {discount > 0 && (
+            <div className="absolute top-1.5 left-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+              {discount}% off
             </div>
           )}
         </div>
 
-        {/* Content */}
-        <div className="p-4">
-          <h3 className="line-clamp-2 text-sm font-medium group-hover:text-primary">
-            {product.name}
-          </h3>
-          
-          {product.shop && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              <span className="line-clamp-1">{product.shop.name}</span>
-            </p>
+        {/* Info */}
+        <div className="p-2 pb-3">
+          {product.shop?.name && (
+            <p className="text-[10px] text-gray-400 mb-0.5 truncate">{product.shop.name}</p>
           )}
-
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-baseline gap-1">
-              <span className="font-heading text-lg font-bold text-primary">
-                {formatPrice(product.price)}
-              </span>
-              {product.mrp && product.mrp > product.price && (
-                <span className="text-xs text-muted-foreground line-through">
-                  {formatPrice(product.mrp)}
-                </span>
-              )}
-            </div>
-            {product.rating && (
-              <div className="flex items-center gap-0.5">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-medium">{product.rating}</span>
-              </div>
+          <p className="text-xs text-gray-800 line-clamp-2 leading-tight mb-1 font-medium">{product.name}</p>
+          <div className="flex items-center gap-1 mb-1">
+            <Star className="h-2.5 w-2.5 text-yellow-400 fill-yellow-400" />
+            <span className="text-[10px] text-gray-500">{product.rating || '4.2'}</span>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-sm font-bold text-gray-900">{formatPrice(product.price)}</p>
+            {product.originalPrice && (
+              <p className="text-[10px] text-gray-400 line-through">{formatPrice(product.originalPrice)}</p>
             )}
           </div>
-
-          {product.stock === 0 && (
-            <p className="mt-2 text-xs font-medium text-destructive">Out of Stock</p>
-          )}
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
