@@ -1,246 +1,227 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  TrendingUp,
-  Package,
-  ShoppingBag,
-  DollarSign,
-  Users,
-  ArrowUp,
-  ArrowDown,
-  Clock,
-  ChevronRight,
-} from 'lucide-react';
 import Link from 'next/link';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import {
+  TrendingUp, Package, ShoppingBag, DollarSign,
+  ArrowUp, ArrowDown, Clock, ChevronRight, Plus,
+  Zap, Bell, BarChart3, AlertCircle, CheckCircle,
+} from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerDashboard } from '@/hooks/use-seller-dashboard';
 import { SalesChart } from '@/components/seller/sales-chart';
 import { RecentOrders } from '@/components/seller/recent-orders';
 import { TopProducts } from '@/components/seller/top-products';
 import { formatPrice, formatNumber } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 export default function SellerDashboardPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
   const { data, isLoading } = useSellerDashboard(period);
 
+  const pendingOrders = data?.pendingOrders || 0;
+  const lowStockProducts = data?.lowStockProducts || 0;
+
   const stats = [
     {
-      title: 'Total Revenue',
+      title: 'Revenue',
       value: formatPrice(data?.totalRevenue || 0),
       change: data?.revenueChange || 0,
       icon: DollarSign,
       color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      bg: 'bg-green-50',
     },
     {
-      title: 'Total Orders',
+      title: 'Orders',
       value: formatNumber(data?.totalOrders || 0),
       change: data?.ordersChange || 0,
       icon: ShoppingBag,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      bg: 'bg-blue-50',
     },
     {
-      title: 'Products Sold',
+      title: 'Sold',
       value: formatNumber(data?.productsSold || 0),
       change: data?.productsSoldChange || 0,
       icon: Package,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      bg: 'bg-purple-50',
     },
     {
-      title: 'Active Products',
+      title: 'Products',
       value: formatNumber(data?.activeProducts || 0),
       change: data?.activeProductsChange || 0,
       icon: TrendingUp,
       color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      bg: 'bg-orange-50',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-            Welcome back, {data?.shopName}!
-          </h1>
-          <p className="text-muted-foreground">Here's what's happening with your store today.</p>
+      <div className="bg-white border-b px-4 pt-4 pb-3 sticky top-0 z-20">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              👋 {data?.shopName || 'My Shop'}
+            </h1>
+            <p className="text-xs text-gray-500">Here's your store overview</p>
+          </div>
+          <Link href="/dashboard/products/new">
+            <button className="flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3 py-2 rounded-xl">
+              <Plus className="h-3.5 w-3.5" /> Add Product
+            </button>
+          </Link>
         </div>
-        <div className="flex items-center gap-2">
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
-            <TabsList>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
-              <TabsTrigger value="year">Year</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+
+        {/* Period selector */}
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+          <TabsList className="w-full h-9 rounded-xl">
+            <TabsTrigger value="week" className="flex-1 rounded-lg text-xs">This Week</TabsTrigger>
+            <TabsTrigger value="month" className="flex-1 rounded-lg text-xs">This Month</TabsTrigger>
+            <TabsTrigger value="year" className="flex-1 rounded-lg text-xs">This Year</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="mt-2 h-8 w-32" />
-                </CardContent>
-              </Card>
-            ))
-          : stats.map((stat, index) => (
-              <motion.div
-                key={stat.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                        <p className="mt-2 font-heading text-3xl font-bold">{stat.value}</p>
-                        {stat.change !== 0 && (
-                          <div className="mt-2 flex items-center gap-1">
-                            {stat.change > 0 ? (
-                              <ArrowUp className="h-3 w-3 text-green-600" />
-                            ) : (
-                              <ArrowDown className="h-3 w-3 text-red-600" />
-                            )}
-                            <span
-                              className={`text-xs font-medium ${
-                                stat.change > 0 ? 'text-green-600' : 'text-red-600'
-                              }`}
-                            >
-                              {Math.abs(stat.change)}% from last period
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className={`rounded-full ${stat.bgColor} p-3`}>
-                        <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                      </div>
+      <div className="px-4 py-4 space-y-4">
+        {/* Alerts */}
+        {(pendingOrders > 0 || lowStockProducts > 0) && (
+          <div className="space-y-2">
+            {pendingOrders > 0 && (
+              <Link href="/dashboard/orders">
+                <div className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl p-3.5">
+                  <div className="bg-orange-500 text-white w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Bell className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-orange-800">
+                      🔔 {pendingOrders} new order{pendingOrders > 1 ? 's' : ''}!
+                    </p>
+                    <p className="text-xs text-orange-600">Tap to accept orders</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-orange-400" />
+                </div>
+              </Link>
+            )}
+            {lowStockProducts > 0 && (
+              <Link href="/dashboard/products">
+                <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-3.5">
+                  <div className="bg-red-500 text-white w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-red-800">
+                      ⚠️ {lowStockProducts} products low stock
+                    </p>
+                    <p className="text-xs text-red-600">Update stock before running out</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-red-400" />
+                </div>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-28 rounded-2xl" />
+              ))
+            : stats.map((stat) => (
+                <div key={stat.title} className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`${stat.bg} p-2 rounded-xl`}>
+                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-      </div>
+                    {stat.change !== 0 && (
+                      <div className={`flex items-center gap-0.5 text-xs font-semibold ${stat.change > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {stat.change > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                        {Math.abs(stat.change)}%
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">{stat.value}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{stat.title}</p>
+                </div>
+              ))
+          }
+        </div>
 
-      {/* Charts & Tables */}
-      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Quick actions */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <p className="text-sm font-bold text-gray-900 px-4 pt-4 pb-2">Quick Actions</p>
+          {[
+            { icon: Plus, label: 'Add New Product', sub: 'List a product for sale', href: '/dashboard/products/new', color: 'bg-primary/10 text-primary' },
+            { icon: ShoppingBag, label: 'View Orders', sub: `${pendingOrders} pending`, href: '/dashboard/orders', color: 'bg-blue-50 text-blue-600' },
+            { icon: Zap, label: 'Create Daily Offer', sub: 'Boost sales with deals', href: '/dashboard/offers', color: 'bg-orange-50 text-orange-500' },
+            { icon: BarChart3, label: 'View Analytics', sub: 'Sales & performance', href: '/dashboard/ads', color: 'bg-purple-50 text-purple-600' },
+          ].map((action) => (
+            <Link key={action.href} href={action.href}>
+              <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-t first:border-0">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${action.color}`}>
+                  <action.icon className="h-4.5 w-4.5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800">{action.label}</p>
+                  <p className="text-xs text-gray-400">{action.sub}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-300" />
+              </div>
+            </Link>
+          ))}
+        </div>
+
         {/* Sales Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Sales Overview</CardTitle>
-            <CardDescription>Your sales performance over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
-            ) : (
-              <SalesChart data={data?.salesChart || []} />
-            )}
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-bold text-gray-900">Sales Overview</p>
+            <span className="text-xs text-gray-400 capitalize">{period}</span>
+          </div>
+          {isLoading
+            ? <Skeleton className="h-48 w-full rounded-xl" />
+            : <SalesChart data={data?.salesChart || []} />
+          }
+        </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks to manage your shop</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href="/seller/dashboard/products/new">
-                <Package className="mr-2 h-4 w-4" />
-                Add New Product
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href="/seller/dashboard/orders">
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                View Orders ({data?.pendingOrders || 0} pending)
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href="/seller/dashboard/ads">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Promote Products
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href="/seller/dashboard/subscription">
-                <DollarSign className="mr-2 h-4 w-4" />
-                Manage Subscription
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Orders & Top Products */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recent Orders</CardTitle>
-              <CardDescription>Latest orders from your shop</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/seller/dashboard/orders">
-                View all <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+        {/* Recent Orders */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <p className="text-sm font-bold text-gray-900">Recent Orders</p>
+            <Link href="/dashboard/orders" className="text-xs text-primary font-semibold flex items-center gap-0.5">
+              See all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {isLoading
+            ? <div className="px-4 pb-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
               </div>
-            ) : (
-              <RecentOrders orders={data?.recentOrders || []} />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Top Products</CardTitle>
-              <CardDescription>Best selling products this period</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/seller/dashboard/products">
-                View all <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+            : <div className="px-4 pb-4">
+                <RecentOrders orders={data?.recentOrders || []} />
               </div>
-            ) : (
-              <TopProducts products={data?.topProducts || []} />
-            )}
-          </CardContent>
-        </Card>
+          }
+        </div>
+
+        {/* Top Products */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <p className="text-sm font-bold text-gray-900">Top Products</p>
+            <Link href="/dashboard/products" className="text-xs text-primary font-semibold flex items-center gap-0.5">
+              See all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {isLoading
+            ? <div className="px-4 pb-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
+              </div>
+            : <div className="px-4 pb-4">
+                <TopProducts products={data?.topProducts || []} />
+              </div>
+          }
+        </div>
       </div>
     </div>
   );
