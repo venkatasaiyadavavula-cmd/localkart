@@ -15,7 +15,6 @@ const config: Config = {
       screens: { '2xl': '1400px' },
     },
     extend: {
-      
       fontFamily: {
         sans:    ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
         display: ['Syne', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -107,7 +106,7 @@ const config: Config = {
           foreground: 'hsl(var(--popover-foreground))',
         },
       },
-      
+
       borderRadius: {
         sm:   'calc(var(--radius) - 4px)',
         md:   'calc(var(--radius) - 2px)',
