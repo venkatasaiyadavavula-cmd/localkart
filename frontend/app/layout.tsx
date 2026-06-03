@@ -1,23 +1,63 @@
-import type { Metadata } from 'next';
-import { Inter, Manrope } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans, Syne } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthGuard } from '@/components/auth/auth-guard';
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  style: ['normal', 'italic'],
+  variable: '--font-sans',
+  display: 'swap',
+  preload: true,
 });
 
-const manrope = Manrope({
+const syne = Syne({
   subsets: ['latin'],
-  variable: '--font-manrope',
+  weight: ['600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+  preload: true,
 });
 
 export const metadata: Metadata = {
-  title: 'LocalKart - Shop Local',
-  description: 'Your local shopping destination',
+  title: {
+    default: 'LocalKart — Shop Local, Delivered Fast',
+    template: '%s | LocalKart',
+  },
+  description:
+    'Discover products from local shops in your city. Same-day delivery, best prices, support your community.',
+  keywords: ['local shopping', 'hyperlocal', 'same day delivery', 'Kadapa', 'Andhra Pradesh'],
+  authors: [{ name: 'Venkata Sai Yadav', url: 'https://github.com/venkatasaiyadavavula-cmd' }],
+  creator: 'Venkata Sai Yadav',
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    siteName: 'LocalKart',
+    title: 'LocalKart — Shop Local, Delivered Fast',
+    description: 'Discover products from local shops in your city.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LocalKart — Shop Local, Delivered Fast',
+    description: 'Discover products from local shops in your city.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)',  color: '#080916' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -26,8 +66,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${manrope.variable} font-sans antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${plusJakartaSans.variable} ${syne.variable}`}
+    >
+      <body className="font-sans antialiased">
         <Providers>
           <AuthGuard>
             {children}
