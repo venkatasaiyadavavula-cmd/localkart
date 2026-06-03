@@ -1,3 +1,10 @@
+/* ═══════════════════════════════════════════════════════════════
+   LocalKart — Global Styles v2.0
+   Ultra-Pro Startup Design System
+═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Syne:wght@600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -121,6 +128,7 @@
     border-radius: 4px;
   }
 
+  /* Autofill fix */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus {
@@ -132,11 +140,9 @@
 
 @layer utilities {
 
-  /* ── Scrollbar hide ── */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* ── Font helpers ── */
   .font-display {
     font-family: 'Syne', system-ui, sans-serif;
     letter-spacing: -0.03em;
@@ -287,6 +293,7 @@
   .delay-400  { animation-delay: 400ms; }
   .delay-500  { animation-delay: 500ms; }
 
+  /* Start hidden for animated reveals */
   .animate-on-load { opacity: 0; }
 
   .animate-fade-in        { animation: fade-in 0.35s ease-out forwards; }
@@ -459,3 +466,4 @@
     transition-duration: 0.01ms !important;
   }
 }
+
