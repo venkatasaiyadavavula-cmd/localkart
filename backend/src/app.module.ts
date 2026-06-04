@@ -4,6 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
+
+// imports array లో:
+ScheduleModule.forRoot()
 
 // Configurations
 import databaseConfig from './config/database.config';
