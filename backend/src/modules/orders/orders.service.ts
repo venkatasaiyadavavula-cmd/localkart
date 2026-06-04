@@ -17,6 +17,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStateMachine } from './workflows/order-state-machine';
 import { CartService } from '../cart/cart.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
 
 @Injectable()
@@ -39,6 +40,7 @@ export class OrdersService {
     private readonly cartService: CartService,
     private readonly dataSource: DataSource,
     private readonly stateMachine: OrderStateMachine,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -174,6 +176,32 @@ export class OrdersService {
 
       delete fullOrder.deliveryOtp;
       delete fullOrder.customer.password;
+
+      // WhatsApp: scam-warning notification to customer (3 languages)
+      if (fullOrder.customer?.phone) {
+        const itemsSummary = fullOrder.items
+          .slice(0, 2)
+          .map((i) => i.productName)
+          .join(', ') + (fullOrder.items.length > 2 ? ` +${fullOrder.items.length - 2} more` : '');
+
+        this.notificationsService.sendOrderPlacedWhatsApp(
+          fullOrder.customer.phone,
+          fullOrder.customer.name,
+          fullOrder.orderNumber,
+          fullOrder.shop.name,
+          fullOrder.totalAmount,
+          fullOrder.paymentMethod as 'cod' | 'razorpay',
+        ).catch((e) => this.logger.error('WhatsApp customer failed: ' + e.message));
+
+        // WhatsApp: new order alert to seller
+        this.notificationsService.sendNewOrderWhatsApp(
+          fullOrder.shop.phone,
+          fullOrder.shop.name,
+          fullOrder.orderNumber,
+          itemsSummary,
+          fullOrder.totalAmount,
+        ).catch((e) => this.logger.error('WhatsApp seller failed: ' + e.message));
+      }
 
       return {
         ...fullOrder,
@@ -402,10 +430,23 @@ export class OrdersService {
     }
 
     await this.orderRepository.save(order);
+
+    // WhatsApp status update to customer
+    const fullOrder = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['customer'],
+    });
+    if (fullOrder?.customer?.phone) {
+      this.notificationsService.sendOrderStatusWhatsApp(
+        fullOrder.customer.phone,
+        fullOrder.customer.name,
+        order.orderNumber,
+        status,
+      ).catch((e) => this.logger.error('WhatsApp status update failed: ' + e.message));
+    }
+
     return order;
   }
-
-  async adminUpdateOrderStatus(orderId: string, updateDto: UpdateOrderStatusDto) {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -487,7 +528,7 @@ export class OrdersService {
       { id: internalOrderId },
       { paymentStatus: PaymentStatus.PENDING } as any,
     );
-    const transaction = (this.transactionRepository.create as any)({
+    const transaction = this.transactionRepository.create({
       orderId: internalOrderId,
       razorpayOrderId,
       type: 'payment',
