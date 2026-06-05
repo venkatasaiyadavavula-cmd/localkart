@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../../core/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
+import { WhatsappService } from '../notifications/whatsapp.service';
 
 @Injectable()
 export class AuthService {
@@ -21,9 +22,10 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly whatsappService: WhatsappService,
   ) {}
 
-  // ✅ Helper — phone ni always +91 format lo normalize chestundi
+  // ✅ Phone normalize — 7032028503 → +917032028503
   private normalizePhone(phone: string): string {
     if (phone.startsWith('+91')) return phone;
     if (phone.startsWith('91') && phone.length === 12) return `+${phone}`;
@@ -33,7 +35,6 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { phone, email, password, name, role } = registerDto;
 
-    // ✅ Phone normalize chesi +91 format lo save cheyyandi
     const normalizedPhone = this.normalizePhone(phone);
 
     const existingUser = await this.userRepository.findOne({
@@ -50,7 +51,7 @@ export class AuthService {
 
     const user = this.userRepository.create({
       name,
-      phone: normalizedPhone, // ✅ Always +91 format
+      phone: normalizedPhone,
       email: email || null,
       password: hashedPassword,
       role: (role as UserRole) || UserRole.CUSTOMER,
@@ -73,7 +74,6 @@ export class AuthService {
 
   async login(user: User) {
     const tokens = await this.generateTokens(user);
-
     return {
       ...tokens,
       user: {
@@ -88,33 +88,25 @@ export class AuthService {
   }
 
   async validateUser(phone: string, password: string) {
-    // ✅ Login lo kuda normalize — DB lo +91 format lo undi, so match avutundi
     const normalizedPhone = this.normalizePhone(phone);
 
     const user = await this.userRepository.findOne({
       where: [
+        { phone: phone },
         { phone: normalizedPhone },
-        { phone: phone }, // fallback — old users kosam
       ],
     });
 
-    if (!user) {
-      return null;
-    }
+    if (!user) return null;
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return null;
-    }
+    if (!isPasswordValid) return null;
 
     return user;
   }
 
   async sendOtp(sendOtpDto: SendOtpDto) {
     const { phone } = sendOtpDto;
-
-    // ✅ OTP send lo kuda normalize
     const normalizedPhone = this.normalizePhone(phone);
 
     const user = await this.userRepository.findOne({
@@ -125,27 +117,37 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
+    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     this.logger.log(`OTP for ${normalizedPhone}: ${otp}`);
 
+    // Save OTP to DB
     await this.userRepository.query(
-      `UPDATE users
-       SET "lastOtp" = $1,
-           "lastOtpSentAt" = $2
-       WHERE phone = $3`,
+      `UPDATE users SET "lastOtp" = $1, "lastOtpSentAt" = $2 WHERE phone = $3`,
       [otp, new Date(), normalizedPhone],
     );
 
-    return {
-      message: 'OTP sent successfully',
-    };
+    // ✅ Send via WhatsApp (falls back to console log if token not set)
+    const message = [
+      `🔐 *LocalKart OTP Verification*`,
+      ``,
+      `Your OTP is: *${otp}*`,
+      `Valid for 5 minutes. Do NOT share with anyone.`,
+      ``,
+      `🇮🇳 *తెలుగు:* మీ OTP: *${otp}* — ఎవరికీ చెప్పకండి.`,
+      `🇮🇳 *हिंदी:* आपका OTP: *${otp}* — किसी को न बताएं।`,
+    ].join('\n');
+
+    await this.whatsappService['send'](normalizedPhone, message).catch((e) =>
+      this.logger.error('WhatsApp OTP failed: ' + e.message),
+    );
+
+    return { message: 'OTP sent successfully' };
   }
 
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { phone, otp } = verifyOtpDto;
-
-    // ✅ OTP verify lo kuda normalize
     const normalizedPhone = this.normalizePhone(phone);
 
     const users = await this.userRepository.query(
@@ -158,7 +160,6 @@ export class AuthService {
     }
 
     const user = users[0];
-
     const otpExpiryTime = 5 * 60 * 1000;
 
     if (
@@ -173,11 +174,7 @@ export class AuthService {
     }
 
     await this.userRepository.query(
-      `UPDATE users
-       SET "isPhoneVerified" = true,
-           "lastOtp" = null,
-           "lastOtpSentAt" = null
-       WHERE phone = $1`,
+      `UPDATE users SET "isPhoneVerified" = true, "lastOtp" = null, "lastOtpSentAt" = null WHERE phone = $1`,
       [normalizedPhone],
     );
 
@@ -185,9 +182,7 @@ export class AuthService {
       where: { phone: normalizedPhone },
     });
 
-    if (!userEntity) {
-      throw new UnauthorizedException('User not found');
-    }
+    if (!userEntity) throw new UnauthorizedException('User not found');
 
     const tokens = await this.generateTokens(userEntity);
 
@@ -205,23 +200,14 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    return {
-      message: 'Logged out successfully',
-    };
+    return { message: 'Logged out successfully' };
   }
 
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken);
-
-      const user = await this.userRepository.findOne({
-        where: { id: payload.sub },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
+      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+      if (!user) throw new UnauthorizedException('User not found');
       return this.generateTokens(user);
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
@@ -229,23 +215,9 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
-    const payload = {
-      sub: user.id,
-      phone: user.phone,
-      role: user.role,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '7d',
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '30d',
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-    };
+    const payload = { sub: user.id, phone: user.phone, role: user.role };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
+    return { accessToken, refreshToken };
   }
 }
