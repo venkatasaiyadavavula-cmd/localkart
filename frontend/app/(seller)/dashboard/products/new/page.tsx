@@ -1,5 +1,6 @@
 'use client';
 
+const [isGenerating, setIsGenerating] = useState(false);
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
