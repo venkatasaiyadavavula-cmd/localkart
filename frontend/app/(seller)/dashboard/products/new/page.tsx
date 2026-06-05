@@ -104,7 +104,45 @@ export default function NewProductPage() {
     setVideos(prev => prev.filter((_, i) => i !== index));
     setVideoUrls(prev => prev.filter((_, i) => i !== index));
   };
+  
+  const generateDescription = async () => {
+  const name = watchedValues.name;
+  const category = watchedValues.categoryType;
+  const brand = watchedValues.brand;
+  if (!name) return;
 
+  setIsGenerating(true);
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: `Write a short, compelling product description for a local shop in India selling:
+Product name: ${name}
+Category: ${category || 'general'}
+Brand: ${brand || 'local'}
+
+Write 2-3 sentences. Mention freshness/quality, local availability. Keep it simple and honest. No marketing fluff. Write in English.`
+        }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text;
+    if (text) {
+      setValue('description', text);
+      toast.success('Description generated!');
+    }
+  } catch {
+    toast.error('Failed to generate. Type manually.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
+  
   const handleNext = async () => {
     if (currentStep === 1 && images.length === 0) {
       toast.error('Please add at least one product photo');
