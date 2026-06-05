@@ -59,7 +59,7 @@ export default function CommissionPage() {
   const verifyMutation = useMutation({
     mutationFn: async (payload: any) => {
       const { data } = await axios.post(`${API}/commission/verify/${payload.billId}`, payload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('accesstoken')}` },
       });
       return data;
     },
