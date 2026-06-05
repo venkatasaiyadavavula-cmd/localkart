@@ -6,9 +6,9 @@ import { Shop } from '../../core/entities/shop.entity';
 import { SubscribeDto } from './dto/subscription-plan.dto';
 
 export const SUBSCRIPTION_PLANS = [
-  { plan: SubscriptionPlan.STARTER, productLimit: 30, price: 0 },
-  { plan: SubscriptionPlan.GROWTH, productLimit: 60, price: 199 },
-  { plan: SubscriptionPlan.BUSINESS, productLimit: 100, price: 499 },
+  { plan: SubscriptionPlan.STARTER, productLimit: 40, price: 0 },
+  { plan: SubscriptionPlan.GROWTH, productLimit: 150, price: 199 },
+  { plan: SubscriptionPlan.BUSINESS, productLimit: 500, price: 499 },
 ];
 
 @Injectable()
@@ -35,7 +35,7 @@ export class SubscriptionService {
       // Default to free starter plan
       return {
         plan: SubscriptionPlan.STARTER,
-        productLimit: 30,
+        productLimit: 40,
         price: 0,
         status: SubscriptionStatus.ACTIVE,
         productCount: 0,
