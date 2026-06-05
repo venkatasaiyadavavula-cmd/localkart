@@ -10,9 +10,16 @@ import slugify from 'slugify';
 import { Product, ProductStatus, ProductCategoryType } from '../../core/entities/product.entity';
 import { Category } from '../../core/entities/category.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
+import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../../core/entities/subscription.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
+
+const PLAN_LIMITS: Record<SubscriptionPlan, number> = {
+  [SubscriptionPlan.STARTER]:  40,
+  [SubscriptionPlan.GROWTH]:   150,
+  [SubscriptionPlan.BUSINESS]: 500,
+};
 
 @Injectable()
 export class CatalogService {
@@ -23,6 +30,8 @@ export class CatalogService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepository: Repository<Subscription>,
   ) {}
 
   async getProducts(query: SearchQueryDto) {
@@ -117,11 +126,24 @@ export class CatalogService {
       throw new ForbiddenException('You need an approved shop to add products');
     }
 
-    // Check product limit based on subscription
+    // Check product limit based on active subscription plan
     const currentProductCount = await this.productRepository.count({
       where: { shopId: shop.id },
     });
-    // Assuming subscription check is handled separately or via middleware
+
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { shopId: shop.id, status: SubscriptionStatus.ACTIVE },
+      order: { endDate: 'DESC' },
+    });
+    const plan  = subscription?.plan ?? SubscriptionPlan.STARTER;
+    const limit = PLAN_LIMITS[plan];
+
+    if (currentProductCount >= limit) {
+      throw new ForbiddenException(
+        `Product limit reached (${currentProductCount}/${limit}) on your ${plan} plan. ` +
+        `Upgrade to add more products.`,
+      );
+    }
 
     const slug = slugify(createProductDto.name, { lower: true, strict: true });
 
