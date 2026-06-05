@@ -163,7 +163,36 @@ export default function NewProductPage() {
           />
         </div>
       </div>
-
+      
+      {/* Description — AI button tho */}
+<div>
+  <div className="flex items-center justify-between mb-1.5">
+    <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
+      Description
+      <span className="text-xs font-normal text-gray-400 ml-2">(Optional but recommended)</span>
+    </Label>
+    <button
+      type="button"
+      onClick={generateDescription}
+      disabled={!watchedValues.name || isGenerating}
+      className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-xl hover:bg-purple-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+    >
+      {isGenerating ? (
+        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating...</>
+      ) : (
+        <><Sparkles className="h-3.5 w-3.5" /> AI తో రాయించు</>
+      )}
+    </button>
+  </div>
+  <Textarea
+    id="description"
+    {...register('description')}
+    placeholder="Tell customers about your product..."
+    rows={4}
+    className="rounded-xl resize-none"
+  />
+</div>
+      
       {/* Step indicators */}
       <div className="bg-white border-b">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
