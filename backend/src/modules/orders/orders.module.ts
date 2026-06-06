@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { TrackingGateway } from './tracking.gateway';
 import { Order } from '../../core/entities/order.entity';
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product } from '../../core/entities/product.entity';
@@ -18,7 +19,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
-  exports: [OrdersService],
+  providers: [OrdersService, TrackingGateway],
+  exports: [OrdersService, TrackingGateway],
 })
 export class OrdersModule {}
