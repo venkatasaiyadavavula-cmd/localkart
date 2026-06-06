@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { SellerController } from './seller.controller';
 import { SellerService } from './seller.service';
@@ -8,6 +10,8 @@ import { SubscriptionService } from './subscription.service';
 import { EarningsService } from './earnings.service';
 import { AdCampaignService } from './ad-campaign.service';
 import { WeeklyEarningsScheduler } from './weekly-earnings.scheduler';
+import { StaffService } from './staff.service';
+import { StaffController } from './staff.controller';
 import { Shop } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
 import { Product } from '../../core/entities/product.entity';
@@ -16,26 +20,35 @@ import { Subscription } from '../../core/entities/subscription.entity';
 import { SponsoredProduct } from '../../core/entities/sponsored-product.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { CommissionBill } from '../../core/entities/commission-bill.entity';
+import { StaffMember } from '../../core/entities/staff-member.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Shop, User, Product, Order,
-      Subscription, SponsoredProduct, Transaction, CommissionBill,
+      Subscription, SponsoredProduct, Transaction,
+      CommissionBill, StaffMember,
     ]),
     BullModule.registerQueue({ name: 'media' }),
     NotificationsModule,
     ScheduleModule.forRoot(),
+    JwtModule.registerAsync({
+      useFactory: (cfg: ConfigService) => ({
+        secret:       cfg.get('JWT_SECRET'),
+        signOptions:  { expiresIn: cfg.get('JWT_EXPIRES_IN') || '7d' },
+      }),
+      inject: [ConfigService],
+    }),
   ],
-  controllers: [SellerController],
+  controllers: [SellerController, StaffController],
   providers: [
     SellerService, SubscriptionService, EarningsService,
-    AdCampaignService, WeeklyEarningsScheduler,
+    AdCampaignService, WeeklyEarningsScheduler, StaffService,
   ],
   exports: [
     SellerService, SubscriptionService, EarningsService,
-    AdCampaignService, WeeklyEarningsScheduler,
+    AdCampaignService, WeeklyEarningsScheduler, StaffService,
   ],
 })
 export class SellerModule {}
