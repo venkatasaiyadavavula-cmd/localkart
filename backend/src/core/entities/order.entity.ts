@@ -1,48 +1,40 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-  Index,
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn,
+  ManyToOne, OneToMany, JoinColumn, Index,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Shop } from './shop.entity';
+import { User }      from './user.entity';
+import { Shop }      from './shop.entity';
 import { OrderItem } from './order-item.entity';
-import { Transaction } from './transaction.entity';
-import { ReturnRequest } from './return-request.entity';
 
 export enum OrderStatus {
-  PENDING_OTP = 'pending_otp',
-  CONFIRMED = 'confirmed',
-  PROCESSING = 'processing',
+  PENDING_OTP      = 'pending_otp',
+  CONFIRMED        = 'confirmed',
+  PROCESSING       = 'processing',
   READY_FOR_PICKUP = 'ready_for_pickup',
   OUT_FOR_DELIVERY = 'out_for_delivery',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
+  DELIVERED        = 'delivered',
+  CANCELLED        = 'cancelled',
   RETURN_REQUESTED = 'return_requested',
-  RETURNED = 'returned',
+  RETURNED         = 'returned',
 }
 
 export enum PaymentMethod {
-  COD = 'cod',
+  COD      = 'cod',
   RAZORPAY = 'razorpay',
+  WALLET   = 'wallet',
 }
 
 export enum PaymentStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  FAILED = 'failed',
+  PENDING  = 'pending',
+  PAID     = 'paid',
+  FAILED   = 'failed',
   REFUNDED = 'refunded',
 }
 
 @Entity('orders')
-@Index(['customerId', 'createdAt'])
+@Index(['customerId', 'status'])
 @Index(['shopId', 'status'])
-@Index(['orderNumber'], { unique: true })
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -50,23 +42,25 @@ export class Order {
   @Column({ unique: true, length: 20 })
   orderNumber: string;
 
-  @ManyToOne(() => User, (user) => user.orders)
-  customer: User;
-
   @Column()
   customerId: string;
 
-  @ManyToOne(() => Shop, (shop) => shop.orders)
-  shop: Shop;
+  @ManyToOne(() => User, u => u.orders)
+  @JoinColumn({ name: 'customerId' })
+  customer: User;
 
   @Column()
   shopId: string;
 
-  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
+  @ManyToOne(() => Shop)
+  @JoinColumn({ name: 'shopId' })
+  shop: Shop;
+
+  @OneToMany(() => OrderItem, i => i.order, { cascade: true })
   items: OrderItem[];
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  subtotal: number;
+  totalAmount: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   deliveryCharge: number;
@@ -75,13 +69,13 @@ export class Order {
   discount: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  totalAmount: number;
+  finalAmount: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   commissionAmount: number;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  commissionRate: number;
+  commissionPercent: number;
 
   @Column({ type: 'enum', enum: PaymentMethod, default: PaymentMethod.COD })
   paymentMethod: PaymentMethod;
@@ -93,16 +87,7 @@ export class Order {
   status: OrderStatus;
 
   @Column({ type: 'jsonb' })
-  shippingAddress: {
-    name: string;
-    phone: string;
-    address: string;
-    city: string;
-    state: string;
-    pincode: string;
-    latitude?: number;
-    longitude?: number;
-  };
+  deliveryAddress: Record<string, any>;
 
   @Column({ nullable: true })
   deliveryOtp: string;
@@ -113,20 +98,28 @@ export class Order {
   @Column({ nullable: true })
   cancellationReason: string;
 
-  @Column({ nullable: true, type: 'timestamp' })
-  confirmedAt: Date;
+  @Column({ nullable: true })
+  razorpayOrderId: string;
+
+  @Column({ nullable: true })
+  razorpayPaymentId: string;
+
+  /* ── Live tracking columns ─────────────────────────── */
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  deliveryLatitude: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  deliveryLongitude: number | null;
 
   @Column({ nullable: true, type: 'timestamp' })
-  deliveredAt: Date;
+  locationUpdatedAt: Date | null;
 
-  @Column({ nullable: true, type: 'timestamp' })
-  cancelledAt: Date;
+  @Column({ nullable: true, length: 100 })
+  deliveryStaffName: string | null;
 
-  @OneToMany(() => Transaction, (transaction) => transaction.order)
-  transactions: Transaction[];
-
-  @OneToOne(() => ReturnRequest, (returnRequest) => returnRequest.order)
-  returnRequest: ReturnRequest;
+  @Column({ nullable: true, length: 15 })
+  deliveryStaffPhone: string | null;
+  /* ─────────────────────────────────────────────────── */
 
   @CreateDateColumn()
   createdAt: Date;
