@@ -5,10 +5,16 @@ import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 
 // imports array లో:
 ScheduleModule.forRoot()
-
+ReviewsModule,
+WishlistModule,
+AddressesModule,
+  
 // Configurations
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
