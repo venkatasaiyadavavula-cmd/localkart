@@ -11,7 +11,7 @@ import {
 import { toast } from 'sonner';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
+const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 type StaffRole = 'store_manager' | 'products_manager' | 'delivery_staff';
 type StaffStatus = 'active' | 'inactive';
