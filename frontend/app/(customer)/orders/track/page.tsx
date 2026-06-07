@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const WS  = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace('/api', '');
-const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
+const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 const LeafletMap = dynamic(() => import('@/components/map/tracking-map'), {
   ssr: false,
