@@ -3,9 +3,15 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# Build output
-#dist/
-build/
+# Build outputs
+backend/dist/
+dist/
+node_modules/
+*.log
+
+# Temp files
+backend/tart*
+"frontend/udo*"
 
 # Environment files
 .env
