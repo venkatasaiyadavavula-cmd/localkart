@@ -83,7 +83,7 @@ export class CommissionService {
 
       if (bill.shop?.phone) {
         this.whatsappService.sendCommissionReminder(
-          bill.shop.phone,
+          bill.shop.contactPhone,
           bill.shop.name,
           bill.billDate,
           Number(bill.commissionAmount),

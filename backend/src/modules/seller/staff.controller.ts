@@ -4,8 +4,8 @@ import {
 } from '@nestjs/common';
 import { StaffService } from './staff.service';
 import { StaffRole } from '../../core/entities/staff-member.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
+import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
 import { Public } from '../../core/decorators/public.decorator';

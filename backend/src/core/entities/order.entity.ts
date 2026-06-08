@@ -126,4 +126,13 @@ export class Order {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  confirmedAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  deliveredAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  cancelledAt: Date;
 }

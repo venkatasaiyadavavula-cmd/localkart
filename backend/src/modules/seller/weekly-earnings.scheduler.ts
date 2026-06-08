@@ -39,7 +39,7 @@ export class WeeklyEarningsScheduler {
  
     let sent = 0;
     for (const shop of shops) {
-      if (!shop.phone) continue;
+      if (!shop.contactPhone) continue;
  
       const orders = await this.orderRepo.find({
         where: {
@@ -56,7 +56,7 @@ export class WeeklyEarningsScheduler {
       const netEarnings   = grossEarnings - commission;
  
       await this.whatsappService.sendWeeklyEarningsSummary(
-        shop.phone,
+        shop.contactPhone,
         shop.name,
         weekLabel,
         orders.length,

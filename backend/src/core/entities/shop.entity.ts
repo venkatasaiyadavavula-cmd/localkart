@@ -71,6 +71,9 @@ export class Shop {
   @Column({ length: 15 })
   contactPhone: string;
 
+  @Column({ length: 20, nullable: true })
+  phone: string;
+
   @Column({ nullable: true, length: 100 })
   contactEmail: string;
 

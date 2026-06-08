@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
         try {
           const { data } = await apiClient.post('/auth/login', { phone, password });
-          const { accessToken, refreshToken, user } = data.data;
+          const { accessToken, refreshToken, user } = data.data || data;
           localStorage.setItem('accessToken', accessToken);
           if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
           set({ user, isAuthenticated: true, isLoading: false });
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
         try {
           const { data } = await apiClient.post('/auth/verify-otp', { phone, otp, mode, orderId });
-          const { accessToken, refreshToken, user } = data.data;
+          const { accessToken, refreshToken, user } = data.data || data;
           if (accessToken) {
             localStorage.setItem('accessToken', accessToken);
             if (refreshToken) localStorage.setItem('refreshToken', refreshToken);

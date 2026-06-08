@@ -57,7 +57,7 @@ export default function LoginPage() {
         <p className="mt-2 text-sm text-muted-foreground">Sign in to your account to continue</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} method="post" className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="phone">Phone Number</Label>
           <div className="relative">

@@ -195,7 +195,7 @@ export class OrdersService {
 
         // WhatsApp: new order alert to seller
         this.notificationsService.sendNewOrderWhatsApp(
-          fullOrder.shop.phone,
+          fullOrder.shop.contactPhone,
           fullOrder.shop.name,
           fullOrder.orderNumber,
           itemsSummary,
@@ -447,21 +447,6 @@ export class OrdersService {
 
     return order;
   }
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    const { status } = updateDto;
-    if (!this.stateMachine.canTransition(order.status, status)) {
-      throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
-    }
-
-    order.status = status;
-    await this.orderRepository.save(order);
-    return order;
-  }
-
   async getAllOrders(page: number, limit: number, status?: string, shopId?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};

@@ -221,7 +221,7 @@ export class AiService {
 
     // Send WhatsApp to each shop owner
     for (const [, { shop, products }] of byShop) {
-      if (!shop.phone) continue;
+      if (!shop.contactPhone) continue;
 
       const outOfStock = products.filter(p => p.stock === 0);
       const lowStock   = products.filter(p => p.stock > 0);
@@ -260,7 +260,7 @@ export class AiService {
 
     lines.push(`Update stock in LocalKart Seller app → Products`);
 
-    await this.whatsappService['send'](shop.phone, lines.join('\n'))
+    await this.whatsappService['send'](shop.contactPhone, lines.join('\n'))
       .catch((e: Error) => this.logger.error(`Stock alert WA failed for ${shop.name}: ${e.message}`));
   }
 
