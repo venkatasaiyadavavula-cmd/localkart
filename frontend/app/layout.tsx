@@ -23,6 +23,22 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
+  // existing fields...
+  manifest: '/manifest.json',
+  themeColor: '#f97316',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'LocalKart',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
+};
+
+export const metadata: Metadata = {
   title: {
     default: 'LocalKart — Shop Local, Delivered Fast',
     template: '%s | LocalKart',
