@@ -1,5 +1,6 @@
 'use client';
 
+import { useDailyOffers } from '@/hooks/use-daily-offers';
 import { useState, useEffect, useRef } from 'react';
 import {
   Search, MapPin, ChevronRight, Bell,
