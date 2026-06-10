@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, ShoppingBag, User, Clapperboard } from 'lucide-react';
+import { Home, Search, ShoppingBag, User, Package, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,11 +13,38 @@ export function MobileNav() {
   const { user } = useAuth();
 
   const navItems = [
-    { icon: Home, label: 'Home', href: '/', exact: true },
-    { icon: Search, label: 'Browse', href: '/browse' },
-    { icon: Clapperboard, label: 'Videos', href: '/videos' },
-    { icon: ShoppingBag, label: 'Cart', href: '/cart', badge: totalItems },
-    { icon: User, label: user ? 'Profile' : 'Login', href: user ? '/profile' : '/login' },
+    {
+      icon: Home,
+      label: 'Home',
+      href: '/',
+      exact: true,
+    },
+    {
+      icon: Search,
+      label: 'Browse',
+      href: '/browse',
+    },
+    {
+      icon: ShoppingBag,
+      label: 'Cart',
+      href: '/cart',
+      badge: totalItems,
+    },
+    {
+      icon: Heart,
+      label: 'Wishlist',
+      href: '/wishlist',
+    },
+    {
+      icon: Package,
+      label: 'Orders',
+      href: '/orders',
+    },
+    {
+      icon: User,
+      label: user ? 'Profile' : 'Login',
+      href: user ? '/profile' : '/login',
+    },
   ];
 
   return (
@@ -34,10 +61,13 @@ export function MobileNav() {
               href={item.href}
               className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full py-2 group"
             >
+              {/* Active indicator */}
               {isActive && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full" />
               )}
+
               <div className="relative">
+                {/* Icon container */}
                 <div className={cn(
                   'p-1.5 rounded-xl transition-all duration-200',
                   isActive ? 'bg-primary/10' : 'group-active:bg-gray-100'
@@ -50,12 +80,15 @@ export function MobileNav() {
                     strokeWidth={isActive ? 2.5 : 1.8}
                   />
                 </div>
+
+                {/* Badge */}
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="absolute -right-1.5 -top-1 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 rounded-full flex items-center justify-center px-1 shadow-sm">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </div>
+
               <span className={cn(
                 'text-[10px] font-medium leading-none transition-colors',
                 isActive ? 'text-primary' : 'text-gray-400'
@@ -66,7 +99,10 @@ export function MobileNav() {
           );
         })}
       </div>
+
+      {/* iOS safe area */}
       <div className="h-safe-bottom bg-white" />
     </nav>
   );
 }
+
