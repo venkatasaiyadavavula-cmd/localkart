@@ -120,3 +120,25 @@ export class UsersService {
     return shop;
   }
 }
+
+  async updateAddresses(userId: string, addresses: any[]) {
+    await this.userRepository.update(userId, { savedAddresses: addresses } as any);
+    return addresses;
+  }
+
+  async getWishlist(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const ids: string[] = (user as any).wishlistProductIds?.filter(Boolean) ?? [];
+    if (!ids.length) return [];
+    const { Product } = await import('../../core/entities/product.entity').catch(() => ({ Product: null }));
+    return ids;
+  }
+
+  async toggleWishlist(userId: string, productId: string): Promise<{ added: boolean }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const ids: string[] = ((user as any).wishlistProductIds ?? []).filter(Boolean);
+    const exists = ids.includes(productId);
+    const updated = exists ? ids.filter(id => id !== productId) : [...ids, productId];
+    await this.userRepository.update(userId, { wishlistProductIds: updated } as any);
+    return { added: !exists };
+  }
