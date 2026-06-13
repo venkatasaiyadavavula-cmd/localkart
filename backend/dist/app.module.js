@@ -20,11 +20,6 @@ const schedule_1 = require("@nestjs/schedule");
 const reviews_module_1 = require("./modules/reviews/reviews.module");
 const wishlist_module_1 = require("./modules/wishlist/wishlist.module");
 const addresses_module_1 = require("./modules/addresses/addresses.module");
-schedule_1.ScheduleModule.forRoot();
-reviews_module_1.ReviewsModule,
-    wishlist_module_1.WishlistModule,
-    addresses_module_1.AddressesModule,
-;
 const database_config_1 = __importDefault(require("./config/database.config"));
 const redis_config_1 = __importDefault(require("./config/redis.config"));
 const user_entity_1 = require("./core/entities/user.entity");
@@ -38,6 +33,11 @@ const transaction_entity_1 = require("./core/entities/transaction.entity");
 const return_request_entity_1 = require("./core/entities/return-request.entity");
 const sponsored_product_entity_1 = require("./core/entities/sponsored-product.entity");
 const daily_offer_entity_1 = require("./core/entities/daily-offer.entity");
+const review_entity_1 = require("./core/entities/review.entity");
+const wishlist_entity_1 = require("./core/entities/wishlist.entity");
+const saved_address_entity_1 = require("./core/entities/saved-address.entity");
+const staff_member_entity_1 = require("./core/entities/staff-member.entity");
+const commission_bill_entity_1 = require("./core/entities/commission-bill.entity");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const location_module_1 = require("./modules/location/location.module");
@@ -56,16 +56,12 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            throttler_1.ThrottlerModule.forRoot([
-                {
-                    ttl: 60000,
-                    limit: 30,
-                },
-            ]),
+            throttler_1.ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
                 load: [database_config_1.default, redis_config_1.default],
             }),
+            schedule_1.ScheduleModule.forRoot(),
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: (configService) => ({
@@ -76,21 +72,14 @@ exports.AppModule = AppModule = __decorate([
                     password: configService.get('database.password'),
                     database: configService.get('database.database'),
                     entities: [
-                        user_entity_1.User,
-                        shop_entity_1.Shop,
-                        product_entity_1.Product,
-                        category_entity_1.Category,
-                        order_entity_1.Order,
-                        order_item_entity_1.OrderItem,
-                        subscription_entity_1.Subscription,
-                        transaction_entity_1.Transaction,
-                        return_request_entity_1.ReturnRequest,
-                        sponsored_product_entity_1.SponsoredProduct,
-                        daily_offer_entity_1.DailyOffer,
+                        user_entity_1.User, shop_entity_1.Shop, product_entity_1.Product, category_entity_1.Category, order_entity_1.Order, order_item_entity_1.OrderItem,
+                        subscription_entity_1.Subscription, transaction_entity_1.Transaction, return_request_entity_1.ReturnRequest, sponsored_product_entity_1.SponsoredProduct,
+                        daily_offer_entity_1.DailyOffer, review_entity_1.Review, wishlist_entity_1.Wishlist, saved_address_entity_1.SavedAddress, staff_member_entity_1.StaffMember, commission_bill_entity_1.CommissionBill,
                     ],
-                    synchronize: configService.get('NODE_ENV') === 'development',
-                    logging: configService.get('NODE_ENV') === 'development',
-                    ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
+                    synchronize: false,
+                    logging: false,
+                    ssl: configService.get('NODE_ENV') === 'production'
+                        ? { rejectUnauthorized: false } : false,
                 }),
                 inject: [config_1.ConfigService],
             }),
@@ -109,9 +98,7 @@ exports.AppModule = AppModule = __decorate([
                 imports: [config_1.ConfigModule],
                 useFactory: (configService) => ({
                     secret: configService.get('JWT_SECRET'),
-                    signOptions: {
-                        expiresIn: configService.get('JWT_EXPIRES_IN') || '7d',
-                    },
+                    signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN') || '7d' },
                 }),
                 inject: [config_1.ConfigService],
                 global: true,
@@ -128,6 +115,9 @@ exports.AppModule = AppModule = __decorate([
             returns_module_1.ReturnsModule,
             admin_module_1.AdminModule,
             notifications_module_1.NotificationsModule,
+            reviews_module_1.ReviewsModule,
+            wishlist_module_1.WishlistModule,
+            addresses_module_1.AddressesModule,
         ],
     })
 ], AppModule);

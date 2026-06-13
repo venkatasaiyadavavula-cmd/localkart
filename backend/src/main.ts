@@ -1,3 +1,6 @@
+import { webcrypto } from 'crypto';
+if (!(global as any).crypto) { (global as any).crypto = webcrypto; }
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';

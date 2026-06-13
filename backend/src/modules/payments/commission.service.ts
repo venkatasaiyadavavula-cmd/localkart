@@ -158,7 +158,7 @@ export class CommissionService {
       amount:          amountPaise,
       currency:        'INR',
       receipt:         `comm_${bill.id}`,
-      payment_capture: 1,
+      payment_capture: true,
       notes: {
         type:    'commission',
         billId:  bill.id,
@@ -167,12 +167,12 @@ export class CommissionService {
       },
     });
 
-    await this.billRepo.update(bill.id, { razorpayOrderId: rzpOrder.id });
+    await this.billRepo.update(bill.id, { razorpayOrderId: (rzpOrder as any).id });
 
     return {
-      razorpayOrderId: rzpOrder.id,
-      amount:          rzpOrder.amount,
-      currency:        rzpOrder.currency,
+      razorpayOrderId: (rzpOrder as any).id,
+      amount:          (rzpOrder as any).amount,
+      currency:        (rzpOrder as any).currency,
       key:             process.env.RAZORPAY_KEY_ID,
       billDetails: {
         billDate:         bill.billDate,

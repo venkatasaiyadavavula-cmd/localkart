@@ -46,7 +46,7 @@ __decorate([
     __metadata("design:type", String)
 ], Transaction.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => order_entity_1.Order, (order) => order.transactions, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToOne)(() => order_entity_1.Order, { onDelete: "CASCADE" }),
     __metadata("design:type", order_entity_1.Order)
 ], Transaction.prototype, "order", void 0);
 __decorate([

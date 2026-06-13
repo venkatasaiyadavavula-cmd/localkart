@@ -19,6 +19,6 @@ export declare class AiController {
         description: string;
     }>;
     triggerStockCheck(): Promise<{
-        shopsAlerted: number;
+        checked: number;
     }>;
 }

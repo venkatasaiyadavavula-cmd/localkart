@@ -77,7 +77,7 @@ export declare class OrdersController {
             totalPages: number;
         };
     }>;
-    adminUpdateOrderStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<any>;
+    adminUpdateOrderStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<import("../../core/entities/order.entity").Order>;
     trackOrder(orderNumber: string): Promise<{
         orderNumber: string;
         status: import("../../core/entities/order.entity").OrderStatus;

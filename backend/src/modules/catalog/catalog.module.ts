@@ -7,9 +7,10 @@ import { Product } from '../../core/entities/product.entity';
 import { Category } from '../../core/entities/category.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
+import { Subscription } from '../../core/entities/subscription.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer])],
+  imports: [TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription])],
   controllers: [CatalogController],
   providers: [CatalogService, SearchService],
   exports: [CatalogService],

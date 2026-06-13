@@ -34,7 +34,7 @@ export class ReturnRequest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => Order, (order) => order.returnRequest)
+  @OneToOne(() => Order)
   @JoinColumn()
   order: Order;
 

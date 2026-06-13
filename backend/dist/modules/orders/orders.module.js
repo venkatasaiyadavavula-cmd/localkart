@@ -12,6 +12,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const orders_controller_1 = require("./orders.controller");
 const orders_service_1 = require("./orders.service");
 const tracking_gateway_1 = require("./tracking.gateway");
+const order_state_machine_1 = require("./workflows/order-state-machine");
 const order_entity_1 = require("../../core/entities/order.entity");
 const order_item_entity_1 = require("../../core/entities/order-item.entity");
 const product_entity_1 = require("../../core/entities/product.entity");
@@ -31,8 +32,8 @@ exports.OrdersModule = OrdersModule = __decorate([
             notifications_module_1.NotificationsModule,
         ],
         controllers: [orders_controller_1.OrdersController],
-        providers: [orders_service_1.OrdersService, tracking_gateway_1.TrackingGateway],
-        exports: [orders_service_1.OrdersService, tracking_gateway_1.TrackingGateway],
+        providers: [orders_service_1.OrdersService, tracking_gateway_1.TrackingGateway, order_state_machine_1.OrderStateMachine],
+        exports: [orders_service_1.OrdersService, tracking_gateway_1.TrackingGateway, order_state_machine_1.OrderStateMachine],
     })
 ], OrdersModule);
 //# sourceMappingURL=orders.module.js.map

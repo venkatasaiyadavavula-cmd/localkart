@@ -5,21 +5,14 @@ import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 
-// imports array లో:
-ScheduleModule.forRoot()
-ReviewsModule,
-WishlistModule,
-AddressesModule,
-  
-// Configurations
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
 
-// Core Entities
 import { User } from './core/entities/user.entity';
 import { Shop } from './core/entities/shop.entity';
 import { Product } from './core/entities/product.entity';
@@ -31,8 +24,12 @@ import { Transaction } from './core/entities/transaction.entity';
 import { ReturnRequest } from './core/entities/return-request.entity';
 import { SponsoredProduct } from './core/entities/sponsored-product.entity';
 import { DailyOffer } from './core/entities/daily-offer.entity';
+import { Review } from './core/entities/review.entity';
+import { Wishlist } from './core/entities/wishlist.entity';
+import { SavedAddress } from './core/entities/saved-address.entity';
+import { StaffMember } from './core/entities/staff-member.entity';
+import { CommissionBill } from './core/entities/commission-bill.entity';
 
-// Feature Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { LocationModule } from './modules/location/location.module';
@@ -45,82 +42,63 @@ import { MediaModule } from './modules/media/media.module';
 import { ReturnsModule } from './modules/returns/returns.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-// AiModule తీసివేయబడింది
-// OfferCleanupService తీసివేయబడింది
+
 
 @Module({
   imports: [
-    // Rate Limiting (Throttler)
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1 minute
-        limit: 30, // 30 requests per minute per IP
-      },
-    ]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
 
-    // Environment Variables
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig, redisConfig],
     }),
 
-    // Database (PostgreSQL + PostGIS)
+    ScheduleModule.forRoot(),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get('database.host'),
-        port: configService.get('database.port'),
+        host:     configService.get('database.host'),
+        port:     configService.get('database.port'),
         username: configService.get('database.username'),
         password: configService.get('database.password'),
         database: configService.get('database.database'),
         entities: [
-          User,
-          Shop,
-          Product,
-          Category,
-          Order,
-          OrderItem,
-          Subscription,
-          Transaction,
-          ReturnRequest,
-          SponsoredProduct,
-          DailyOffer,
+          User, Shop, Product, Category, Order, OrderItem,
+          Subscription, Transaction, ReturnRequest, SponsoredProduct,
+          DailyOffer, Review, Wishlist, SavedAddress, StaffMember, CommissionBill,
         ],
-        synchronize: configService.get('NODE_ENV') === 'development',
-        logging: configService.get('NODE_ENV') === 'development',
-        ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
+        synchronize: false,
+        logging: false,
+        ssl: configService.get('NODE_ENV') === 'production'
+          ? { rejectUnauthorized: false } : false,
       }),
       inject: [ConfigService],
     }),
 
-    // Redis & Bull Queue
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         redis: {
-          host: configService.get('redis.host'),
-          port: configService.get('redis.port'),
+          host:     configService.get('redis.host'),
+          port:     configService.get('redis.port'),
           password: configService.get('redis.password') || undefined,
         },
       }),
       inject: [ConfigService],
     }),
 
-    // JWT Module (Global)
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN') || '7d',
-        },
+        signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN') || '7d' },
       }),
       inject: [ConfigService],
       global: true,
     }),
 
-    // Feature Modules
     AuthModule,
     UsersModule,
     LocationModule,
@@ -133,6 +111,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ReturnsModule,
     AdminModule,
     NotificationsModule,
+    ReviewsModule,
+    WishlistModule,
+    AddressesModule,
+
   ],
 })
 export class AppModule {}

@@ -104,7 +104,9 @@ let OrdersService = OrdersService_1 = class OrdersService {
         await queryRunner.connect();
         await queryRunner.startTransaction();
         try {
-            const order = this.orderRepository.create({
+            const order = this.orderRepository.create({});
+            order.status = "confirmed";
+            Object.assign(order, {
                 orderNumber,
                 customerId: userId,
                 shopId,
@@ -356,6 +358,13 @@ let OrdersService = OrdersService_1 = class OrdersService {
         }
         return order;
     }
+    async adminUpdateOrderStatus(id, dto) {
+        const order = await this.orderRepository.findOne({ where: { id } });
+        if (!order)
+            throw new Error("Order not found");
+        order.status = dto.status || dto;
+        return this.orderRepository.save(order);
+    }
     async getAllOrders(page, limit, status, shopId) {
         const skip = (page - 1) * limit;
         const where = {};
@@ -411,7 +420,8 @@ let OrdersService = OrdersService_1 = class OrdersService {
     }
     async updateRazorpayOrderId(internalOrderId, razorpayOrderId) {
         await this.orderRepository.update({ id: internalOrderId }, { paymentStatus: order_entity_1.PaymentStatus.PENDING });
-        const transaction = this.transactionRepository.create({
+        const transaction = this.transactionRepository.create({});
+        Object.assign(transaction, {
             orderId: internalOrderId,
             razorpayOrderId,
             type: 'payment',

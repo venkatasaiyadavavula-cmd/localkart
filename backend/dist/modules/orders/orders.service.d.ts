@@ -91,6 +91,7 @@ export declare class OrdersService {
         };
     }>;
     updateOrderStatusBySeller(orderId: string, sellerId: string, updateDto: UpdateOrderStatusDto): Promise<Order>;
+    adminUpdateOrderStatus(id: string, dto: any): Promise<Order>;
     getAllOrders(page: number, limit: number, status?: string, shopId?: string): Promise<{
         data: Order[];
         meta: {

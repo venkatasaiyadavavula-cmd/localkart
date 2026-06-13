@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { TrackingGateway } from './tracking.gateway';
+import { OrderStateMachine } from './workflows/order-state-machine';
 import { Order } from '../../core/entities/order.entity';
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product } from '../../core/entities/product.entity';
@@ -19,7 +20,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService, TrackingGateway],
-  exports: [OrdersService, TrackingGateway],
+  providers: [OrdersService, TrackingGateway, OrderStateMachine],
+  exports: [OrdersService, TrackingGateway, OrderStateMachine],
 })
 export class OrdersModule {}

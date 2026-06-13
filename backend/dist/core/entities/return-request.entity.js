@@ -58,7 +58,7 @@ __decorate([
     __metadata("design:type", String)
 ], ReturnRequest.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => order_entity_1.Order, (order) => order.returnRequest),
+    (0, typeorm_1.OneToOne)(() => order_entity_1.Order),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", order_entity_1.Order)
 ], ReturnRequest.prototype, "order", void 0);

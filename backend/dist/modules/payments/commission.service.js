@@ -132,7 +132,7 @@ let CommissionService = CommissionService_1 = class CommissionService {
             amount: amountPaise,
             currency: 'INR',
             receipt: `comm_${bill.id}`,
-            payment_capture: 1,
+            payment_capture: true,
             notes: {
                 type: 'commission',
                 billId: bill.id,
