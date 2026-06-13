@@ -274,9 +274,16 @@ export default function OrderDetailPage() {
                   </Button>
                 )}
                 {order.status === 'out_for_delivery' && (
-                  <Button className="w-full" onClick={() => setShowOtpDialog(true)}>
-                    Confirm Delivery
-                  </Button>
+                  <>
+                    <Button variant="outline" className="w-full" asChild style={{ borderColor: '#3D5AF1', color: '#3D5AF1' }}>
+                      <Link href={`/orders/track?id=${order.id}`}>
+                        📍 Live Track Order
+                      </Link>
+                    </Button>
+                    <Button className="w-full" onClick={() => setShowOtpDialog(true)}>
+                      Confirm Delivery
+                    </Button>
+                  </>
                 )}
               </div>
             </CardContent>

@@ -57,6 +57,23 @@ export class User {
 
   @Column({ nullable: true })
   lastOtp: string;
+  @Column({ type: 'jsonb', default: [] })
+  savedAddresses: {
+    id: string;
+    type: 'home' | 'work' | 'other';
+    name: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    isDefault: boolean;
+  }[];
+
+  @Column({ type: 'simple-array', default: '' })
+  wishlistProductIds: string[];
+
+
 
   @Column({ nullable: true, type: 'timestamp' })
   lastOtpSentAt: Date;

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -63,6 +65,18 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [deliveryNotes, setDeliveryNotes] = useState('');
+
+  // Load saved addresses
+  const { data: savedAddresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return [];
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      return data;
+    },
+  });
 
   const {
     register,
@@ -164,6 +178,48 @@ export default function CheckoutPage() {
                 <MapPin className="h-5 w-5 text-primary" />
                 <h2 className="font-heading text-lg font-semibold">Delivery Address</h2>
               </div>
+
+              {/* Saved addresses quick-select */}
+              {savedAddresses.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Saved Addresses</p>
+                  <div className="flex flex-col gap-2">
+                    {savedAddresses.map((addr: any) => (
+                      <button
+                        key={addr.id}
+                        type="button"
+                        onClick={() => {
+                          setValue('name',    addr.name    || user?.name || '');
+                          setValue('phone',   addr.phone   || user?.phone || '');
+                          setValue('address', addr.address || '');
+                          setValue('city',    addr.city    || 'Kadapa');
+                          setValue('state',   addr.state   || 'Andhra Pradesh');
+                          setValue('pincode', addr.pincode || '');
+                          setValue('type',    addr.type    || 'home');
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:border-primary/40 hover:bg-primary/5"
+                        style={{ borderColor: '#E5E9F2' }}
+                      >
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#EEF0FE' }}>
+                          {addr.type === 'work' ? <Building className="h-4 w-4 text-primary" /> : <Home className="h-4 w-4 text-primary" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-gray-800 capitalize">{addr.type || 'Home'}</p>
+                          <p className="text-xs text-gray-500 truncate">{addr.address}, {addr.city}</p>
+                        </div>
+                        {addr.isDefault && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#EEF0FE', color: '#3D5AF1' }}>Default</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 my-3">
+                    <div className="flex-1 h-px bg-gray-100" />
+                    <span className="text-xs text-gray-400 font-medium">or enter new address</span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
+                </div>
+              )}
 
               <form id="checkout-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">

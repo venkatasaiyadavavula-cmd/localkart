@@ -11,27 +11,22 @@ import { Separator } from '@/components/ui/separator';
 const footerLinks = {
   company: [
     { label: 'About Us', href: '/about' },
-    { label: 'Careers', href: '/careers' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Press', href: '/press' },
-  ],
+              ],
   support: [
     { label: 'Help Center', href: '/help' },
     { label: 'Contact Us', href: '/contact' },
     { label: 'Shipping Policy', href: '/shipping' },
-    { label: 'Returns & Refunds', href: '/returns' },
+    { label: 'Returns & Refunds', href: '/orders' },
   ],
   seller: [
     { label: 'Sell on LocalKart', href: '/seller-onboarding' },
     { label: 'Seller Dashboard', href: '/seller/dashboard' },
-    { label: 'Seller Policy', href: '/seller-policy' },
-    { label: 'Commission Structure', href: '/commissions' },
+        { label: 'Commission Structure', href: '/help' },
   ],
   legal: [
     { label: 'Terms of Service', href: '/terms' },
     { label: 'Privacy Policy', href: '/privacy' },
-    { label: 'Cookie Policy', href: '/cookies' },
-  ],
+      ],
 };
 
 const socialLinks = [
