@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SellerController = void 0;
+const public_decorator_1 = require("../../core/decorators/public.decorator");
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const seller_service_1 = require("./seller.service");
@@ -167,6 +168,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "getCurrentSubscription", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('subscription/plans'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),

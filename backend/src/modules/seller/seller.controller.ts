@@ -1,3 +1,4 @@
+import { Public } from '../../core/decorators/public.decorator';
 import {
   Controller,
   Get,
@@ -82,6 +83,7 @@ export class SellerController {
     return this.subscriptionService.getCurrentSubscription(user.id);
   }
 
+  @Public()
   @Get('subscription/plans')
   async getAvailablePlans() {
     return this.subscriptionService.getAvailablePlans();
