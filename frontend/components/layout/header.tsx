@@ -1,7 +1,5 @@
 'use client';
 
-import { LanguageToggle } from './language-toggle';
-import { useTranslation } from '@/hooks/use-translation';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,16 +12,18 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useCartStore } from '@/store/cart-store';
+import { useTranslation } from '@/hooks/use-translation';
+import { LanguageToggle } from './language-toggle';
 
 const CATEGORIES = [
-  { label: 'Groceries',   slug: 'groceries',      emoji: '🛒', color: '#059669', bg: '#ECFDF5', hover: '#D1FAE5' },
-  { label: 'Fashion',     slug: 'fashion',         emoji: '👗', color: '#DB2777', bg: '#FDF2F8', hover: '#FCE7F3' },
-  { label: 'Electronics', slug: 'electronics',     emoji: '📱', color: '#2563EB', bg: '#EFF6FF', hover: '#DBEAFE' },
-  { label: 'Beauty',      slug: 'beauty',          emoji: '💄', color: '#7C3AED', bg: '#F5F3FF', hover: '#EDE9FE' },
-  { label: 'Home',        slug: 'home_essentials', emoji: '🏠', color: '#D97706', bg: '#FFFBEB', hover: '#FEF3C7' },
-  { label: 'Accessories', slug: 'accessories',     emoji: '⌚', color: '#0891B2', bg: '#ECFEFF', hover: '#CFFAFE' },
-  { label: 'Sports',      slug: 'sports',          emoji: '⚽', color: '#65A30D', bg: '#F7FEE7', hover: '#ECFCCB' },
-  { label: 'Books',       slug: 'books',           emoji: '📚', color: '#EA580C', bg: '#FFF7ED', hover: '#FFEDD5' },
+  { label: 'Groceries',   labelTe: 'కిరాణా',       slug: 'groceries',      emoji: '🛒', color: '#059669', bg: '#ECFDF5', hover: '#D1FAE5' },
+  { label: 'Fashion',     labelTe: 'ఫ్యాషన్',       slug: 'fashion',         emoji: '👗', color: '#DB2777', bg: '#FDF2F8', hover: '#FCE7F3' },
+  { label: 'Electronics', labelTe: 'ఎలక్ట్రానిక్స్', slug: 'electronics',     emoji: '📱', color: '#2563EB', bg: '#EFF6FF', hover: '#DBEAFE' },
+  { label: 'Beauty',      labelTe: 'బ్యూటీ',        slug: 'beauty',          emoji: '💄', color: '#7C3AED', bg: '#F5F3FF', hover: '#EDE9FE' },
+  { label: 'Home',        labelTe: 'హోమ్',          slug: 'home_essentials', emoji: '🏠', color: '#D97706', bg: '#FFFBEB', hover: '#FEF3C7' },
+  { label: 'Accessories', labelTe: 'యాక్సెసరీస్',    slug: 'accessories',     emoji: '⌚', color: '#0891B2', bg: '#ECFEFF', hover: '#CFFAFE' },
+  { label: 'Sports',      labelTe: 'స్పోర్ట్స్',      slug: 'sports',          emoji: '⚽', color: '#65A30D', bg: '#F7FEE7', hover: '#ECFCCB' },
+  { label: 'Books',       labelTe: 'పుస్తకాలు',      slug: 'books',           emoji: '📚', color: '#EA580C', bg: '#FFF7ED', hover: '#FFEDD5' },
 ] as const;
 
 /* quick-search suggestions */
@@ -99,6 +99,7 @@ export function Header() {
   const router         = useRouter();
   const { user, logout } = useAuth();
   const { totalItems }   = useCartStore();
+  const { t, language }  = useTranslation();
 
   const [searchQuery,    setSearchQuery]    = useState('');
   const [searchFocused,  setSearchFocused]  = useState(false);
@@ -171,7 +172,7 @@ export function Header() {
               <MapPin className="h-3 w-3" style={{ color: '#818CF8' }} />
             </div>
             <span className="text-xs font-medium" style={{ color: 'rgba(199,210,254,0.75)' }}>
-              Delivering to&nbsp;
+              {t('deliveringTo')}&nbsp;
               <span className="text-white font-bold">Kadapa, Andhra Pradesh</span>
             </span>
           </div>
@@ -180,26 +181,29 @@ export function Header() {
           <div className="flex items-center gap-5 text-xs font-semibold" style={{ color: 'rgba(165,180,252,0.65)' }}>
             <span className="flex items-center gap-1.5 hover:text-indigo-300 transition-colors cursor-default">
               <Zap className="h-3 w-3" style={{ color: '#A78BFA' }} />
-              Free delivery above ₹199
+              {t('freeDelivery')}
             </span>
             <span style={{ color: 'rgba(255,255,255,0.12)' }}>|</span>
             <span className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors cursor-default">
               <Sparkles className="h-3 w-3" style={{ color: '#FCD34D' }} />
-              Same-day delivery in Kadapa
+              {t('sameDayDelivery')}
             </span>
           </div>
 
           {/* Right */}
-          <Link
-            href="/seller-onboarding"
-            className="flex items-center gap-1 text-xs font-bold transition-all duration-200 group"
-            style={{ color: 'rgba(165,180,252,0.70)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(165,180,252,0.70)')}
-          >
-            Sell on LocalKart
-            <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <LanguageToggle className="!bg-transparent !border-white/10 !text-white/70 hover:!border-white/30" />
+            <Link
+              href="/seller-onboarding"
+              className="flex items-center gap-1 text-xs font-bold transition-all duration-200 group"
+              style={{ color: 'rgba(165,180,252,0.70)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(165,180,252,0.70)')}
+            >
+              {t('sellOnLocalKart')}
+              <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -254,7 +258,7 @@ export function Header() {
               onMouseLeave={e => { if (!showCategories) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#4B5563'; } }}
             >
               <span className="text-base leading-none">🗂️</span>
-              All Categories
+              {t('allCategories')}
               <ChevronDown
                 className="h-3.5 w-3.5 transition-transform duration-200"
                 style={{ transform: showCategories ? 'rotate(180deg)' : 'none' }}
@@ -275,13 +279,13 @@ export function Header() {
                 {/* Header */}
                 <div className="px-4 pb-2.5 flex items-center justify-between">
                   <p className="text-[10px] font-extrabold tracking-[0.14em] uppercase" style={{ color: '#9CA3AF' }}>
-                    Browse Categories
+                    {t('shopByCategory')}
                   </p>
                   <span
                     className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ background: '#EEF0FE', color: '#3D5AF1' }}
                   >
-                    {CATEGORIES.length} categories
+                    {CATEGORIES.length}
                   </span>
                 </div>
 
@@ -304,7 +308,7 @@ export function Header() {
                         {cat.emoji}
                       </span>
                       <span className="text-xs font-bold truncate" style={{ color: cat.color }}>
-                        {cat.label}
+                        {language === 'te' ? cat.labelTe : cat.label}
                       </span>
                     </Link>
                   ))}
@@ -321,7 +325,7 @@ export function Header() {
                     onMouseLeave={e => { e.currentTarget.style.background = '#F8F9FF'; }}
                   >
                     <span className="text-xs font-extrabold" style={{ color: '#3D5AF1' }}>
-                      View all categories
+                      {t('seeAll')}
                     </span>
                     <ArrowRight
                       className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
@@ -351,7 +355,7 @@ export function Header() {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search products, shops, brands..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full pl-11 pr-24 py-3 bg-transparent text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -425,7 +429,7 @@ export function Header() {
           {/* ── Right icon cluster ── */}
           <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
 
-            <IconBtn href="/wishlist" title="Wishlist">
+            <IconBtn href="/wishlist" title={t('wishlist')}>
               <Heart className="h-[18px] w-[18px] text-gray-500 group-hover:text-pink-500 transition-colors" />
             </IconBtn>
 
@@ -433,7 +437,7 @@ export function Header() {
               <Bell className="h-[18px] w-[18px] text-gray-500 group-hover:text-primary transition-colors" />
             </IconBtn>
 
-            <IconBtn href="/cart" title="Cart" badge={totalItems || undefined}>
+            <IconBtn href="/cart" title={t('cart')} badge={totalItems || undefined}>
               <ShoppingBag className="h-[18px] w-[18px] text-gray-500 group-hover:text-primary transition-colors" />
             </IconBtn>
 
@@ -496,9 +500,9 @@ export function Header() {
 
                     <div className="py-1">
                       {[
-                        { href: '/profile',  icon: User,     label: 'My Profile' },
-                        { href: '/orders',   icon: Package,  label: 'My Orders' },
-                        { href: '/wishlist', icon: Heart,    label: 'Wishlist' },
+                        { href: '/profile',  icon: User,     label: t('myAccount') },
+                        { href: '/orders',   icon: Package,  label: t('myOrders') },
+                        { href: '/wishlist', icon: Heart,    label: t('wishlist') },
                         { href: '/settings', icon: Settings, label: 'Settings' },
                       ].map(({ href, icon: Icon, label }) => (
                         <Link
@@ -538,7 +542,7 @@ export function Header() {
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
                         <LogOut className="h-4 w-4" />
-                        Sign Out
+                        {t('logout')}
                       </button>
                     </div>
                   </div>
@@ -553,7 +557,7 @@ export function Header() {
                     onMouseEnter={e => (e.currentTarget.style.background = '#EEF0FE')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'white')}
                   >
-                    Log in
+                    {t('login')}
                   </button>
                 </Link>
                 <Link href="/register">
@@ -566,7 +570,7 @@ export function Header() {
                     onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 24px rgba(61,90,241,0.45)')}
                     onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(61,90,241,0.35)')}
                   >
-                    Sign Up Free
+                    {t('signUpFree')}
                   </button>
                 </Link>
               </div>
@@ -598,7 +602,7 @@ export function Header() {
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280'; } }}
               >
                 <span className="text-sm leading-none">{cat.emoji}</span>
-                {cat.label}
+                {language === 'te' ? cat.labelTe : cat.label}
                 {active && (
                   <span
                     className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-[3px] w-5 rounded-full"
@@ -622,7 +626,7 @@ export function Header() {
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(234,88,12,0.18)')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(234,88,12,0.10)')}
           >
-            🔥 Today&apos;s Deals
+            🔥 {t('todaysDeals')}
           </Link>
         </div>
       </div>
