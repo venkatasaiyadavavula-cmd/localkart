@@ -109,6 +109,9 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'localkart-auth',
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isLoading = false;
+      },
     }
   )
 );
