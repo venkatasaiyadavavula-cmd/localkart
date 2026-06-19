@@ -6,43 +6,45 @@ import { Home, Search, ShoppingBag, User, Package, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useAuth } from '@/hooks/use-auth';
+import { useTranslation } from '@/hooks/use-translation';
 
 export function MobileNav() {
   const pathname = usePathname();
   const { totalItems } = useCartStore();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const navItems = [
     {
       icon: Home,
-      label: 'Home',
+      label: t('home'),
       href: '/',
       exact: true,
     },
     {
       icon: Search,
-      label: 'Browse',
+      label: t('browse'),
       href: '/browse',
     },
     {
       icon: ShoppingBag,
-      label: 'Cart',
+      label: t('cart'),
       href: '/cart',
       badge: totalItems,
     },
     {
       icon: Heart,
-      label: 'Wishlist',
+      label: t('wishlist'),
       href: '/wishlist',
     },
     {
       icon: Package,
-      label: 'Orders',
+      label: t('orders'),
       href: '/orders',
     },
     {
       icon: User,
-      label: user ? 'Profile' : 'Login',
+      label: user ? t('profile') : t('login'),
       href: user ? '/profile' : '/login',
     },
   ];
