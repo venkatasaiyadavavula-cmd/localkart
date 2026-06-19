@@ -59,6 +59,9 @@ export class CatalogService {
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.price = Between(minPrice || 0, maxPrice || Number.MAX_SAFE_INTEGER);
     }
+    if ((query as any).query) {
+      where.name = ILike(`%${(query as any).query}%`);
+    }
 
     const [products, total] = await this.productRepository.findAndCount({
       where,

@@ -9,4 +9,8 @@ export declare class SearchQueryDto {
     maxPrice?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+    query?: string;
+    latitude?: number;
+    longitude?: number;
+    hasVideo?: boolean;
 }

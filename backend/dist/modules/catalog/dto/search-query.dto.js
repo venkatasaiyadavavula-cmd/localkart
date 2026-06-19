@@ -23,6 +23,10 @@ class SearchQueryDto {
     maxPrice;
     sortBy = 'createdAt';
     sortOrder = 'DESC';
+    query;
+    latitude;
+    longitude;
+    hasVideo;
 }
 exports.SearchQueryDto = SearchQueryDto;
 __decorate([
@@ -42,6 +46,7 @@ __decorate([
 ], SearchQueryDto.prototype, "limit", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
     (0, class_validator_1.IsEnum)(product_entity_1.ProductCategoryType),
     __metadata("design:type", String)
 ], SearchQueryDto.prototype, "categoryType", void 0);
@@ -57,12 +62,14 @@ __decorate([
 ], SearchQueryDto.prototype, "shopId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
     (0, class_validator_1.IsNumber)(),
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], SearchQueryDto.prototype, "minPrice", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
     (0, class_validator_1.IsNumber)(),
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
@@ -77,4 +84,28 @@ __decorate([
     (0, class_validator_1.IsEnum)(['ASC', 'DESC']),
     __metadata("design:type", String)
 ], SearchQueryDto.prototype, "sortOrder", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SearchQueryDto.prototype, "query", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], SearchQueryDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], SearchQueryDto.prototype, "longitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
+    __metadata("design:type", Boolean)
+], SearchQueryDto.prototype, "hasVideo", void 0);
 //# sourceMappingURL=search-query.dto.js.map

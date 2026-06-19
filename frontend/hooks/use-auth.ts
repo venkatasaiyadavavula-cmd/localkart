@@ -108,7 +108,7 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'localkart-auth',
-      partialize: (state) => ({ user: state.user }),
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 );

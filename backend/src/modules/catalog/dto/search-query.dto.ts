@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ProductCategoryType } from '../../../core/entities/product.entity';
 
 export class SearchQueryDto {
@@ -17,6 +17,7 @@ export class SearchQueryDto {
   limit?: number = 20;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(ProductCategoryType)
   categoryType?: ProductCategoryType;
 
@@ -29,11 +30,13 @@ export class SearchQueryDto {
   shopId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsNumber()
   @Type(() => Number)
   minPrice?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsNumber()
   @Type(() => Number)
   maxPrice?: number;
@@ -45,4 +48,24 @@ export class SearchQueryDto {
   @IsOptional()
   @IsEnum(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC' = 'DESC';
+
+  @IsOptional()
+  @IsString()
+  query?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsNumber()
+  @Type(() => Number)
+  latitude?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsNumber()
+  @Type(() => Number)
+  longitude?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  hasVideo?: boolean;
 }

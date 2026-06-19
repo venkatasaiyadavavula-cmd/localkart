@@ -55,6 +55,9 @@ let CatalogService = class CatalogService {
         if (minPrice !== undefined || maxPrice !== undefined) {
             where.price = (0, typeorm_2.Between)(minPrice || 0, maxPrice || Number.MAX_SAFE_INTEGER);
         }
+        if (query.query) {
+            where.name = (0, typeorm_2.ILike)(`%${query.query}%`);
+        }
         const [products, total] = await this.productRepository.findAndCount({
             where,
             relations: ['shop', 'category'],
