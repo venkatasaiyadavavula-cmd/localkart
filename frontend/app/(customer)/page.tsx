@@ -84,7 +84,7 @@ export default function HomePage() {
       />
 
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 glass border-b border-white/70 shadow-soft-sm">
+      <header className="lg:hidden sticky top-0 z-50 glass border-b border-white/70 shadow-soft-sm">
         <div className="px-4 pt-3 pb-1.5 flex items-center justify-between">
           <button onClick={() => setShowLocationDialog(true)} className="flex items-center gap-2 group max-w-[70%]">
             <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-xl" style={{ background: '#EEF0FE' }}>
