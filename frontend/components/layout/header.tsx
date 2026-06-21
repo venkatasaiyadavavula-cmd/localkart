@@ -211,7 +211,7 @@ export function Header() {
           MAIN NAV ROW
       ══════════════════════════════════════ */}
       <div
-        className="glass border-b"
+        className="glass border-b relative z-20"
         style={{ borderColor: 'rgba(226,232,240,0.80)' }}
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4" ref={wrapperRef}>
@@ -583,7 +583,7 @@ export function Header() {
           CATEGORY NAV STRIP
       ══════════════════════════════════════ */}
       <div
-        className="glass border-b"
+        className="glass border-b relative z-10"
         style={{ borderColor: 'rgba(226,232,240,0.55)' }}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center gap-0.5 h-11">

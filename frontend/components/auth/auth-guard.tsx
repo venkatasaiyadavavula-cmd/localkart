@@ -17,6 +17,8 @@ const publicRoutes = [
   '/cart',
   '/wishlist',
   '/videos',
+  '/orders',
+  '/profile',
 ];
 
 const sellerRoutes = ['/seller', '/seller-onboarding'];
