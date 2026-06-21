@@ -52,9 +52,11 @@ export function RazorpayButton({
 
     try {
       // Create Razorpay order from backend
+      const token = localStorage.getItem('accessToken');
       const { data } = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/payments/create-order`,
-        { orderId }
+        { orderId },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const scriptLoaded = await loadRazorpayScript();
@@ -74,6 +76,7 @@ export function RazorpayButton({
         handler: async (response: any) => {
           try {
             // Verify payment on backend
+            const verifyToken = localStorage.getItem('accessToken');
             await axios.post(
               `${process.env.NEXT_PUBLIC_API_URL}/payments/verify`,
               {
@@ -81,7 +84,8 @@ export function RazorpayButton({
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 internalOrderId: orderId,
-              }
+              },
+              { headers: { Authorization: `Bearer ${verifyToken}` } }
             );
             onSuccess(response);
           } catch (error) {
