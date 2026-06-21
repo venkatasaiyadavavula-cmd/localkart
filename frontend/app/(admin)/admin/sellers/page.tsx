@@ -145,14 +145,14 @@ export default function AdminSellersPage() {
                     <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : data?.data.length === 0 ? (
+              ) : data?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                     No shops found
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.data.map((shop) => (
+                data?.map((shop) => (
                   <TableRow key={shop.id}>
                     <TableCell className="font-medium">{shop.name}</TableCell>
                     <TableCell>{shop.owner?.name}</TableCell>

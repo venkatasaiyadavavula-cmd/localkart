@@ -10,18 +10,18 @@ import { Separator } from '@/components/ui/separator';
 
 const footerLinks = {
   company: [
-    { label: 'About Us', href: '/about' },
+    { label: 'About Us', href: '/' },
               ],
   support: [
-    { label: 'Help Center', href: '/help' },
-    { label: 'Contact Us', href: '/contact' },
-    { label: 'Shipping Policy', href: '/shipping' },
+    { label: 'Help Center', href: 'mailto:support@localkart.com' },
+    { label: 'Contact Us', href: 'mailto:support@localkart.com' },
+    { label: 'Shipping Policy', href: '/orders' },
     { label: 'Returns & Refunds', href: '/orders' },
   ],
   seller: [
     { label: 'Sell on LocalKart', href: '/seller-onboarding' },
-    { label: 'Seller Dashboard', href: '/seller/dashboard' },
-        { label: 'Commission Structure', href: '/help' },
+    { label: 'Seller Dashboard', href: '/dashboard' },
+        { label: 'Commission Structure', href: '/dashboard/commission' },
   ],
   legal: [
     { label: 'Terms of Service', href: '/terms' },

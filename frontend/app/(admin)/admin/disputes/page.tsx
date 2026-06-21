@@ -107,14 +107,14 @@ export default function AdminDisputesPage() {
                     <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : data?.data.length === 0 ? (
+              ) : data?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     No disputes found
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.data.map((dispute) => (
+                data?.map((dispute) => (
                   <TableRow key={dispute.id}>
                     <TableCell className="font-medium">{dispute.order?.orderNumber}</TableCell>
                     <TableCell>{dispute.customer?.name}</TableCell>

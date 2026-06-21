@@ -135,14 +135,14 @@ export default function AdminProductsPage() {
                     <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : data?.data.length === 0 ? (
+              ) : data?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                     No products found
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.data.map((product) => (
+                data?.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell>
                       <div className="relative h-10 w-10 overflow-hidden rounded-md bg-muted">
