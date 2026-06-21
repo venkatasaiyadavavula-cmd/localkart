@@ -53,8 +53,9 @@ export function ProductScannerFree({ onScanComplete }: ProductScannerFreeProps) 
         formData.append('images', blob, `product-${Date.now()}.jpg`);
       }
 
-      const response = await fetch('/api/ai/scan-product-free', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/scan-product`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         body: formData,
       });
 

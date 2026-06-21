@@ -72,7 +72,7 @@ export default function CheckoutPage() {
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return [];
-      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses`,
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/addresses`,
         { headers: { Authorization: `Bearer ${token}` } });
       return data;
     },
@@ -112,9 +112,9 @@ export default function CheckoutPage() {
   const onSubmit = async (data: AddressFormData) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/orders', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         body: JSON.stringify({
           shippingAddress: {
             ...data,

@@ -79,8 +79,9 @@ export default function ReturnRequestPage() {
       if (data.description) formData.append('description', data.description);
       evidenceFiles.forEach((file) => formData.append('evidence', file));
 
-      const response = await fetch('/api/returns', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/returns`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         body: formData,
       });
 
