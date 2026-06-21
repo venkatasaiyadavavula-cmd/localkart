@@ -105,7 +105,7 @@ export default function NewProductPage() {
       videos.forEach(vid => formData.append('videos', vid));
       await createProduct(formData);
       toast.success('Product created successfully. Awaiting approval.');
-      router.push('/seller/dashboard/products');
+      router.push('/dashboard/products');
     } catch {
       toast.error('Failed to create product');
     }

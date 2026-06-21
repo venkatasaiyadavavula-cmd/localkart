@@ -19,7 +19,7 @@ export default async function SellerLayout({
   const session = await getServerSession();
 
   if (!session || session.user.role !== 'seller') {
-    redirect('/login?redirect=/seller/dashboard');
+    redirect('/login?redirect=/dashboard');
   }
 
   // Check if seller has a shop

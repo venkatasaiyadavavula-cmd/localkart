@@ -520,7 +520,7 @@ export function Header() {
 
                       {user.role === 'seller' && (
                         <Link
-                          href="/seller/dashboard"
+                          href="/dashboard"
                           onClick={closeAll}
                           className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors"
                           style={{ color: '#3D5AF1' }}

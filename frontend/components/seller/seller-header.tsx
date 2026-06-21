@@ -54,7 +54,7 @@ export function SellerHeader() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/profile')}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/seller/dashboard/shop-settings')}>
+            <DropdownMenuItem onClick={() => router.push('/dashboard/shop-settings')}>
               Shop Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />

@@ -8,7 +8,7 @@ export declare class StaffService {
     private readonly jwtService;
     private readonly logger;
     constructor(staffRepo: Repository<StaffMember>, shopRepo: Repository<Shop>, jwtService: JwtService);
-    getStaff(shopId: string): Promise<{
+    getStaff(ownerId: string): Promise<{
         permissions: string[];
         isOnline: boolean;
         id: string;

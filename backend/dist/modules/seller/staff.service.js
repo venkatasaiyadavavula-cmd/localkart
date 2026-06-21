@@ -70,9 +70,12 @@ let StaffService = StaffService_1 = class StaffService {
         this.shopRepo = shopRepo;
         this.jwtService = jwtService;
     }
-    async getStaff(shopId) {
+    async getStaff(ownerId) {
+        const shop = await this.shopRepo.findOne({ where: { ownerId } });
+        if (!shop)
+            throw new common_1.ForbiddenException('Shop not found');
         const staff = await this.staffRepo.find({
-            where: { shopId },
+            where: { shopId: shop.id },
             order: { createdAt: 'DESC' },
             select: ['id', 'name', 'phone', 'staffId', 'role', 'status', 'lastLoginAt', 'note', 'createdAt'],
         });

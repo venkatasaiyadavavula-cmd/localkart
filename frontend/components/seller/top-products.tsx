@@ -19,7 +19,7 @@ export function TopProducts({ products }: TopProductsProps) {
       {products.map((product) => (
         <Link
           key={product.id}
-          href={`/seller/dashboard/products/${product.id}`}
+          href={`/dashboard/products/${product.id}`}
           className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
         >
           <div className="relative h-10 w-10 overflow-hidden rounded-md bg-muted">

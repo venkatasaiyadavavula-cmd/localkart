@@ -19,7 +19,7 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
       {orders.slice(0, 5).map((order) => (
         <Link
           key={order.id}
-          href={`/seller/dashboard/orders/${order.id}`}
+          href={`/dashboard/orders/${order.id}`}
           className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
         >
           <div>

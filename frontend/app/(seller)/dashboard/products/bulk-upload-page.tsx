@@ -110,7 +110,7 @@ export default function BulkUploadPage() {
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/seller/dashboard/products">
+        <Link href="/dashboard/products">
           <button className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
             <ChevronLeft className="h-4 w-4 text-gray-600" />
           </button>
@@ -162,7 +162,7 @@ export default function BulkUploadPage() {
               <p className="text-xs text-gray-400">
                 <span className="font-bold text-gray-600">Growth plan</span> — up to 150 products · ₹199/mo
               </p>
-              <Link href="/seller/dashboard/subscription">
+              <Link href="/dashboard/subscription">
                 <button
                   className="flex items-center gap-1 text-xs font-extrabold text-white px-3 py-1.5 rounded-xl"
                   style={{ background: 'linear-gradient(135deg,#2563EB,#1D4ED8)' }}
@@ -324,7 +324,7 @@ export default function BulkUploadPage() {
           )}
 
           {result.created > 0 && (
-            <Link href="/seller/dashboard/products">
+            <Link href="/dashboard/products">
               <button
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.97]"
                 style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 4px 16px rgba(5,150,105,0.30)' }}

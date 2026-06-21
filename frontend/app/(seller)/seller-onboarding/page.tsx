@@ -90,7 +90,7 @@ export default function SellerOnboardingPage() {
         longitude: location.lng,
       });
       toast.success('Shop registered successfully! Awaiting approval.');
-      router.push('/seller/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       toast.error('Failed to register shop');
     }

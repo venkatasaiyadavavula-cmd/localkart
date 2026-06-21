@@ -11,17 +11,17 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard',      href: '/seller/dashboard' },
-  { icon: Package,         label: 'Products',        href: '/seller/dashboard/products' },
-  { icon: ShoppingBag,     label: 'Orders',          href: '/seller/dashboard/orders' },
-  { icon: Zap,             label: "Today's Offers",  href: '/seller/dashboard/offers' },
-  { icon: TrendingUp,      label: 'Ads',             href: '/seller/dashboard/ads' },
-  { icon: IndianRupee,     label: 'Commission',      href: '/seller/dashboard/commission' },
-  { icon: BarChart2,       label: 'Earnings',        href: '/seller/dashboard/earnings' },
-  { icon: Users,           label: 'Staff',           href: '/seller/dashboard/staff' },
-  { icon: Upload,          label: 'Bulk Upload',     href: '/seller/dashboard/products/bulk-upload' },
-  { icon: CreditCard,      label: 'Subscription',    href: '/seller/dashboard/subscription' },
-  { icon: Settings,        label: 'Settings',        href: '/seller/dashboard/shop-settings' },
+  { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },
+  { icon: Package,         label: 'Products',        href: '/dashboard/products' },
+  { icon: ShoppingBag,     label: 'Orders',          href: '/dashboard/orders' },
+  { icon: Zap,             label: "Today's Offers",  href: '/dashboard/offers' },
+  { icon: TrendingUp,      label: 'Ads',             href: '/dashboard/ads' },
+  { icon: IndianRupee,     label: 'Commission',      href: '/dashboard/commission' },
+  { icon: BarChart2,       label: 'Earnings',        href: '/dashboard/earnings' },
+  { icon: Users,           label: 'Staff',           href: '/dashboard/staff' },
+  { icon: Upload,          label: 'Bulk Upload',     href: '/dashboard/products/bulk-upload' },
+  { icon: CreditCard,      label: 'Subscription',    href: '/dashboard/subscription' },
+  { icon: Settings,        label: 'Settings',        href: '/dashboard/shop-settings' },
 ];
 
 export function SellerSidebar() {
@@ -30,7 +30,7 @@ export function SellerSidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-card lg:block">
       <div className="flex h-16 items-center border-b px-4">
-        <Link href="/seller/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <Image src="/logo.svg" alt="LocalKart" width={100} height={32} className="h-7 w-auto" />
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
             Seller

@@ -20,12 +20,12 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/seller/dashboard' },
-  { icon: Package, label: 'Products', href: '/seller/dashboard/products' },
-  { icon: ShoppingBag, label: 'Orders', href: '/seller/dashboard/orders' },
-  { icon: TrendingUp, label: 'Ads', href: '/seller/dashboard/ads' },
-  { icon: CreditCard, label: 'Subscription', href: '/seller/dashboard/subscription' },
-  { icon: Settings, label: 'Settings', href: '/seller/dashboard/shop-settings' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: Package, label: 'Products', href: '/dashboard/products' },
+  { icon: ShoppingBag, label: 'Orders', href: '/dashboard/orders' },
+  { icon: TrendingUp, label: 'Ads', href: '/dashboard/ads' },
+  { icon: CreditCard, label: 'Subscription', href: '/dashboard/subscription' },
+  { icon: Settings, label: 'Settings', href: '/dashboard/shop-settings' },
 ];
 
 export function SellerSidebar() {
@@ -45,7 +45,7 @@ export function SellerSidebar() {
         collapsed ? 'justify-center' : 'justify-between'
       )}>
         {!collapsed && (
-          <Link href="/seller/dashboard" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <Image src="/logo.svg" alt="LocalKart" width={100} height={32} className="h-7 w-auto" />
           </Link>
         )}

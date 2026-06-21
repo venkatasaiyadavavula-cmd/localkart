@@ -36,7 +36,7 @@ export class StaffController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)
   getStaff(@Request() req: any) {
-    return this.staffService.getStaff(req.user.shopId);
+    return this.staffService.getStaff(req.user.id);
   }
 
   @Post()

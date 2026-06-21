@@ -30,9 +30,12 @@ export class StaffService {
   ) {}
 
   // ── List all staff for a shop ────────────────────────────
-  async getStaff(shopId: string) {
+  async getStaff(ownerId: string) {
+    const shop = await this.shopRepo.findOne({ where: { ownerId } });
+    if (!shop) throw new ForbiddenException('Shop not found');
+
     const staff = await this.staffRepo.find({
-      where: { shopId },
+      where: { shopId: shop.id },
       order: { createdAt: 'DESC' },
       select: ['id','name','phone','staffId','role','status','lastLoginAt','note','createdAt'],
     });

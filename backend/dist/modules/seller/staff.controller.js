@@ -80,7 +80,7 @@ let StaffController = class StaffController {
         this.staffService = staffService;
     }
     getStaff(req) {
-        return this.staffService.getStaff(req.user.shopId);
+        return this.staffService.getStaff(req.user.id);
     }
     addStaff(req, dto) {
         return this.staffService.addStaff(req.user.id, dto);

@@ -153,7 +153,7 @@ export default function EditProductPage() {
     try {
       await updateProduct(productId, formData);
       toast.success('Product updated successfully. Changes pending approval.');
-      router.push('/seller/dashboard/products');
+      router.push('/dashboard/products');
     } catch (error) {
       toast.error('Failed to update product');
     }
