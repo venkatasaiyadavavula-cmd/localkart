@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ProductCategoryType } from '@/types/product';
+import type { ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(200),

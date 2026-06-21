@@ -23,7 +23,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProduct } from '@/hooks/use-product';
 import { useUpdateProduct } from '@/hooks/use-update-product';
-import { ProductCategoryType } from '@/types/product';
+import type { ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(200),
