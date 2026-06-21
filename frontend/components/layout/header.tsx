@@ -503,7 +503,7 @@ export function Header() {
                         { href: '/profile',  icon: User,     label: t('myAccount') },
                         { href: '/orders',   icon: Package,  label: t('myOrders') },
                         { href: '/wishlist', icon: Heart,    label: t('wishlist') },
-                        { href: '/settings', icon: Settings, label: 'Settings' },
+                        { href: '/profile', icon: Settings, label: 'Settings' },
                       ].map(({ href, icon: Icon, label }) => (
                         <Link
                           key={href}
