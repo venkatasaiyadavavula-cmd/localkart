@@ -46,7 +46,7 @@ export default function OrdersPage() {
     status: activeTab !== 'all' ? activeTab : undefined,
   });
 
-  const filteredOrders = data?.data.filter(
+  const filteredOrders = data?.filter(
     (order) =>
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.shop.name.toLowerCase().includes(searchQuery.toLowerCase())
