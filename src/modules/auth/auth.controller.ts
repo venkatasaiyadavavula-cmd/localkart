@@ -1,18 +1,10 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
+import { Public } from '../../core/decorators/public.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { Public } from '../../core/decorators/public.decorator';
+import { VerifyOtpDto } from './dto/otp.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,37 +17,41 @@ export class AuthController {
   }
 
   @Public()
-  @UseGuards(LocalAuthGuard)
-  @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Request() req) {
-    return this.authService.login(req.user);
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(loginDto.phone, loginDto.password);
+    return this.authService.login(user);
   }
 
   @Public()
   @Post('send-otp')
-  @HttpCode(HttpStatus.OK)
-  async sendOtp(@Body() sendOtpDto: SendOtpDto) {
-    return this.authService.sendOtp(sendOtpDto.phone);
+  async sendOtp(@Body() body: { phone: string }) {
+    return this.authService.sendOtp(body.phone);
   }
 
   @Public()
   @Post('verify-otp')
-  @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
     return this.authService.verifyOtp(verifyOtpDto);
   }
 
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  async logout(@Request() req) {
-    // In JWT, logout is handled client-side by discarding token
-    return { message: 'Logged out successfully' };
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  async refresh(@Request() req) {
+    return this.authService.refreshToken(req.user);
   }
 
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  async refreshToken(@Request() req) {
-    return this.authService.refreshToken(req.user);
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  getProfile(@Request() req) {
+    return req.user;
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Request() req) {
+    // In a real implementation, you might want to invalidate the token
+    // by adding it to a blacklist in Redis
+    return { message: 'Logged out successfully' };
   }
 }

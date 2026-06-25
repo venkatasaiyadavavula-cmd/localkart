@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../../core/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
+import { SmsService } from '../notifications/sms.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly smsService: SmsService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -108,8 +110,8 @@ export class AuthService {
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // In production: Send SMS via Twilio/Fast2SMS
-    this.logger.log(`OTP for ${phone}: ${otp}`);
+    // Send OTP via SMS service (Twilio/Fast2SMS/Console)
+    await this.smsService.sendOtp(phone, otp);
 
     // Save OTP in database (with expiry)
     user.lastOtp = otp;

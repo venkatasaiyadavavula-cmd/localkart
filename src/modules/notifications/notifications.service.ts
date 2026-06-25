@@ -27,28 +27,24 @@ export class NotificationsService {
 
   async sendOrderOtp(phone: string, otp: string) {
     const message = `Your LocalKart order verification OTP is: ${otp}. Valid for 5 minutes.`;
-    await this.smsService.sendSms(phone, message);
+    await this.smsService.sendOtp(phone, otp);
   }
 
   async sendDeliveryOtp(phone: string, otp: string) {
     const message = `Your LocalKart delivery confirmation OTP is: ${otp}. Share this with delivery partner only upon receiving order.`;
-    await this.smsService.sendSms(phone, message);
+    await this.smsService.sendOtp(phone, otp);
   }
 
   async sendLoginOtp(phone: string, otp: string) {
     const message = `Your LocalKart login OTP is: ${otp}. Valid for 5 minutes.`;
-    await this.smsService.sendSms(phone, message);
+    await this.smsService.sendOtp(phone, otp);
   }
 
   async sendWelcomeEmail(email: string, name: string) {
-    const subject = 'Welcome to LocalKart!';
-    const html = `<h1>Welcome ${name}!</h1><p>Thank you for joining LocalKart. Start exploring local shops near you.</p>`;
-    await this.emailService.sendEmail(email, subject, html);
+    await this.emailService.sendWelcomeEmail(email, name);
   }
 
   async sendOrderConfirmationEmail(email: string, orderDetails: any) {
-    const subject = `Order Confirmed - ${orderDetails.orderNumber}`;
-    const html = `<h1>Order Confirmed</h1><p>Your order #${orderDetails.orderNumber} has been confirmed.</p>`;
-    await this.emailService.sendEmail(email, subject, html);
+    await this.emailService.sendOrderConfirmationEmail(email, orderDetails);
   }
 }
