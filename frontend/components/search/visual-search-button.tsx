@@ -2,8 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
-import * as mobilenet from '@tensorflow-models/mobilenet';
-import '@tensorflow/tfjs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Webcam from 'react-webcam';
@@ -13,7 +11,7 @@ import axios from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 interface VisualSearchButtonProps {
-  onResults: (products: any[]) => void;
+  onResults: (products: unknown[]) => void;
 }
 
 export function VisualSearchButton({ onResults }: VisualSearchButtonProps) {
@@ -30,22 +28,19 @@ export function VisualSearchButton({ onResults }: VisualSearchButtonProps) {
         return;
       }
 
-      const model = await mobilenet.load();
-      const img = new Image();
-      img.src = imageSrc;
-      await new Promise((resolve) => (img.onload = resolve));
-
-      const embedding = model.infer(img, true) as any;
-      const embeddingArray = Array.from(embedding.dataSync());
+      const { pipeline } = await import('@xenova/transformers');
+      const classifier = await pipeline('image-feature-extraction', 'Xenova/clip-vit-base-patch32');
+      const output = await classifier(imageSrc);
+      const embeddingArray = Array.from(output.data as Float32Array);
 
       const { data } = await axios.post(`${API_URL}/catalog/visual-search`, {
         embedding: embeddingArray,
       });
 
-      onResults(data.data);
+      onResults(data.data ?? []);
       setOpen(false);
-      toast.success(`Found ${data.data.length} similar products`);
-    } catch (error: any) {
+      toast.success(`Found ${data.data?.length ?? 0} similar products`);
+    } catch (error) {
       console.error('Visual search error:', error);
       toast.error('Search failed. Please try again.');
     } finally {

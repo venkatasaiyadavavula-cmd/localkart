@@ -1,5 +1,6 @@
 'use client';
 
+import { ShoppingBag } from 'lucide-react';
 import { ProductCard } from './product-card';
 import { cn } from '@/lib/utils';
 
@@ -40,11 +41,10 @@ export function ProductGrid({
       )}
     >
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} viewMode={viewMode} />
+        <ProductCard key={product.id} product={product} />
       ))}
     </div>
   );
 }
 
-// Missing import
-import { ShoppingBag } from 'lucide-react';
+// viewMode controls grid layout only; ProductCard does not need it

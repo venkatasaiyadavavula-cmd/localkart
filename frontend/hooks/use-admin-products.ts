@@ -16,7 +16,9 @@ interface AdminProductsParams {
 }
 
 export function useAdminProducts(params: AdminProductsParams = {}) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['admin', 'products', params],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -30,11 +32,8 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
       return data.data;
     },
   });
-}
 
-export function useApproveProduct() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const approveMutation = useMutation({
     mutationFn: async (productId: string) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/products/${productId}/approve`, {}, {
@@ -45,11 +44,8 @@ export function useApproveProduct() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
     },
   });
-}
 
-export function useRejectProduct() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const rejectMutation = useMutation({
     mutationFn: async ({ productId, reason }: { productId: string; reason: string }) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/products/${productId}/reject`, { reason }, {
@@ -60,4 +56,12 @@ export function useRejectProduct() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
     },
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    approveProduct: (productId: string) => approveMutation.mutateAsync(productId),
+    rejectProduct: (productId: string, reason: string) =>
+      rejectMutation.mutateAsync({ productId, reason }),
+  };
 }

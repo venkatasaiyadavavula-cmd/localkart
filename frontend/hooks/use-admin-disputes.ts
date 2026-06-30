@@ -9,7 +9,9 @@ const apiClient = axios.create({
 });
 
 export function useAdminDisputes(params: { status?: string } = {}) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['admin', 'disputes', params],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -21,11 +23,8 @@ export function useAdminDisputes(params: { status?: string } = {}) {
       return data.data;
     },
   });
-}
 
-export function useResolveDispute() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const resolveMutation = useMutation({
     mutationFn: async ({ disputeId, action }: { disputeId: string; action: string }) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/disputes/${disputeId}/resolve`, { action }, {
@@ -36,4 +35,11 @@ export function useResolveDispute() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
     },
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    resolveDispute: (disputeId: string, action: string) =>
+      resolveMutation.mutateAsync({ disputeId, action }),
+  };
 }

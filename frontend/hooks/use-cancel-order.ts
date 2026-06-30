@@ -10,8 +10,8 @@ const apiClient = axios.create({
 
 export function useCancelOrder() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
+
+  const mutation = useMutation({
     mutationFn: async (orderId: string) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.put(`/orders/${orderId}/cancel`, {}, {
@@ -24,4 +24,9 @@ export function useCancelOrder() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
   });
+
+  return {
+    cancelOrder: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+  };
 }

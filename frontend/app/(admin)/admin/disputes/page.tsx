@@ -114,7 +114,7 @@ export default function AdminDisputesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.map((dispute) => (
+                data?.map((dispute: any) => (
                   <TableRow key={dispute.id}>
                     <TableCell className="font-medium">{dispute.order?.orderNumber}</TableCell>
                     <TableCell>{dispute.customer?.name}</TableCell>

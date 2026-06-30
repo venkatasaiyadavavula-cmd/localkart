@@ -12,21 +12,23 @@ const apiClient = axios.create({
 export function useProfile() {
   const queryClient = useQueryClient();
   const { setUser } = useAuthStore();
-  
+
+  const mutation = useMutation({
+    mutationFn: async (profileData: Record<string, unknown>) => {
+      const token = localStorage.getItem('accessToken');
+      const { data } = await apiClient.put('/users/profile', profileData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data.data;
+    },
+    onSuccess: (data) => {
+      setUser(data);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+  });
+
   return {
-    updateProfile: useMutation({
-      mutationFn: async (profileData: any) => {
-        const token = localStorage.getItem('accessToken');
-        const { data } = await apiClient.put('/users/profile', profileData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        return data.data;
-      },
-      onSuccess: (data) => {
-        setUser(data);
-        queryClient.invalidateQueries({ queryKey: ['user'] });
-      },
-    }),
-    isLoading: false,
+    updateProfile: mutation.mutateAsync,
+    isLoading: mutation.isPending,
   };
 }

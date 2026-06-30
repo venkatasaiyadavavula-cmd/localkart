@@ -48,7 +48,9 @@ export default function BrowsePage() {
     query: initialQuery,
   });
 
-  const products = data?.products || data || [];
+  const products = Array.isArray(data)
+    ? data
+    : (data as { products?: unknown[] })?.products ?? [];
 
   const handleSort = (val: string) => {
     const [by, order] = val.split('-');

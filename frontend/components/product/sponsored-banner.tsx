@@ -125,7 +125,7 @@ export function SponsoredBanner() {
 
           {/* Indicators */}
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-            {products.map((_, index) => (
+            {products.map((_: unknown, index: number) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}

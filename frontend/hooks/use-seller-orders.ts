@@ -9,7 +9,9 @@ const apiClient = axios.create({
 });
 
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['seller', 'orders', params],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -22,11 +24,8 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
       return data.data;
     },
   });
-}
 
-export function useUpdateOrderStatus() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/seller/orders/${orderId}/status`, { status }, {
@@ -37,4 +36,11 @@ export function useUpdateOrderStatus() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
     },
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    updateOrderStatus: (orderId: string, status: string) =>
+      updateStatusMutation.mutateAsync({ orderId, status }),
+  };
 }

@@ -105,7 +105,7 @@ export default function SellerAdsPage() {
                     <SelectValue placeholder="Choose a product" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products?.data.map((product) => (
+                    {products?.data?.map((product: any) => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
                       </SelectItem>
@@ -176,7 +176,7 @@ export default function SellerAdsPage() {
               <p className="py-8 text-center text-muted-foreground">No active sponsored campaigns</p>
             ) : (
               <div className="space-y-4">
-                {campaigns?.sponsored?.map((campaign) => (
+                {campaigns?.sponsored?.map((campaign: any) => (
                   <div key={campaign.id} className="flex items-center justify-between rounded-lg border p-4">
                     <div className="flex items-center gap-3">
                       <TrendingUp className="h-5 w-5 text-primary" />
@@ -228,7 +228,7 @@ export default function SellerAdsPage() {
               <p className="py-8 text-center text-muted-foreground">No video campaigns</p>
             ) : (
               <div className="space-y-4">
-                {campaigns?.video?.map((campaign) => (
+                {campaigns?.video?.map((campaign: any) => (
                   <div key={campaign.id} className="flex items-center justify-between rounded-lg border p-4">
                     <div className="flex items-center gap-3">
                       <Video className="h-5 w-5 text-accent" />

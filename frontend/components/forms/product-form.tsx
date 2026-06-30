@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ProductCategoryType } from '@/types/product';
+import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(200),
@@ -29,7 +29,7 @@ const productSchema = z.object({
   stock: z.coerce.number().min(0, 'Stock must be positive'),
   sku: z.string().optional(),
   brand: z.string().optional(),
-  categoryType: z.nativeEnum(ProductCategoryType),
+  categoryType: z.enum(PRODUCT_CATEGORY_VALUES),
   categoryId: z.string().optional(),
 });
 

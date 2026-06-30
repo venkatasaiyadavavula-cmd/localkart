@@ -329,11 +329,7 @@ export default function ProductDetailPage() {
                 orderId=""
                 onDone={() => {}}
               />
-              <ProductReviews
-                productId={product.id}
-                productName={product.name}
-                shopId={product.shopId}
-              />
+              <ProductReviews productId={product.id} />
             </TabsContent>
           </Tabs>
         </div>

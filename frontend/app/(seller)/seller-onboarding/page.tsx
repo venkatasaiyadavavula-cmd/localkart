@@ -218,8 +218,8 @@ export default function SellerOnboardingPage() {
                       <MapPin className="mr-2 h-4 w-4" />
                       {location ? 'Location Selected ✓' : 'Pin Your Shop Location'}
                     </Button>
-                    {!location && currentStep === 3 && (
-                      <p className="text-xs text-destructive">Please select your shop location</p>
+                    {!location && (
+                      <p className="text-xs text-destructive">Please select your shop location before submitting</p>
                     )}
                   </div>
                 </motion.div>

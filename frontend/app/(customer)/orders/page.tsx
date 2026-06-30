@@ -47,7 +47,7 @@ export default function OrdersPage() {
   });
 
   const filteredOrders = data?.filter(
-    (order) =>
+    (order: { orderNumber: string; shop: { name: string } }) =>
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.shop.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -114,7 +114,7 @@ export default function OrdersPage() {
             )}
           </motion.div>
         ) : (
-          filteredOrders?.map((order) => (
+          filteredOrders?.map((order: any) => (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, y: 10 }}
@@ -130,8 +130,8 @@ export default function OrdersPage() {
                           <span className="text-sm font-medium">
                             #{order.orderNumber}
                           </span>
-                          <Badge className={statusColors[order.status] || ''}>
-                            {statusLabels[order.status] || order.status}
+                          <Badge className={statusColors[order.status as OrderStatus] || ''}>
+                            {statusLabels[order.status as OrderStatus] || order.status}
                           </Badge>
                         </div>
                         <span className="text-xs text-muted-foreground">

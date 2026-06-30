@@ -160,7 +160,7 @@ export default function SellerOrdersPage() {
                     {order.status === 'processing' && '📦'}
                     {order.status === 'out_for_delivery' && '🛵'}
                     {order.status === 'delivered' && '✅'}
-                    {' '}{statusLabels[order.status] || order.status}
+                    {' '}{statusLabels[order.status as OrderStatus] || order.status}
                   </span>
 
                   {/* Customer */}

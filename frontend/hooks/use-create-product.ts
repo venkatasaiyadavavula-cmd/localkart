@@ -5,17 +5,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'multipart/form-data' },
 });
 
 export function useCreateProduct() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
+
+  const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.post('/seller/products', formData, {
-        headers: { 
+        headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
@@ -26,4 +25,9 @@ export function useCreateProduct() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
     },
   });
+
+  return {
+    createProduct: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+  };
 }

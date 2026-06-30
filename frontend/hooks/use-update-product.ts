@@ -9,12 +9,12 @@ const apiClient = axios.create({
 
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
+
+  const mutation = useMutation({
     mutationFn: async ({ productId, formData }: { productId: string; formData: FormData }) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.put(`/seller/products/${productId}`, formData, {
-        headers: { 
+        headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
@@ -26,4 +26,9 @@ export function useUpdateProduct() {
       queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
     },
   });
+
+  return {
+    updateProduct: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+  };
 }

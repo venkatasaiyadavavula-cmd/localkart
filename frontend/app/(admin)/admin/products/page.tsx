@@ -142,7 +142,7 @@ export default function AdminProductsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.map((product) => (
+                data?.map((product: any) => (
                   <TableRow key={product.id}>
                     <TableCell>
                       <div className="relative h-10 w-10 overflow-hidden rounded-md bg-muted">

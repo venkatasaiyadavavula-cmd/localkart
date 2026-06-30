@@ -9,7 +9,9 @@ const apiClient = axios.create({
 });
 
 export function useAdCampaigns() {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['seller', 'ads'],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -19,12 +21,9 @@ export function useAdCampaigns() {
       return data.data;
     },
   });
-}
 
-export function useCreateCampaign() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (campaignData: any) => {
+  const createMutation = useMutation({
+    mutationFn: async (campaignData: Record<string, unknown>) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.post('/seller/ads', campaignData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -35,12 +34,9 @@ export function useCreateCampaign() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
     },
   });
-}
 
-export function useUpdateCampaign() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ campaignId, data: updateData }: { campaignId: string; data: any }) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ campaignId, data: updateData }: { campaignId: string; data: Record<string, unknown> }) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.put(`/seller/ads/${campaignId}`, updateData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -51,4 +47,12 @@ export function useUpdateCampaign() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
     },
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    createCampaign: createMutation.mutateAsync,
+    updateCampaign: (campaignId: string, data: Record<string, unknown>) =>
+      updateMutation.mutateAsync({ campaignId, data }),
+  };
 }

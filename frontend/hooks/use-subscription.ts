@@ -9,7 +9,9 @@ const apiClient = axios.create({
 });
 
 export function useSubscription() {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['seller', 'subscription'],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -19,11 +21,8 @@ export function useSubscription() {
       return data.data;
     },
   });
-}
 
-export function useSubscribe() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const subscribeMutation = useMutation({
     mutationFn: async (plan: string) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.post('/seller/subscription/subscribe', { plan }, {
@@ -35,4 +34,10 @@ export function useSubscribe() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'subscription'] });
     },
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    subscribe: subscribeMutation.mutateAsync,
+  };
 }

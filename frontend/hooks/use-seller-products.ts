@@ -8,8 +8,10 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-export function useSellerProducts(params: any = {}) {
-  return useQuery({
+export function useSellerProducts(params: Record<string, unknown> = {}) {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['seller', 'products', params],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -25,11 +27,8 @@ export function useSellerProducts(params: any = {}) {
       return data.data;
     },
   });
-}
 
-export function useDeleteProduct() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.delete(`/seller/products/${productId}`, {
@@ -40,4 +39,24 @@ export function useDeleteProduct() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ productId, data: updateData }: { productId: string; data: Record<string, unknown> }) => {
+      const token = localStorage.getItem('accessToken');
+      return apiClient.put(`/seller/products/${productId}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
+    },
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    deleteProduct: deleteMutation.mutateAsync,
+    updateProduct: (productId: string, data: Record<string, unknown>) =>
+      updateMutation.mutateAsync({ productId, data }),
+  };
 }

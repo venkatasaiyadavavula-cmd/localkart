@@ -96,7 +96,7 @@ export default function AdminCommissionsPage() {
     toast.success('Earnings settled (dummy)');
   };
 
-  const currentRates = data.currentRates;
+  const currentRates: Record<string, number> = data.currentRates;
 
   return (
     <div className="space-y-6">

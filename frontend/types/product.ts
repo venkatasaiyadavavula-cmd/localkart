@@ -1,12 +1,15 @@
 // types/product.ts
 
-export type ProductCategoryType =
-  | 'groceries'
-  | 'fashion'
-  | 'electronics'
-  | 'home_essentials'
-  | 'beauty'
-  | 'accessories';
+export const PRODUCT_CATEGORY_VALUES = [
+  'groceries',
+  'fashion',
+  'electronics',
+  'home_essentials',
+  'beauty',
+  'accessories',
+] as const;
+
+export type ProductCategoryType = (typeof PRODUCT_CATEGORY_VALUES)[number];
 
 export type ProductStatus =
   | 'draft'

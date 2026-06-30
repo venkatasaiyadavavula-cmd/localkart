@@ -9,7 +9,9 @@ const apiClient = axios.create({
 });
 
 export function useAdminShops(params: { status?: string; search?: string } = {}) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['admin', 'shops', params],
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
@@ -22,11 +24,8 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
       return data.data;
     },
   });
-}
 
-export function useApproveShop() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const approveMutation = useMutation({
     mutationFn: async (shopId: string) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/shops/${shopId}/approve`, {}, {
@@ -37,11 +36,8 @@ export function useApproveShop() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
     },
   });
-}
 
-export function useRejectShop() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  const rejectMutation = useMutation({
     mutationFn: async ({ shopId, reason }: { shopId: string; reason: string }) => {
       const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/shops/${shopId}/reject`, { reason }, {
@@ -52,4 +48,26 @@ export function useRejectShop() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
     },
   });
+
+  const suspendMutation = useMutation({
+    mutationFn: async ({ shopId, reason }: { shopId: string; reason: string }) => {
+      const token = localStorage.getItem('accessToken');
+      return apiClient.put(`/admin/shops/${shopId}/suspend`, { reason }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
+    },
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    approveShop: (shopId: string) => approveMutation.mutateAsync(shopId),
+    rejectShop: (shopId: string, reason: string) =>
+      rejectMutation.mutateAsync({ shopId, reason }),
+    suspendShop: (shopId: string, reason: string) =>
+      suspendMutation.mutateAsync({ shopId, reason }),
+  };
 }

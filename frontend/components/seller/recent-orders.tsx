@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { statusColors, statusLabels } from '@/types/order';
+import { statusColors, statusLabels, type OrderStatus } from '@/types/order';
 
 interface RecentOrdersProps {
   orders: any[];
@@ -28,8 +28,8 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
           </div>
           <div className="text-right">
             <p className="font-medium">{formatPrice(order.totalAmount)}</p>
-            <Badge className={statusColors[order.status]}>
-              {statusLabels[order.status]}
+            <Badge className={statusColors[order.status as OrderStatus]}>
+              {statusLabels[order.status as OrderStatus]}
             </Badge>
           </div>
         </Link>

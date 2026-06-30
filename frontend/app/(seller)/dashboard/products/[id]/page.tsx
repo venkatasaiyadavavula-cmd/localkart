@@ -23,7 +23,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProduct } from '@/hooks/use-product';
 import { useUpdateProduct } from '@/hooks/use-update-product';
-import type { ProductCategoryType } from '@/types/product';
+import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(200),
@@ -33,7 +33,7 @@ const productSchema = z.object({
   stock: z.coerce.number().min(0, 'Stock must be positive'),
   sku: z.string().optional(),
   brand: z.string().optional(),
-  categoryType: z.nativeEnum(ProductCategoryType),
+  categoryType: z.enum(PRODUCT_CATEGORY_VALUES),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -151,7 +151,7 @@ export default function EditProductPage() {
     newVideos.forEach((file) => formData.append('newVideos', file));
 
     try {
-      await updateProduct(productId, formData);
+      await updateProduct({ productId, formData });
       toast.success('Product updated successfully. Changes pending approval.');
       router.push('/dashboard/products');
     } catch (error) {

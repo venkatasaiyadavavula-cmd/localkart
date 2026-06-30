@@ -132,8 +132,8 @@ export default function OrderDetailPage() {
             </p>
           </div>
         </div>
-        <Badge className={statusColors[order.status] + ' px-3 py-1 text-sm'}>
-          {statusLabels[order.status]}
+        <Badge className={statusColors[order.status as OrderStatus] + ' px-3 py-1 text-sm'}>
+          {statusLabels[order.status as OrderStatus]}
         </Badge>
       </div>
 

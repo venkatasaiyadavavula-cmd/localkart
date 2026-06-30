@@ -11,9 +11,9 @@ const apiClient = axios.create({
 
 export function useCreateShop() {
   const router = useRouter();
-  
-  return useMutation({
-    mutationFn: async (shopData: any) => {
+
+  const mutation = useMutation({
+    mutationFn: async (shopData: Record<string, unknown>) => {
       const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.post('/seller/shop', shopData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -21,7 +21,12 @@ export function useCreateShop() {
       return data.data;
     },
     onSuccess: () => {
-      router.push('/seller/dashboard');
+      router.push('/dashboard');
     },
   });
+
+  return {
+    createShop: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+  };
 }

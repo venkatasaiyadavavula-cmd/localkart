@@ -20,10 +20,16 @@ export default function ShopPage() {
   const slug = params.slug as string;
 
   const { data: shop, isLoading: shopLoading } = useShop(slug);
-  const { data: products, isLoading: productsLoading } = useProducts({
+  const { data: productsData, isLoading: productsLoading } = useProducts({
     shopId: shop?.id,
     limit: 20,
   });
+
+  const productList = Array.isArray(productsData)
+    ? productsData
+    : (productsData as { products?: unknown[]; data?: unknown[] })?.products
+      ?? (productsData as { products?: unknown[]; data?: unknown[] })?.data
+      ?? [];
 
   if (shopLoading) {
     return <ShopSkeleton />;
@@ -149,18 +155,18 @@ export default function ShopPage() {
                 ))}
               </div>
             ) : (
-              <ProductGrid products={products?.data || []} viewMode="grid" />
+              <ProductGrid products={productList} viewMode="grid" />
             )}
           </TabsContent>
           <TabsContent value="trending" className="pt-6">
-            <ProductGrid products={products?.data?.slice(0, 4) || []} viewMode="grid" />
+            <ProductGrid products={productList.slice(0, 4)} viewMode="grid" />
           </TabsContent>
           <TabsContent value="new" className="pt-6">
-            <ProductGrid products={products?.data?.slice(0, 4) || []} viewMode="grid" />
+            <ProductGrid products={productList.slice(0, 4)} viewMode="grid" />
           </TabsContent>
           <TabsContent value="offers" className="pt-6">
             <ProductGrid
-              products={products?.data?.filter((p: any) => p.discountPercentage) || []}
+              products={productList.filter((p: { discountPercentage?: number }) => p.discountPercentage)}
               viewMode="grid"
             />
           </TabsContent>

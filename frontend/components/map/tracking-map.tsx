@@ -105,12 +105,10 @@ export default function TrackingMap({ deliveryLocation, customerLocation, shopLo
 
     // Draw route line
     if (lineRef.current) lineRef.current.remove();
-    if (mapRef.current) {
+    if (customerLocation?.latitude && customerLocation?.longitude) {
+      const customerLatLng = L.latLng(customerLocation.latitude, customerLocation.longitude);
       lineRef.current = L.polyline(
-        [
-          newLatLng,
-          ...(mapRef.current.getBounds ? [] : []),
-        ],
+        [newLatLng, customerLatLng],
         { color: '#3D5AF1', weight: 3, dashArray: '6, 8', opacity: 0.7 }
       ).addTo(mapRef.current);
     }

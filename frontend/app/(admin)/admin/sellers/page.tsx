@@ -84,7 +84,7 @@ export default function AdminSellersPage() {
 
   const handleSuspend = async (shopId: string) => {
     try {
-      await suspendShop(shopId);
+      await suspendShop(shopId, 'Suspended by admin');
       toast.success('Shop suspended');
     } catch (error) {
       toast.error('Failed to suspend shop');
@@ -152,7 +152,7 @@ export default function AdminSellersPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.map((shop) => (
+                data?.map((shop: any) => (
                   <TableRow key={shop.id}>
                     <TableCell className="font-medium">{shop.name}</TableCell>
                     <TableCell>{shop.owner?.name}</TableCell>
