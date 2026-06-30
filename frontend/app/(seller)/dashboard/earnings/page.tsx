@@ -19,10 +19,10 @@ export default function EarningsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['weekly-earnings'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/seller/weekly-earnings`, {
+      const { data } = await axios.get(`${API}/seller/earnings/weekly`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return data;
+      return data.data ?? data;
     },
   });
 

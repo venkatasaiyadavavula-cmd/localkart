@@ -12,6 +12,8 @@ import { AdCampaignService } from './ad-campaign.service';
 import { WeeklyEarningsScheduler } from './weekly-earnings.scheduler';
 import { StaffService } from './staff.service';
 import { StaffController } from './staff.controller';
+import { DailyOfferService } from './daily-offer.service';
+import { DailyOffer } from '../../core/entities/daily-offer.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
 import { Product } from '../../core/entities/product.entity';
@@ -28,7 +30,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     TypeOrmModule.forFeature([
       Shop, User, Product, Order,
       Subscription, SponsoredProduct, Transaction,
-      CommissionBill, StaffMember,
+      CommissionBill, StaffMember, DailyOffer,
     ]),
     BullModule.registerQueue({ name: 'media' }),
     NotificationsModule,
@@ -45,10 +47,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
   providers: [
     SellerService, SubscriptionService, EarningsService,
     AdCampaignService, WeeklyEarningsScheduler, StaffService,
+    DailyOfferService,
   ],
   exports: [
     SellerService, SubscriptionService, EarningsService,
     AdCampaignService, WeeklyEarningsScheduler, StaffService,
+    DailyOfferService,
   ],
 })
 export class SellerModule {}

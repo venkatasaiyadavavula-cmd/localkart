@@ -150,6 +150,18 @@ export class CatalogController {
     return this.catalogService.getSellerProducts(user.id, query);
   }
 
+  @Get('seller/products/:id')
+  @Roles(UserRole.SELLER)
+  async getSellerProductById(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.catalogService.getSellerProductById(user.id, id);
+  }
+
+  @Get('seller/product-limit')
+  @Roles(UserRole.SELLER)
+  async getSellerProductLimit(@CurrentUser() user: any) {
+    return this.catalogService.getSellerProductLimit(user.id);
+  }
+
   // ==================== ADMIN ENDPOINTS ====================
 
   @Put('admin/products/:id/approve')

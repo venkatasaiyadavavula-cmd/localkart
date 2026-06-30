@@ -8,6 +8,11 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function useShop(slug?: string) {
   const queryClient = useQueryClient();
   const isSellerShop = !slug;
@@ -15,24 +20,22 @@ export function useShop(slug?: string) {
   const query = useQuery({
     queryKey: isSellerShop ? ['seller', 'shop'] : ['shop', slug],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       if (isSellerShop) {
         const { data } = await apiClient.get('/seller/shop', {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAuthHeaders(),
         });
         return data.data;
       }
-      const { data } = await apiClient.get(`/shops/${slug}`);
+      const { data } = await apiClient.get(`/seller/shop/slug/${slug}`);
       return data.data;
     },
-    enabled: isSellerShop ? !!tokenAvailable() : !!slug,
+    enabled: isSellerShop ? !!getAuthHeaders().Authorization : !!slug,
   });
 
   const updateMutation = useMutation({
     mutationFn: async (shopData: Record<string, unknown>) => {
-      const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.put('/seller/shop', shopData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       return data.data;
     },
@@ -46,9 +49,4 @@ export function useShop(slug?: string) {
     isLoading: query.isLoading,
     updateShop: updateMutation.mutateAsync,
   };
-}
-
-function tokenAvailable() {
-  if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('accessToken');
 }

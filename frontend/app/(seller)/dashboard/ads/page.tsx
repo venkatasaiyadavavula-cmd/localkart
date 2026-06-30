@@ -37,8 +37,10 @@ export default function SellerAdsPage() {
   const [adType, setAdType] = useState<'sponsored' | 'video'>('sponsored');
   const [duration, setDuration] = useState('7');
 
-  const { data: products } = useSellerProducts({ limit: 100 });
+  const { data: productsList } = useSellerProducts({ limit: 100 });
   const { data: campaigns, isLoading, createCampaign, updateCampaign } = useAdCampaigns();
+
+  const products = productsList || [];
 
   const handleCreateCampaign = async () => {
     if (!selectedProduct) {
@@ -105,7 +107,7 @@ export default function SellerAdsPage() {
                     <SelectValue placeholder="Choose a product" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products?.data?.map((product: any) => (
+                    {products.map((product: any) => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
                       </SelectItem>

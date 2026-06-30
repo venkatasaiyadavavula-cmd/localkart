@@ -8,25 +8,33 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function useAdCampaigns() {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['seller', 'ads'],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.get('/seller/ads', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
-      return data.data;
+      const campaigns = Array.isArray(data.data) ? data.data : [];
+      return {
+        sponsored: campaigns.filter((c: { adType?: string }) => c.adType === 'sponsored' || !c.adType),
+        video: campaigns.filter((c: { adType?: string }) => c.adType === 'video'),
+        all: campaigns,
+      };
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (campaignData: Record<string, unknown>) => {
-      const token = localStorage.getItem('accessToken');
       const { data } = await apiClient.post('/seller/ads', campaignData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       return data.data;
     },
@@ -35,13 +43,22 @@ export function useAdCampaigns() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ campaignId, data: updateData }: { campaignId: string; data: Record<string, unknown> }) => {
-      const token = localStorage.getItem('accessToken');
-      const { data } = await apiClient.put(`/seller/ads/${campaignId}`, updateData, {
-        headers: { Authorization: `Bearer ${token}` },
+  const pauseMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      return apiClient.post(`/seller/ads/${campaignId}/pause`, {}, {
+        headers: getAuthHeaders(),
       });
-      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
+    },
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      return apiClient.post(`/seller/ads/${campaignId}/resume`, {}, {
+        headers: getAuthHeaders(),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
@@ -52,7 +69,18 @@ export function useAdCampaigns() {
     data: query.data,
     isLoading: query.isLoading,
     createCampaign: createMutation.mutateAsync,
-    updateCampaign: (campaignId: string, data: Record<string, unknown>) =>
-      updateMutation.mutateAsync({ campaignId, data }),
+    updateCampaign: async (campaignId: string, payload: { status?: string }) => {
+      if (payload.status === 'paused' || payload.status === 'active') {
+        if (payload.status === 'paused') {
+          return pauseMutation.mutateAsync(campaignId);
+        }
+        return resumeMutation.mutateAsync(campaignId);
+      }
+      const { data } = await apiClient.put(`/seller/ads/${campaignId}`, payload, {
+        headers: getAuthHeaders(),
+      });
+      queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
+      return data.data;
+    },
   };
 }

@@ -83,6 +83,69 @@ export class EarningsService {
     };
   }
 
+  async getWeeklyEarnings(ownerId: string) {
+    const shop = await this.shopRepository.findOne({ where: { ownerId } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const weeks: {
+      weekLabel: string;
+      orderCount: number;
+      gross: number;
+      commission: number;
+      net: number;
+    }[] = [];
+
+    const now = new Date();
+
+    for (let i = 7; i >= 0; i--) {
+      const weekEnd = new Date(now);
+      weekEnd.setDate(now.getDate() - i * 7);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekEnd.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
+
+      const orders = await this.orderRepository.find({
+        where: {
+          shopId: shop.id,
+          status: OrderStatus.DELIVERED,
+        },
+      });
+
+      const weekOrders = orders.filter(
+        (o) => o.deliveredAt && new Date(o.deliveredAt) >= weekStart && new Date(o.deliveredAt) <= weekEnd,
+      );
+
+      const gross = weekOrders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
+      const commission = weekOrders.reduce((sum, o) => sum + Number(o.commissionAmount), 0);
+      const net = gross - commission;
+
+      weeks.push({
+        weekLabel: `${weekStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`,
+        orderCount: weekOrders.length,
+        gross,
+        commission,
+        net,
+      });
+    }
+
+    const currentWeek = weeks[weeks.length - 1];
+    const previousWeek = weeks[weeks.length - 2];
+    const growth =
+      previousWeek && previousWeek.net > 0
+        ? Math.round(((currentWeek.net - previousWeek.net) / previousWeek.net) * 100)
+        : 0;
+
+    return {
+      weeks,
+      currentWeek,
+      growth,
+    };
+  }
+
   async getPayouts(ownerId: string) {
     const shop = await this.shopRepository.findOne({ where: { ownerId } });
     if (!shop) {

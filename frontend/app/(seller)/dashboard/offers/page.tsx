@@ -32,7 +32,7 @@ export default function SellerOffersPage() {
       const { data } = await axios.get(`${API_URL}/seller/daily-offers`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      return data;
+      return data.data ?? [];
     },
   });
 
@@ -42,7 +42,8 @@ export default function SellerOffersPage() {
       const { data } = await axios.get(`${API_URL}/catalog/seller/products?limit=100`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      return data.data;
+      const payload = data.data;
+      return Array.isArray(payload) ? payload : payload?.data ?? [];
     },
   });
 

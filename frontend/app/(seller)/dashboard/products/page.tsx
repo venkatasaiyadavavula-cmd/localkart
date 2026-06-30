@@ -43,9 +43,9 @@ export default function SellerProductsPage() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [savingQuick, setSavingQuick] = useState(false);
 
-  const { data, isLoading, deleteProduct, updateProduct } = useSellerProducts({ search: searchQuery });
+  const { data: productsList, isLoading, deleteProduct, updateProduct } = useSellerProducts({ search: searchQuery });
 
-  const products = data?.data || [];
+  const products = productsList || [];
   const filtered = activeFilter === 'all' ? products : products.filter((p: any) => p.status === activeFilter);
 
   const stats = {

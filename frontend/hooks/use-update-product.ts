@@ -7,23 +7,46 @@ const apiClient = axios.create({
   baseURL: API_URL,
 });
 
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async ({ productId, formData }: { productId: string; formData: FormData }) => {
-      const token = localStorage.getItem('accessToken');
-      const { data } = await apiClient.put(`/seller/products/${productId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
-        },
+    mutationFn: async ({
+      productId,
+      formData,
+      data,
+    }: {
+      productId: string;
+      formData?: FormData;
+      data?: Record<string, unknown>;
+    }) => {
+      let payload: Record<string, unknown> = data ?? {};
+
+      if (formData) {
+        formData.forEach((value, key) => {
+          if (key.startsWith('existing') || key.startsWith('new')) return;
+          const str = String(value);
+          if (['price', 'mrp', 'stock'].includes(key)) {
+            payload[key] = Number(str);
+          } else {
+            payload[key] = str;
+          }
+        });
+      }
+
+      const { data: response } = await apiClient.put(`/catalog/seller/products/${productId}`, payload, {
+        headers: getAuthHeaders(),
       });
-      return data.data;
+      return response.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
+      queryClient.invalidateQueries({ queryKey: ['seller-product', variables.productId] });
     },
   });
 

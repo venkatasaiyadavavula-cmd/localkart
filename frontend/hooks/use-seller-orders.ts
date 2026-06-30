@@ -8,28 +8,40 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function normalizeOrders(payload: unknown) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object') {
+    const obj = payload as { data?: unknown[] };
+    if (Array.isArray(obj.data)) return obj.data;
+  }
+  return [];
+}
+
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['seller', 'orders', params],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
       if (params.search) searchParams.append('search', params.search);
-      const { data } = await apiClient.get(`/seller/orders?${searchParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`, {
+        headers: getAuthHeaders(),
       });
-      return data.data;
+      return normalizeOrders(data.data);
     },
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const token = localStorage.getItem('accessToken');
-      return apiClient.put(`/seller/orders/${orderId}/status`, { status }, {
-        headers: { Authorization: `Bearer ${token}` },
+      return apiClient.put(`/orders/seller/${orderId}/status`, { status }, {
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => {

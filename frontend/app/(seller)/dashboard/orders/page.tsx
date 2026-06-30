@@ -44,16 +44,16 @@ export default function SellerOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const { data, isLoading, updateOrderStatus } = useSellerOrders({
+  const { data: ordersList, isLoading, updateOrderStatus } = useSellerOrders({
     status: activeTab !== 'all' ? activeTab : undefined,
     search: searchQuery,
   });
 
-  const orders = data?.data || [];
+  const orders = ordersList || [];
 
   // Counts for badges
-  const { data: allData } = useSellerOrders({});
-  const allOrders = allData?.data || [];
+  const { data: allOrdersList } = useSellerOrders({});
+  const allOrders = allOrdersList || [];
   const newCount = allOrders.filter((o: any) => o.status === 'confirmed').length;
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {

@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -18,6 +19,8 @@ import { SellerService } from './seller.service';
 import { SubscriptionService } from './subscription.service';
 import { EarningsService } from './earnings.service';
 import { AdCampaignService } from './ad-campaign.service';
+import { DailyOfferService } from './daily-offer.service';
+import { CreateDailyOfferDto } from './dto/daily-offer.dto';
 import { ShopProfileDto } from './dto/shop-profile.dto';
 import { SubscribeDto } from './dto/subscription-plan.dto';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
@@ -36,9 +39,16 @@ export class SellerController {
     private readonly subscriptionService: SubscriptionService,
     private readonly earningsService: EarningsService,
     private readonly adCampaignService: AdCampaignService,
+    private readonly dailyOfferService: DailyOfferService,
   ) {}
 
   // Shop Profile
+  @Public()
+  @Get('shop/slug/:slug')
+  async getShopBySlug(@Param('slug') slug: string) {
+    return this.sellerService.getShopBySlug(slug);
+  }
+
   @Get('shop')
   async getMyShop(@CurrentUser() user: any) {
     return this.sellerService.getShopByOwner(user.id);
@@ -68,8 +78,10 @@ export class SellerController {
 
   // Dashboard Analytics
   @Get('dashboard')
-  async getDashboard(@CurrentUser() user: any) {
-    return this.sellerService.getDashboardStats(user.id);
+  async getDashboard(@CurrentUser() user: any, @Query('period') period: string = 'week') {
+    const stats = await this.sellerService.getDashboardStats(user.id);
+    const salesChart = await this.sellerService.getSalesChart(user.id, period);
+    return { ...stats, salesChart };
   }
 
   @Get('dashboard/sales-chart')
@@ -102,6 +114,11 @@ export class SellerController {
   @Get('subscription/history')
   async getSubscriptionHistory(@CurrentUser() user: any) {
     return this.subscriptionService.getSubscriptionHistory(user.id);
+  }
+
+  @Get('earnings/weekly')
+  async getWeeklyEarnings(@CurrentUser() user: any) {
+    return this.earningsService.getWeeklyEarnings(user.id);
   }
 
   // Earnings
@@ -161,5 +178,21 @@ export class SellerController {
   @Get('ads/:id/stats')
   async getAdStats(@CurrentUser() user: any, @Param('id') id: string) {
     return this.adCampaignService.getCampaignStats(user.id, id);
+  }
+
+  // Daily Offers
+  @Get('daily-offers')
+  async getDailyOffers(@CurrentUser() user: any) {
+    return this.dailyOfferService.getActiveOffers(user.id);
+  }
+
+  @Post('daily-offers')
+  async createDailyOffer(@CurrentUser() user: any, @Body() dto: CreateDailyOfferDto) {
+    return this.dailyOfferService.createOffer(user.id, dto.productId, dto.offerPrice);
+  }
+
+  @Delete('daily-offers/:id')
+  async deleteDailyOffer(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.dailyOfferService.deleteOffer(user.id, id);
   }
 }

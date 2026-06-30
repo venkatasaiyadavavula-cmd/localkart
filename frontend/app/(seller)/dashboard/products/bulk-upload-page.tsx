@@ -43,7 +43,7 @@ export default function BulkUploadPage() {
     queryKey: ['plan-info'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/catalog/seller/product-limit`, { headers: auth() });
-      return data;
+      return data.data ?? data;
     },
   });
 

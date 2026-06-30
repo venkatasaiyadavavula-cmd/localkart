@@ -6,11 +6,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import slugify from 'slugify';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
-import { Product } from '../../core/entities/product.entity';
+import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { ShopProfileDto } from './dto/shop-profile.dto';
 import { getSignedUploadUrl, BUCKET_NAME } from '../../config/storage.config';
@@ -41,6 +41,18 @@ export class SellerService {
     }
 
     delete shop.owner.password;
+    return shop;
+  }
+
+  async getShopBySlug(slug: string) {
+    const shop = await this.shopRepository.findOne({
+      where: { slug, status: ShopStatus.APPROVED },
+    });
+
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
     return shop;
   }
 
@@ -133,6 +145,14 @@ export class SellerService {
       where: { shopId: shop.id },
     });
 
+    const activeProducts = await this.productRepository.count({
+      where: { shopId: shop.id, status: ProductStatus.APPROVED },
+    });
+
+    const lowStockProducts = await this.productRepository.count({
+      where: { shopId: shop.id, stock: Between(1, 4) },
+    });
+
     const totalOrders = await this.orderRepository.count({
       where: { shopId: shop.id },
     });
@@ -141,18 +161,20 @@ export class SellerService {
       where: { shopId: shop.id, status: OrderStatus.CONFIRMED },
     });
 
+    const productsSold = await this.orderRepository
+      .createQueryBuilder('order')
+      .innerJoin('order.items', 'item')
+      .select('COALESCE(SUM(item.quantity), 0)', 'total')
+      .where('order.shopId = :shopId', { shopId: shop.id })
+      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
+      .getRawOne();
+
     const totalRevenue = await this.orderRepository
       .createQueryBuilder('order')
       .select('SUM(order.totalAmount)', 'total')
       .where('order.shopId = :shopId', { shopId: shop.id })
       .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
       .getRawOne();
-
-    const todayOrders = await this.orderRepository
-      .createQueryBuilder('order')
-      .where('order.shopId = :shopId', { shopId: shop.id })
-      .andWhere('DATE(order.createdAt) = CURRENT_DATE')
-      .getCount();
 
     const recentOrders = await this.orderRepository.find({
       where: { shopId: shop.id },
@@ -161,20 +183,34 @@ export class SellerService {
       take: 5,
     });
 
+    const topProducts = await this.productRepository.find({
+      where: { shopId: shop.id, status: ProductStatus.APPROVED },
+      order: { orderCount: 'DESC' },
+      take: 5,
+    });
+
     return {
+      shopName: shop.name,
       totalProducts,
+      activeProducts,
+      lowStockProducts,
       totalOrders,
       pendingOrders,
-      totalRevenue: totalRevenue?.total || 0,
-      todayOrders,
-      recentOrders: recentOrders.map(o => ({
+      productsSold: Number(productsSold?.total || 0),
+      totalRevenue: Number(totalRevenue?.total || 0),
+      revenueChange: 0,
+      ordersChange: 0,
+      productsSoldChange: 0,
+      activeProductsChange: 0,
+      recentOrders: recentOrders.map((o) => ({
         id: o.id,
         orderNumber: o.orderNumber,
         status: o.status,
         totalAmount: o.totalAmount,
-        customerName: o.customer.name,
+        customer: { name: o.customer?.name },
         createdAt: o.createdAt,
       })),
+      topProducts,
     };
   }
 
@@ -213,6 +249,10 @@ export class SellerService {
       .orderBy('date', 'ASC')
       .getRawMany();
 
-    return sales;
+    return sales.map((row) => ({
+      date: row.date,
+      sales: Number(row.sales || 0),
+      orders: Number(row.orders || 0),
+    }));
   }
 }

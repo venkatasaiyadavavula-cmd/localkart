@@ -18,7 +18,7 @@ export const sellerApi = {
   },
 
   async getShopBySlug(slug: string) {
-    const response = await apiClient.get(`/shops/${slug}`);
+    const response = await apiClient.get(`/seller/shop/slug/${slug}`);
     return response.data.data;
   },
 
@@ -30,26 +30,23 @@ export const sellerApi = {
         params.append(key, String(value));
       }
     });
-    const response = await apiClient.get(`/seller/products?${params.toString()}`);
+    const response = await apiClient.get(`/catalog/seller/products?${params.toString()}`);
+    const payload = response.data.data;
+    return Array.isArray(payload) ? payload : payload?.data ?? [];
+  },
+
+  async createProduct(data: Record<string, unknown>) {
+    const response = await apiClient.post('/catalog/seller/products', data);
     return response.data.data;
   },
 
-  async createProduct(data: FormData) {
-    const response = await apiClient.post('/seller/products', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data.data;
-  },
-
-  async updateProduct(id: string, data: FormData) {
-    const response = await apiClient.put(`/seller/products/${id}`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  async updateProduct(id: string, data: Record<string, unknown>) {
+    const response = await apiClient.put(`/catalog/seller/products/${id}`, data);
     return response.data.data;
   },
 
   async deleteProduct(id: string) {
-    const response = await apiClient.delete(`/seller/products/${id}`);
+    const response = await apiClient.delete(`/catalog/seller/products/${id}`);
     return response.data.data;
   },
 

@@ -8,6 +8,12 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** Public product by slug (customer catalog) */
 export function useProduct(slug: string) {
   return useQuery({
     queryKey: ['product', slug],
@@ -16,5 +22,19 @@ export function useProduct(slug: string) {
       return data.data;
     },
     enabled: !!slug,
+  });
+}
+
+/** Seller product by ID (dashboard edit) */
+export function useSellerProduct(productId: string) {
+  return useQuery({
+    queryKey: ['seller-product', productId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/catalog/seller/products/${productId}`, {
+        headers: getAuthHeaders(),
+      });
+      return data.data;
+    },
+    enabled: !!productId,
   });
 }

@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProduct } from '@/hooks/use-product';
+import { useSellerProduct } from '@/hooks/use-product';
 import { useUpdateProduct } from '@/hooks/use-update-product';
 import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
 
@@ -52,7 +52,7 @@ export default function EditProductPage() {
   const router = useRouter();
   const productId = params.id as string;
 
-  const { data: product, isLoading: productLoading } = useProduct(productId);
+  const { data: product, isLoading: productLoading } = useSellerProduct(productId);
   const { updateProduct, isLoading: isUpdating } = useUpdateProduct();
 
   const [existingImages, setExistingImages] = useState<string[]>([]);

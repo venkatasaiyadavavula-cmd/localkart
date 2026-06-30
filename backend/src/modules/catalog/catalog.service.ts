@@ -219,7 +219,73 @@ export class CatalogService {
     if (!shop) {
       throw new NotFoundException('Shop not found');
     }
-    return this.getProducts({ ...query, shopId: shop.id });
+
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = query;
+
+    const skip = (page - 1) * limit;
+    const where: FindOptionsWhere<Product> = { shopId: shop.id };
+
+    if ((query as any).search) {
+      where.name = ILike(`%${(query as any).search}%`);
+    }
+
+    const [products, total] = await this.productRepository.findAndCount({
+      where,
+      relations: ['shop', 'category'],
+      order: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
+    });
+
+    return {
+      data: products,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async getSellerProductById(userId: string, productId: string) {
+    const shop = await this.shopRepository.findOne({ where: { ownerId: userId } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const product = await this.productRepository.findOne({
+      where: { id: productId, shopId: shop.id },
+      relations: ['shop', 'category'],
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
+  }
+
+  async getSellerProductLimit(userId: string) {
+    const shop = await this.shopRepository.findOne({ where: { ownerId: userId } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const used = await this.productRepository.count({ where: { shopId: shop.id } });
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { shopId: shop.id, status: SubscriptionStatus.ACTIVE },
+      order: { endDate: 'DESC' },
+    });
+    const plan = subscription?.plan ?? SubscriptionPlan.STARTER;
+    const limit = PLAN_LIMITS[plan];
+
+    return {
+      plan,
+      limit,
+      used,
+      remaining: Math.max(0, limit - used),
+    };
   }
 
   // Admin methods

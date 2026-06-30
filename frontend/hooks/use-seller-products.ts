@@ -8,31 +8,44 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** Normalize paginated API payloads: { data: T[], meta } or bare array */
+export function normalizeList<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object') {
+    const obj = payload as { data?: T[] };
+    if (Array.isArray(obj.data)) return obj.data;
+  }
+  return [];
+}
+
 export function useSellerProducts(params: Record<string, unknown> = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['seller', 'products', params],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           searchParams.append(key, String(value));
         }
       });
-      const { data } = await apiClient.get(`/seller/products?${searchParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`, {
+        headers: getAuthHeaders(),
       });
-      return data.data;
+      return normalizeList(data.data);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
-      const token = localStorage.getItem('accessToken');
-      return apiClient.delete(`/seller/products/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      return apiClient.delete(`/catalog/seller/products/${productId}`, {
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => {
@@ -42,9 +55,8 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ productId, data: updateData }: { productId: string; data: Record<string, unknown> }) => {
-      const token = localStorage.getItem('accessToken');
-      return apiClient.put(`/seller/products/${productId}`, updateData, {
-        headers: { Authorization: `Bearer ${token}` },
+      return apiClient.put(`/catalog/seller/products/${productId}`, updateData, {
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => {

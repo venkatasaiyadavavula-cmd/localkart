@@ -99,11 +99,11 @@ export default function NewProductPage() {
 
   const onSubmit = async (data: ProductFormData) => {
     try {
-      const formData = new FormData();
-      Object.entries(data).forEach(([k, v]) => { if (v !== undefined) formData.append(k, String(v)); });
-      images.forEach(img => formData.append('images', img));
-      videos.forEach(vid => formData.append('videos', vid));
-      await createProduct(formData);
+      await createProduct({
+        ...data,
+        images: [],
+        videos: [],
+      });
       toast.success('Product created successfully. Awaiting approval.');
       router.push('/dashboard/products');
     } catch {
