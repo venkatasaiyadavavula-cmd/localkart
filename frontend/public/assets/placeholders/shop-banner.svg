@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bannerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B63E5"/>
+      <stop offset="100%" stop-color="#1A1A2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bannerGrad)"/>
+  <text x="600" y="220" font-family="Manrope, sans-serif" font-size="48" font-weight="700" fill="white" text-anchor="middle" opacity="0.9">
+    Shop Banner
+  </text>
+</svg>

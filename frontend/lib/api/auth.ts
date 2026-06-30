@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, setAuthTokens, clearAuthTokens } from './client';
 
 export interface LoginCredentials {
   phone: string;
@@ -10,59 +10,56 @@ export interface RegisterData {
   phone: string;
   email?: string;
   password: string;
-  role?: 'customer' | 'seller' | 'admin';
+  role?: 'customer' | 'seller';
 }
 
-export interface User {
-  id: string;
-  name: string;
+export interface OtpData {
   phone: string;
-  email?: string;
-  role: 'customer' | 'seller' | 'admin';
-  isPhoneVerified: boolean;
-  profileImage?: string;
-  shopId?: string;
-  address?: string;
+  otp: string;
 }
 
 export const authApi = {
-  login: async (credentials: LoginCredentials) => {
+  async login(credentials: LoginCredentials) {
     const response = await apiClient.post('/auth/login', credentials);
-    return response.data;
+    const { accessToken, refreshToken, user } = response.data.data;
+    setAuthTokens(accessToken, refreshToken);
+    return { user };
   },
 
-  register: async (data: RegisterData) => {
+  async register(data: RegisterData) {
     const response = await apiClient.post('/auth/register', data);
-    return response.data;
+    return response.data.data;
   },
 
-  logout: async () => {
-    const response = await apiClient.post('/auth/logout');
-    return response.data;
-  },
-
-  getCurrentUser: async () => {
-    const response = await apiClient.get('/auth/profile');
-    return response.data;
-  },
-
-  updateProfile: async (data: Partial<User>) => {
-    const response = await apiClient.put('/auth/profile', data);
-    return response.data;
-  },
-
-  sendOtp: async (phone: string) => {
+  async sendOtp(phone: string) {
     const response = await apiClient.post('/auth/send-otp', { phone });
-    return response.data;
+    return response.data.data;
   },
 
-  verifyOtp: async (phone: string, otp: string) => {
-    const response = await apiClient.post('/auth/verify-otp', { phone, otp });
-    return response.data;
+  async verifyOtp(data: OtpData) {
+    const response = await apiClient.post('/auth/verify-otp', data);
+    const { accessToken, refreshToken, user } = response.data.data;
+    if (accessToken) {
+      setAuthTokens(accessToken, refreshToken);
+    }
+    return { user };
   },
 
-  refreshToken: async () => {
-    const response = await apiClient.post('/auth/refresh');
-    return response.data;
+  async logout() {
+    try {
+      await apiClient.post('/auth/logout');
+    } finally {
+      clearAuthTokens();
+    }
+  },
+
+  async getCurrentUser() {
+    const response = await apiClient.get('/users/profile');
+    return response.data.data;
+  },
+
+  async updateProfile(data: any) {
+    const response = await apiClient.put('/users/profile', data);
+    return response.data.data;
   },
 };

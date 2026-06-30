@@ -1,0 +1,228 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import {
+  TrendingUp, Package, ShoppingBag, DollarSign,
+  ArrowUp, ArrowDown, Clock, ChevronRight, Plus,
+  Zap, Bell, BarChart3, AlertCircle, CheckCircle,
+} from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useSellerDashboard } from '@/hooks/use-seller-dashboard';
+import { SalesChart } from '@/components/seller/sales-chart';
+import { RecentOrders } from '@/components/seller/recent-orders';
+import { TopProducts } from '@/components/seller/top-products';
+import { formatPrice, formatNumber } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+
+export default function SellerDashboardPage() {
+  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
+  const { data, isLoading } = useSellerDashboard(period);
+
+  const pendingOrders = data?.pendingOrders || 0;
+  const lowStockProducts = data?.lowStockProducts || 0;
+
+  const stats = [
+    {
+      title: 'Revenue',
+      value: formatPrice(data?.totalRevenue || 0),
+      change: data?.revenueChange || 0,
+      icon: DollarSign,
+      color: 'text-green-600',
+      bg: 'bg-green-50',
+    },
+    {
+      title: 'Orders',
+      value: formatNumber(data?.totalOrders || 0),
+      change: data?.ordersChange || 0,
+      icon: ShoppingBag,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+    },
+    {
+      title: 'Sold',
+      value: formatNumber(data?.productsSold || 0),
+      change: data?.productsSoldChange || 0,
+      icon: Package,
+      color: 'text-purple-600',
+      bg: 'bg-purple-50',
+    },
+    {
+      title: 'Products',
+      value: formatNumber(data?.activeProducts || 0),
+      change: data?.activeProductsChange || 0,
+      icon: TrendingUp,
+      color: 'text-orange-600',
+      bg: 'bg-orange-50',
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Header */}
+      <div className="bg-white border-b px-4 pt-4 pb-3 sticky top-0 z-20">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              👋 {data?.shopName || 'My Shop'}
+            </h1>
+            <p className="text-xs text-gray-500">Here's your store overview</p>
+          </div>
+          <Link href="/dashboard/products/new">
+            <button className="flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3 py-2 rounded-xl">
+              <Plus className="h-3.5 w-3.5" /> Add Product
+            </button>
+          </Link>
+        </div>
+
+        {/* Period selector */}
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+          <TabsList className="w-full h-9 rounded-xl">
+            <TabsTrigger value="week" className="flex-1 rounded-lg text-xs">This Week</TabsTrigger>
+            <TabsTrigger value="month" className="flex-1 rounded-lg text-xs">This Month</TabsTrigger>
+            <TabsTrigger value="year" className="flex-1 rounded-lg text-xs">This Year</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <div className="px-4 py-4 space-y-4">
+        {/* Alerts */}
+        {(pendingOrders > 0 || lowStockProducts > 0) && (
+          <div className="space-y-2">
+            {pendingOrders > 0 && (
+              <Link href="/dashboard/orders">
+                <div className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl p-3.5">
+                  <div className="bg-orange-500 text-white w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Bell className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-orange-800">
+                      🔔 {pendingOrders} new order{pendingOrders > 1 ? 's' : ''}!
+                    </p>
+                    <p className="text-xs text-orange-600">Tap to accept orders</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-orange-400" />
+                </div>
+              </Link>
+            )}
+            {lowStockProducts > 0 && (
+              <Link href="/dashboard/products">
+                <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-3.5">
+                  <div className="bg-red-500 text-white w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-red-800">
+                      ⚠️ {lowStockProducts} products low stock
+                    </p>
+                    <p className="text-xs text-red-600">Update stock before running out</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-red-400" />
+                </div>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-28 rounded-2xl" />
+              ))
+            : stats.map((stat) => (
+                <div key={stat.title} className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`${stat.bg} p-2 rounded-xl`}>
+                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                    </div>
+                    {stat.change !== 0 && (
+                      <div className={`flex items-center gap-0.5 text-xs font-semibold ${stat.change > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {stat.change > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                        {Math.abs(stat.change)}%
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">{stat.value}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{stat.title}</p>
+                </div>
+              ))
+          }
+        </div>
+
+        {/* Quick actions */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <p className="text-sm font-bold text-gray-900 px-4 pt-4 pb-2">Quick Actions</p>
+          {[
+            { icon: Plus, label: 'Add New Product', sub: 'List a product for sale', href: '/dashboard/products/new', color: 'bg-primary/10 text-primary' },
+            { icon: ShoppingBag, label: 'View Orders', sub: `${pendingOrders} pending`, href: '/dashboard/orders', color: 'bg-blue-50 text-blue-600' },
+            { icon: Zap, label: 'Create Daily Offer', sub: 'Boost sales with deals', href: '/dashboard/offers', color: 'bg-orange-50 text-orange-500' },
+            { icon: BarChart3, label: 'View Analytics', sub: 'Sales & performance', href: '/dashboard/ads', color: 'bg-purple-50 text-purple-600' },
+          ].map((action) => (
+            <Link key={action.href} href={action.href}>
+              <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-t first:border-0">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${action.color}`}>
+                  <action.icon className="h-4.5 w-4.5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800">{action.label}</p>
+                  <p className="text-xs text-gray-400">{action.sub}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-300" />
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Sales Chart */}
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-bold text-gray-900">Sales Overview</p>
+            <span className="text-xs text-gray-400 capitalize">{period}</span>
+          </div>
+          {isLoading
+            ? <Skeleton className="h-48 w-full rounded-xl" />
+            : <SalesChart data={data?.salesChart || []} />
+          }
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <p className="text-sm font-bold text-gray-900">Recent Orders</p>
+            <Link href="/dashboard/orders" className="text-xs text-primary font-semibold flex items-center gap-0.5">
+              See all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {isLoading
+            ? <div className="px-4 pb-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
+              </div>
+            : <div className="px-4 pb-4">
+                <RecentOrders orders={data?.recentOrders || []} />
+              </div>
+          }
+        </div>
+
+        {/* Top Products */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <p className="text-sm font-bold text-gray-900">Top Products</p>
+            <Link href="/dashboard/products" className="text-xs text-primary font-semibold flex items-center gap-0.5">
+              See all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {isLoading
+            ? <div className="px-4 pb-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
+              </div>
+            : <div className="px-4 pb-4">
+                <TopProducts products={data?.topProducts || []} />
+              </div>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
