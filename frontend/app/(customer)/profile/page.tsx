@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/hooks/use-profile';
+import { unwrapApiData } from '@/lib/utils';
 
 const API  = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
@@ -38,9 +39,9 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 type AddressType = 'home' | 'work' | 'other';
 interface Address {
   id:        string;
-  label:     AddressType;
-  address:   string;
-  city:      string;
+  type:      AddressType;
+  label:     string;
+  fullAddress: string;
   pincode:   string;
   isDefault: boolean;
 }
@@ -56,7 +57,7 @@ function AddressCard({ addr, onDelete, onSetDefault }: {
   onDelete:     (id: string) => void;
   onSetDefault: (id: string) => void;
 }) {
-  const cfg  = ADDRESS_ICONS[addr.label] ?? ADDRESS_ICONS.other;
+  const cfg  = ADDRESS_ICONS[addr.type] ?? ADDRESS_ICONS.other;
   const Icon = cfg.icon;
 
   return (
@@ -73,7 +74,7 @@ function AddressCard({ addr, onDelete, onSetDefault }: {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-extrabold text-gray-800 capitalize">{addr.label}</p>
+          <p className="text-sm font-extrabold text-gray-800 capitalize">{addr.type || addr.label}</p>
           {addr.isDefault && (
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1"
               style={{ background: '#EEF0FE', color: '#3D5AF1' }}>
@@ -81,8 +82,8 @@ function AddressCard({ addr, onDelete, onSetDefault }: {
             </span>
           )}
         </div>
-        <p className="text-sm text-gray-600 mt-0.5 leading-snug">{addr.address}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{addr.city} — {addr.pincode}</p>
+        <p className="text-sm text-gray-600 mt-0.5 leading-snug">{addr.fullAddress}</p>
+        {addr.pincode && <p className="text-xs text-gray-400 mt-0.5">Pincode: {addr.pincode}</p>}
 
         <div className="flex items-center gap-2 mt-2.5">
           {!addr.isDefault && (
@@ -109,12 +110,17 @@ function AddressCard({ addr, onDelete, onSetDefault }: {
 
 function AddAddressForm({ onSaved }: { onSaved: () => void }) {
   const qc   = useQueryClient();
-  const [form, setForm] = useState({ label: 'home' as AddressType, address: '', city: '', pincode: '' });
+  const [form, setForm] = useState({ label: 'home' as AddressType, fullAddress: '', pincode: '' });
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data } = await axios.post(`${API}/users/addresses`, form, { headers: auth() });
-      return data;
+      const { data } = await axios.post(`${API}/addresses`, {
+        type: form.label,
+        label: form.label,
+        fullAddress: form.fullAddress,
+        pincode: form.pincode,
+      }, { headers: auth() });
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       toast.success('Address saved!');
@@ -144,14 +150,10 @@ function AddAddressForm({ onSaved }: { onSaved: () => void }) {
         })}
       </div>
 
-      <input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+      <input value={form.fullAddress} onChange={e => setForm(p => ({ ...p, fullAddress: e.target.value }))}
         placeholder="Flat, House No., Street, Area *" className="input-base" />
-      <div className="grid grid-cols-2 gap-2">
-        <input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
-          placeholder="City *" className="input-base" />
-        <input value={form.pincode} onChange={e => setForm(p => ({ ...p, pincode: e.target.value }))}
-          placeholder="Pincode *" className="input-base" maxLength={6} />
-      </div>
+      <input value={form.pincode} onChange={e => setForm(p => ({ ...p, pincode: e.target.value }))}
+        placeholder="Pincode *" className="input-base" maxLength={6} />
 
       <div className="flex gap-2">
         <button onClick={onSaved}
@@ -160,7 +162,7 @@ function AddAddressForm({ onSaved }: { onSaved: () => void }) {
         </button>
         <button
           onClick={() => mutation.mutate()}
-          disabled={!form.address || !form.city || !form.pincode || mutation.isPending}
+          disabled={!form.fullAddress || !form.pincode || mutation.isPending}
           className="flex-1 py-2.5 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-50 active:scale-[0.97]"
           style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 16px rgba(61,90,241,0.28)' }}>
           {mutation.isPending ? 'Saving...' : 'Save Address'}
@@ -187,18 +189,18 @@ export default function ProfilePage() {
   const { data: addresses = [] } = useQuery<Address[]>({
     queryKey: ['addresses'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/users/addresses`, { headers: auth() });
-      return data;
+      const { data } = await axios.get(`${API}/addresses`, { headers: auth() });
+      return unwrapApiData<Address[]>(data) ?? [];
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => axios.delete(`${API}/users/addresses/${id}`, { headers: auth() }),
+    mutationFn: async (id: string) => axios.delete(`${API}/addresses/${id}`, { headers: auth() }),
     onSuccess: () => { toast.success('Address removed'); qc.invalidateQueries({ queryKey: ['addresses'] }); },
   });
 
   const defaultMutation = useMutation({
-    mutationFn: async (id: string) => axios.patch(`${API}/users/addresses/${id}/default`, {}, { headers: auth() }),
+    mutationFn: async (id: string) => axios.put(`${API}/addresses/${id}/default`, {}, { headers: auth() }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['addresses'] }),
   });
 

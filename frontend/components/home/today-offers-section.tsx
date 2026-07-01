@@ -8,7 +8,7 @@ import { Clock, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, normalizeList } from '@/lib/utils';
 import { useLocationStore } from '@/store/location-store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -23,7 +23,7 @@ export function TodayOffersSection() {
       if (location?.latitude) params.append('lat', String(location.latitude));
       if (location?.longitude) params.append('lng', String(location.longitude));
       const { data } = await axios.get(`${API_URL}/catalog/today-offers?${params}`);
-      return data.data;
+      return normalizeList(data);
     },
     enabled: !!location,
   });

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -18,7 +19,7 @@ export function useSubscription() {
       const { data } = await apiClient.get('/seller/subscription', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return data.data;
+      return unwrapApiData(data);
     },
   });
 
@@ -28,7 +29,7 @@ export function useSubscription() {
       const { data } = await apiClient.post('/seller/subscription/subscribe', { plan }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return data.data;
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'subscription'] });

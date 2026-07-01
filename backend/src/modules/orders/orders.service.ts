@@ -326,7 +326,7 @@ export class OrdersService {
   async getOrderById(id: string, userId: string, role: UserRole) {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['items', 'shop', 'customer'],
+      relations: ['items', 'items.product', 'shop', 'customer'],
     });
 
     if (!order) {

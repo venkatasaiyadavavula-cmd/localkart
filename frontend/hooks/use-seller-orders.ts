@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -11,15 +12,6 @@ const apiClient = axios.create({
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-function normalizeOrders(payload: unknown) {
-  if (Array.isArray(payload)) return payload;
-  if (payload && typeof payload === 'object') {
-    const obj = payload as { data?: unknown[] };
-    if (Array.isArray(obj.data)) return obj.data;
-  }
-  return [];
 }
 
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
@@ -34,7 +26,14 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
       const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`, {
         headers: getAuthHeaders(),
       });
-      return normalizeOrders(data.data);
+      let orders = normalizeList(data);
+      if (params.search) {
+        const q = params.search.toLowerCase();
+        orders = orders.filter((o: { orderNumber?: string }) =>
+          o.orderNumber?.toLowerCase().includes(q),
+        );
+      }
+      return orders;
     },
   });
 

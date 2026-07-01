@@ -19,6 +19,8 @@ export interface CartItem {
   quantity: number;
   image: string | null;
   maxQuantity: number;
+  slug?: string;
+  categoryType?: string;
 }
 
 interface CartStore {

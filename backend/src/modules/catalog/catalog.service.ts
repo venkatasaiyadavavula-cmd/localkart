@@ -61,8 +61,8 @@ export class CatalogService {
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.price = Between(minPrice || 0, maxPrice || Number.MAX_SAFE_INTEGER);
     }
-    if ((query as any).query) {
-      where.name = ILike(`%${(query as any).query}%`);
+    if (query.query) {
+      where.name = ILike(`%${query.query}%`);
     }
     if (sponsored) {
       where.isSponsored = true;
@@ -238,8 +238,10 @@ export class CatalogService {
     const skip = (page - 1) * limit;
     const where: FindOptionsWhere<Product> = { shopId: shop.id };
 
-    if ((query as any).search) {
-      where.name = ILike(`%${(query as any).search}%`);
+    if (query.search) {
+      where.name = ILike(`%${query.search}%`);
+    } else if (query.query) {
+      where.name = ILike(`%${query.query}%`);
     }
 
     const [products, total] = await this.productRepository.findAndCount({

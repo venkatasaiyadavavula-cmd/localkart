@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -7,6 +8,11 @@ const apiClient = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
 });
+
+function getAuthHeaders() {
+  const token = localStorage.getItem('accessToken');
+  return { Authorization: `Bearer ${token}` };
+}
 
 interface AdminProductsParams {
   status?: string;
@@ -21,23 +27,33 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
   const query = useQuery({
     queryKey: ['admin', 'products', params],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) searchParams.append(key, String(value));
       });
-      const { data } = await apiClient.get(`/admin/products?${searchParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const endpoint =
+        !params.status || params.status === 'pending'
+          ? `/admin/products/pending?${searchParams.toString()}`
+          : `/admin/products/pending?limit=0`;
+      const { data } = await apiClient.get(endpoint, {
+        headers: getAuthHeaders(),
       });
-      return data.data;
+      const products = normalizeList(data);
+      if (params.status && params.status !== 'pending' && params.status !== 'all') {
+        return products.filter((p: { status?: string }) => p.status === params.status);
+      }
+      if (params.search) {
+        const q = params.search.toLowerCase();
+        return products.filter((p: { name?: string }) => p.name?.toLowerCase().includes(q));
+      }
+      return products;
     },
   });
 
   const approveMutation = useMutation({
     mutationFn: async (productId: string) => {
-      const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/products/${productId}/approve`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => {
@@ -47,9 +63,8 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ productId, reason }: { productId: string; reason: string }) => {
-      const token = localStorage.getItem('accessToken');
       return apiClient.put(`/admin/products/${productId}/reject`, { reason }, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => {

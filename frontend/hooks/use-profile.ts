@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { unwrapApiData } from '@/lib/utils';
 import { useAuthStore } from './use-auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
@@ -19,10 +20,10 @@ export function useProfile() {
       const { data } = await apiClient.put('/users/profile', profileData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return data.data;
+      return unwrapApiData(data);
     },
     onSuccess: (data) => {
-      setUser(data);
+      setUser(data as Parameters<typeof setUser>[0]);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });

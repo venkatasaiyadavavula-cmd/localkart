@@ -90,7 +90,10 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         set({ isLoading: true });
         try {
-          await apiClient.post('/auth/logout');
+          const token = localStorage.getItem('accessToken');
+          await apiClient.post('/auth/logout', {}, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
         } finally {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Link from 'next/link';
 import { Play, ChevronRight } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, normalizeList } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -15,7 +15,8 @@ export function VideoPreviewSection() {
       const { data } = await axios.get(`${API}/catalog/products`, {
         params: { hasVideo: true, limit: 4, sortBy: 'createdAt', sortOrder: 'DESC' },
       });
-      return (data.data || data || []).filter((p: any) => p.videos?.length > 0);
+      const list = normalizeList(data);
+      return list.filter((p: { videos?: unknown[] }) => p.videos?.length);
     },
     staleTime: 120000,
   });
