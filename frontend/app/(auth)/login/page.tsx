@@ -44,7 +44,11 @@ export default function LoginPage() {
     try {
       await login(data.phone, data.password, data.rememberMe);
       toast.success('Welcome back!');
-      router.push('/');
+      const redirect =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('redirect')
+          : null;
+      router.push(redirect && redirect.startsWith('/') ? redirect : '/');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Login failed. Please try again.');
     }

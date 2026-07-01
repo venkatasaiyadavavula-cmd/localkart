@@ -32,7 +32,13 @@ export async function getServerSession(): Promise<{ user: SessionUser } | null> 
     }
 
     const data = await response.json();
-    return { user: data.data };
+    const user = data.data ?? data;
+    return {
+      user: {
+        ...user,
+        shopId: user.shop?.id ?? user.shopId,
+      },
+    };
   } catch (error) {
     console.error('Session fetch error:', error);
     return null;

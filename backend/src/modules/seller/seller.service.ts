@@ -56,6 +56,18 @@ export class SellerService {
     return shop;
   }
 
+  async getShopById(id: string) {
+    const shop = await this.shopRepository.findOne({
+      where: { id, status: ShopStatus.APPROVED },
+    });
+
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    return shop;
+  }
+
   async createShop(ownerId: string, shopProfileDto: ShopProfileDto) {
     const existingShop = await this.shopRepository.findOne({
       where: { ownerId },

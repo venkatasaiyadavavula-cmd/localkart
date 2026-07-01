@@ -68,4 +68,8 @@ export class SearchQueryDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   hasVideo?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  sponsored?: boolean;
 }

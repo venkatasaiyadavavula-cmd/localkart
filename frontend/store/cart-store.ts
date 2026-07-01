@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api/client';
+import { unwrapApiData } from '@/lib/utils';
+
+interface CartResponse {
+  items: CartItem[];
+  totalItems: number;
+  totalAmount: number;
+}
 
 export interface CartItem {
   productId: string;
@@ -22,7 +29,7 @@ interface CartStore {
   addItem: (productId: string, quantity?: number) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   removeItem: (productId: string) => Promise<void>;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
   syncWithServer: () => Promise<void>;
 }
 
@@ -38,7 +45,7 @@ export const useCartStore = create<CartStore>()(
         set({ isLoading: true });
         try {
           const response = await apiClient.post('/cart/items', { productId, quantity });
-          const cart = response.data.data;
+          const cart = unwrapApiData<CartResponse>(response.data);
           set({
             items: cart.items,
             totalItems: cart.totalItems,
@@ -57,7 +64,7 @@ export const useCartStore = create<CartStore>()(
         set({ isLoading: true });
         try {
           const response = await apiClient.put(`/cart/items/${productId}`, { quantity });
-          const cart = response.data.data;
+          const cart = unwrapApiData<CartResponse>(response.data);
           set({
             items: cart.items,
             totalItems: cart.totalItems,
@@ -75,7 +82,7 @@ export const useCartStore = create<CartStore>()(
         set({ isLoading: true });
         try {
           const response = await apiClient.delete(`/cart/items/${productId}`);
-          const cart = response.data.data;
+          const cart = unwrapApiData<CartResponse>(response.data);
           set({
             items: cart.items,
             totalItems: cart.totalItems,
@@ -90,7 +97,12 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      clearCart: () => {
+      clearCart: async () => {
+        try {
+          await apiClient.delete('/cart');
+        } catch {
+          // ignore if not logged in or cart already empty
+        }
         set({ items: [], totalItems: 0, totalAmount: 0 });
       },
 
@@ -98,7 +110,7 @@ export const useCartStore = create<CartStore>()(
         set({ isLoading: true });
         try {
           const response = await apiClient.get('/cart');
-          const cart = response.data.data;
+          const cart = unwrapApiData<CartResponse>(response.data);
           set({
             items: cart.items,
             totalItems: cart.totalItems,

@@ -1,8 +1,9 @@
-import { IsString, IsNotEmpty, Length, IsPhoneNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, Length, IsOptional, Matches } from 'class-validator';
 
 export class SendOtpDto {
-  @IsPhoneNumber('IN')
+  @IsString()
   @IsNotEmpty()
+  @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' })
   phone: string;
 
   @IsString()
@@ -15,8 +16,9 @@ export class SendOtpDto {
 }
 
 export class VerifyOtpDto {
-  @IsPhoneNumber('IN')
+  @IsString()
   @IsNotEmpty()
+  @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' })
   phone: string;
 
   @IsString()

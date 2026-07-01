@@ -94,7 +94,7 @@ export function SponsoredBanner() {
 
             <div className="mt-4">
               <Button asChild>
-                <Link href={`/product/${currentProduct.slug}`}>
+                <Link href={`/browse/${currentProduct.categoryType}/product/${currentProduct.slug}`}>
                   Shop Now
                 </Link>
               </Button>

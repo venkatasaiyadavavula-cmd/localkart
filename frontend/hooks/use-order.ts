@@ -8,6 +8,8 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+import { unwrapApiData } from '@/lib/utils';
+
 export function useOrder(orderId: string) {
   return useQuery({
     queryKey: ['order', orderId],
@@ -16,7 +18,7 @@ export function useOrder(orderId: string) {
       const { data } = await apiClient.get(`/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return data.data;
+      return unwrapApiData(data);
     },
     enabled: !!orderId,
   });

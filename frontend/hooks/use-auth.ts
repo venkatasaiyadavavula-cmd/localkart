@@ -5,6 +5,18 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
+const setAuthCookie = (accessToken: string) => {
+  if (typeof document !== 'undefined') {
+    document.cookie = `accessToken=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+  }
+};
+
+const clearAuthCookie = () => {
+  if (typeof document !== 'undefined') {
+    document.cookie = 'accessToken=; path=/; max-age=0';
+  }
+};
+
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -49,6 +61,7 @@ export const useAuthStore = create<AuthStore>()(
           const { accessToken, refreshToken, user } = data.data || data;
           localStorage.setItem('accessToken', accessToken);
           if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+          setAuthCookie(accessToken);
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error: any) {
           set({ isLoading: false });
@@ -59,7 +72,9 @@ export const useAuthStore = create<AuthStore>()(
       register: async (data) => {
         set({ isLoading: true });
         try {
-          const response = await apiClient.post('/auth/register', data);
+          const payload = { ...data };
+          if (!payload.email) delete payload.email;
+          const response = await apiClient.post('/auth/register', payload);
           // ✅ Response check chestunnam — error vasina throw avutundi
           if (!response.data) {
             throw new Error('Registration failed');
@@ -79,6 +94,7 @@ export const useAuthStore = create<AuthStore>()(
         } finally {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+          clearAuthCookie();
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },
@@ -96,6 +112,7 @@ export const useAuthStore = create<AuthStore>()(
           if (accessToken) {
             localStorage.setItem('accessToken', accessToken);
             if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+            setAuthCookie(accessToken);
             set({ user, isAuthenticated: true });
           }
           set({ isLoading: false });

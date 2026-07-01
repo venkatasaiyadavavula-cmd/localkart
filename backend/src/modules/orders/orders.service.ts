@@ -43,6 +43,16 @@ export class OrdersService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  private formatOrderResponse(order: Order) {
+    if (!order) return order;
+    const { deliveryAddress, ...rest } = order as Order & { shippingAddress?: unknown };
+    return {
+      ...rest,
+      deliveryAddress,
+      shippingAddress: deliveryAddress,
+    };
+  }
+
   /**
    * షాపు ప్రస్తుతం తెరిచి ఉందో లేదో చెక్ చేస్తుంది
    */
@@ -119,31 +129,33 @@ export class OrdersService {
     await queryRunner.startTransaction();
 
     try {
-      const order = this.orderRepository.create({} as any);(order as any).status = "confirmed"; Object.assign(order, {
+      const order = this.orderRepository.create({
         orderNumber,
         customerId: userId,
         shopId,
-        subtotal,
+        totalAmount: subtotal,
         deliveryCharge,
-        totalAmount,
-        commissionRate,
+        finalAmount: totalAmount,
+        commissionPercent: commissionRate,
         commissionAmount,
         paymentMethod,
-        paymentStatus: paymentMethod === PaymentMethod.COD ? PaymentStatus.PENDING : PaymentStatus.PENDING,
+        paymentStatus: PaymentStatus.PENDING,
         status: OrderStatus.PENDING_OTP,
-        shippingAddress,
+        deliveryAddress: shippingAddress,
         deliveryNotes,
         deliveryOtp: generateOtp(),
       });
 
       const savedOrder = await queryRunner.manager.save(order);
 
+      const isCod = paymentMethod === PaymentMethod.COD;
+
       for (const item of cart.items) {
         const product = products.find((p) => p.id === item.productId);
         if (!product) continue;
 
         const orderItem = this.orderItemRepository.create({
-          orderId: (savedOrder as any).id,
+          orderId: savedOrder.id,
           productId: item.productId,
           productName: item.name,
           productImage: item.image,
@@ -155,24 +167,39 @@ export class OrdersService {
         });
         await queryRunner.manager.save(orderItem);
 
-        product.stock -= item.quantity;
-        product.orderCount += 1;
-        await queryRunner.manager.save(product);
+        if (isCod) {
+          product.stock -= item.quantity;
+          product.orderCount += 1;
+          await queryRunner.manager.save(product);
+        }
       }
 
-      shop.totalOrders += 1;
-      await queryRunner.manager.save(shop);
+      if (isCod) {
+        shop.totalOrders += 1;
+        await queryRunner.manager.save(shop);
+        await this.cartService.clearCart(userId);
+      }
 
-      await this.cartService.clearCart(userId);
-
-      this.logger.log(`Order OTP for ${orderNumber}: ${(savedOrder as any).deliveryOtp}`);
+      this.logger.log(`Order OTP for ${orderNumber}: ${savedOrder.deliveryOtp}`);
+      this.notificationsService
+        .sendDeliveryOtp(user.phone, savedOrder.deliveryOtp)
+        .catch((e) => this.logger.error('Delivery OTP SMS failed: ' + e.message));
 
       await queryRunner.commitTransaction();
 
       const fullOrder = await this.orderRepository.findOne({
-        where: { id: (savedOrder as any).id },
+        where: { id: savedOrder.id },
         relations: ['items', 'shop', 'customer'],
       });
+
+      if (fullOrder.customer?.email) {
+        this.notificationsService
+          .sendOrderConfirmationEmail(fullOrder.customer.email, {
+            orderNumber: fullOrder.orderNumber,
+            totalAmount: fullOrder.finalAmount,
+          })
+          .catch((e) => this.logger.error('Order confirmation email failed: ' + e.message));
+      }
 
       delete fullOrder.deliveryOtp;
       delete fullOrder.customer.password;
@@ -204,7 +231,7 @@ export class OrdersService {
       }
 
       return {
-        ...fullOrder,
+        ...this.formatOrderResponse(fullOrder),
         isShopOpen: isOpen,
         shopClosedMessage: isOpen ? null : `Shop is currently closed. Your order will be processed after ${nextOpeningTime}.`,
       };
@@ -316,7 +343,7 @@ export class OrdersService {
     delete order.deliveryOtp;
     delete order.customer.password;
 
-    return order;
+    return this.formatOrderResponse(order);
   }
 
   async cancelOrder(orderId: string, userId: string, reason?: string) {
@@ -502,17 +529,57 @@ export class OrdersService {
   }
 
   async confirmPaidOrder(internalOrderId: string, razorpayPaymentId: string) {
-    const order = await this.orderRepository.findOne({ where: { id: internalOrderId } });
+    const order = await this.orderRepository.findOne({
+      where: { id: internalOrderId },
+      relations: ['items', 'shop'],
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
 
-    order.paymentStatus = PaymentStatus.PAID;
-    order.status = OrderStatus.CONFIRMED;
-    order.confirmedAt = new Date();
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      return order;
+    }
 
-    await this.orderRepository.save(order);
-    return order;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const item of order.items) {
+        await queryRunner.manager.decrement(
+          Product,
+          { id: item.productId },
+          'stock',
+          item.quantity,
+        );
+        await queryRunner.manager.increment(
+          Product,
+          { id: item.productId },
+          'orderCount',
+          item.quantity,
+        );
+      }
+
+      await queryRunner.manager.increment(Shop, { id: order.shopId }, 'totalOrders', 1);
+
+      order.paymentStatus = PaymentStatus.PAID;
+      order.status = OrderStatus.CONFIRMED;
+      order.confirmedAt = new Date();
+      order.razorpayPaymentId = razorpayPaymentId;
+
+      await queryRunner.manager.save(order);
+      await queryRunner.commitTransaction();
+
+      await this.cartService.clearCart(order.customerId);
+
+      return order;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async updateRazorpayOrderId(internalOrderId: string, razorpayOrderId: string) {

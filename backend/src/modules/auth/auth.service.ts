@@ -13,6 +13,7 @@ import { User, UserRole } from '../../core/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 import { WhatsappService } from '../notifications/whatsapp.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly whatsappService: WhatsappService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // ✅ Phone normalize — 7032028503 → +917032028503
@@ -59,6 +61,12 @@ export class AuthService {
     });
 
     await this.userRepository.save(user);
+
+    if (user.email) {
+      this.notificationsService
+        .sendWelcomeEmail(user.email, user.name)
+        .catch((e) => this.logger.error('Welcome email failed: ' + e.message));
+    }
 
     return {
       message: 'Registration successful',
@@ -128,18 +136,8 @@ export class AuthService {
       [otp, new Date(), normalizedPhone],
     );
 
-    // ✅ Send via WhatsApp (falls back to console log if token not set)
-    const message = [
-      `🔐 *LocalKart OTP Verification*`,
-      ``,
-      `Your OTP is: *${otp}*`,
-      `Valid for 5 minutes. Do NOT share with anyone.`,
-      ``,
-      `🇮🇳 *తెలుగు:* మీ OTP: *${otp}* — ఎవరికీ చెప్పకండి.`,
-      `🇮🇳 *हिंदी:* आपका OTP: *${otp}* — किसी को न बताएं।`,
-    ].join('\n');
-
-    await this.whatsappService['send'](normalizedPhone, message).catch((e) =>
+    // Send via WhatsApp (falls back to console log if token not set)
+    await this.whatsappService.sendOtpMessage(normalizedPhone, otp).catch((e) =>
       this.logger.error('WhatsApp OTP failed: ' + e.message),
     );
 

@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, Between, FindOptionsWhere } from 'typeorm';
+import { Repository, ILike, Between, FindOptionsWhere, Not, IsNull } from 'typeorm';
 import slugify from 'slugify';
 import { Product, ProductStatus, ProductCategoryType } from '../../core/entities/product.entity';
 import { Category } from '../../core/entities/category.entity';
@@ -45,6 +45,8 @@ export class CatalogService {
       maxPrice,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
+      sponsored,
+      hasVideo,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -61,6 +63,12 @@ export class CatalogService {
     }
     if ((query as any).query) {
       where.name = ILike(`%${(query as any).query}%`);
+    }
+    if (sponsored) {
+      where.isSponsored = true;
+    }
+    if (hasVideo) {
+      where.videos = Not(IsNull());
     }
 
     const [products, total] = await this.productRepository.findAndCount({

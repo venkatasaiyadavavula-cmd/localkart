@@ -23,7 +23,7 @@ export default async function SellerLayout({
   }
 
   // Check if seller has a shop
-  const hasShop = session.user.shopId !== null;
+  const hasShop = !!(session.user.shopId ?? (session.user as { shop?: { id?: string } }).shop?.id);
 
   if (!hasShop) {
     redirect('/seller-onboarding');

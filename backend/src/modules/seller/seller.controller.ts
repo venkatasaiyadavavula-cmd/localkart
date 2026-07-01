@@ -49,6 +49,12 @@ export class SellerController {
     return this.sellerService.getShopBySlug(slug);
   }
 
+  @Public()
+  @Get('shop/id/:id')
+  async getShopById(@Param('id') id: string) {
+    return this.sellerService.getShopById(id);
+  }
+
   @Get('shop')
   async getMyShop(@CurrentUser() user: any) {
     return this.sellerService.getShopByOwner(user.id);

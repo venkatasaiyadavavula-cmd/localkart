@@ -35,7 +35,7 @@ import { useCartStore } from '@/store/cart-store';
 import { useShop } from '@/hooks/use-shop';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocationStore } from '@/store/location-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { LocationPicker } from '@/components/map/location-picker';
 
 const addressSchema = z.object({
@@ -74,7 +74,17 @@ export default function CheckoutPage() {
       if (!token) return [];
       const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/addresses`,
         { headers: { Authorization: `Bearer ${token}` } });
-      return data;
+      const addresses = unwrapApiData<any[]>(data) ?? [];
+      return addresses.map((addr) => ({
+        ...addr,
+        name: addr.label || user?.name || '',
+        phone: user?.phone || '',
+        address: addr.fullAddress || addr.address || '',
+        city: addr.city || 'Kadapa',
+        state: addr.state || 'Andhra Pradesh',
+        pincode: addr.pincode || '',
+        type: addr.type || 'home',
+      }));
     },
   });
 
@@ -126,18 +136,21 @@ export default function CheckoutPage() {
         }),
       });
 
-      const order = await response.json();
+      const raw = await response.json();
+      const order = unwrapApiData<{ id: string; finalAmount?: number; totalAmount?: number }>(raw);
 
       if (!response.ok) {
-        throw new Error(order.message || 'Failed to create order');
+        throw new Error((raw as { message?: string }).message || 'Failed to create order');
       }
+
+      const orderTotal = order.finalAmount ?? order.totalAmount ?? totalAmount;
 
       if (paymentMethod === 'cod') {
         await clearCart();
         toast.success('Order placed successfully!');
         router.push(`/orders/${order.id}`);
       } else {
-        router.push(`/checkout/payment?orderId=${order.id}&amount=${totalAmount}`);
+        router.push(`/checkout/payment?orderId=${order.id}&amount=${orderTotal}`);
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to place order');

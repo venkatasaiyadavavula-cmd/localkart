@@ -8,6 +8,8 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+import { unwrapApiData } from '@/lib/utils';
+
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -24,10 +26,12 @@ export function useShop(slug?: string) {
         const { data } = await apiClient.get('/seller/shop', {
           headers: getAuthHeaders(),
         });
-        return data.data;
+        return unwrapApiData(data);
       }
-      const { data } = await apiClient.get(`/seller/shop/slug/${slug}`);
-      return data.data;
+      const isUuid = /^[0-9a-f-]{36}$/i.test(slug!);
+      const endpoint = isUuid ? `/seller/shop/id/${slug}` : `/seller/shop/slug/${slug}`;
+      const { data } = await apiClient.get(endpoint);
+      return unwrapApiData(data);
     },
     enabled: isSellerShop ? !!getAuthHeaders().Authorization : !!slug,
   });

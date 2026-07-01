@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
+import { unwrapApiData } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const WS  = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace('/api', '');
@@ -52,7 +53,7 @@ export default function TrackOrderPage() {
     queryKey: ['order', orderId],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/orders/${orderId}`, { headers: auth() });
-      return data;
+      return unwrapApiData(data);
     },
     enabled: !!orderId,
   });

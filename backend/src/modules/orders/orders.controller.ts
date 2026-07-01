@@ -7,8 +7,6 @@ import {
   Param,
   Query,
   UseGuards,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -46,6 +44,67 @@ export class OrdersController {
     );
   }
 
+  @Get('seller/all')
+  @Roles(UserRole.SELLER)
+  async getSellerOrders(
+    @CurrentUser() user: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.ordersService.getSellerOrders(
+      user.id,
+      parseInt(page || '1'),
+      parseInt(limit || '20'),
+      status,
+    );
+  }
+
+  @Get('admin/all')
+  @Roles(UserRole.ADMIN)
+  async getAllOrders(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('shopId') shopId?: string,
+  ) {
+    return this.ordersService.getAllOrders(
+      parseInt(page || '1'),
+      parseInt(limit || '20'),
+      status,
+      shopId,
+    );
+  }
+
+  @Public()
+  @Get('track/:orderNumber')
+  async trackOrder(@Param('orderNumber') orderNumber: string) {
+    return this.ordersService.trackOrderByNumber(orderNumber);
+  }
+
+  @Put('seller/:id/status')
+  @Roles(UserRole.SELLER)
+  async updateOrderStatus(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  ) {
+    return this.ordersService.updateOrderStatusBySeller(
+      id,
+      user.id,
+      updateOrderStatusDto,
+    );
+  }
+
+  @Put('admin/:id/status')
+  @Roles(UserRole.ADMIN)
+  async adminUpdateOrderStatus(
+    @Param('id') id: string,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  ) {
+    return this.ordersService.adminUpdateOrderStatus(id, updateOrderStatusDto);
+  }
+
   @Get(':id')
   async getOrderById(@CurrentUser() user: any, @Param('id') id: string) {
     return this.ordersService.getOrderById(id, user.id, user.role);
@@ -69,69 +128,5 @@ export class OrdersController {
     @Body('otp') otp: string,
   ) {
     return this.ordersService.verifyDeliveryOtp(id, otp, user);
-  }
-
-  // Seller endpoints
-  @Get('seller/all')
-  @Roles(UserRole.SELLER)
-  async getSellerOrders(
-    @CurrentUser() user: any,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.ordersService.getSellerOrders(
-      user.id,
-      parseInt(page || '1'),
-      parseInt(limit || '20'),
-      status,
-    );
-  }
-
-  @Put('seller/:id/status')
-  @Roles(UserRole.SELLER)
-  async updateOrderStatus(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
-  ) {
-    return this.ordersService.updateOrderStatusBySeller(
-      id,
-      user.id,
-      updateOrderStatusDto,
-    );
-  }
-
-  // Admin endpoints
-  @Get('admin/all')
-  @Roles(UserRole.ADMIN)
-  async getAllOrders(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-    @Query('shopId') shopId?: string,
-  ) {
-    return this.ordersService.getAllOrders(
-      parseInt(page || '1'),
-      parseInt(limit || '20'),
-      status,
-      shopId,
-    );
-  }
-
-  @Put('admin/:id/status')
-  @Roles(UserRole.ADMIN)
-  async adminUpdateOrderStatus(
-    @Param('id') id: string,
-    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
-  ) {
-    return this.ordersService.adminUpdateOrderStatus(id, updateOrderStatusDto);
-  }
-
-  // Public endpoint for tracking (no auth required)
-  @Public()
-  @Get('track/:orderNumber')
-  async trackOrder(@Param('orderNumber') orderNumber: string) {
-    return this.ordersService.trackOrderByNumber(orderNumber);
   }
 }

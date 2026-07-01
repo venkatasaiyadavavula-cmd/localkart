@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axios from 'axios';
+import { unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -25,7 +26,7 @@ export function useProducts(params: Record<string, unknown> = {}) {
         }
       });
       const { data } = await apiClient.get(`/catalog/products?${searchParams.toString()}`);
-      return data.data;
+      return unwrapApiData(data);
     },
     placeholderData: keepPreviousData,
   });

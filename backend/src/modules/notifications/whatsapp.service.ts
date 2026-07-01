@@ -194,4 +194,18 @@ export class WhatsappService {
  
     return this.send(sellerPhone, msg);
   }
+
+  /** OTP for login / verification */
+  async sendOtpMessage(phone: string, otp: string): Promise<boolean> {
+    const msg = [
+      `🔐 *LocalKart OTP Verification*`,
+      ``,
+      `Your OTP is: *${otp}*`,
+      `Valid for 5 minutes. Do NOT share with anyone.`,
+      ``,
+      `🇮🇳 *తెలుగు:* మీ OTP: *${otp}* — ఎవరికీ చెప్పకండి.`,
+      `🇮🇳 *हिंदी:* आपका OTP: *${otp}* — किसी को न बताएं।`,
+    ].join('\n');
+    return this.send(phone, msg);
+  }
 }

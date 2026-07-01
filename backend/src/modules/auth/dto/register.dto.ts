@@ -7,6 +7,7 @@ import {
   MaxLength,
   IsEnum,
   Matches,
+  ValidateIf,
 } from 'class-validator';
 import { UserRole } from '../../../core/entities/user.entity';
 
@@ -21,6 +22,7 @@ export class RegisterDto {
   @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' })
   phone: string;
 
+  @ValidateIf((o) => o.email !== '' && o.email != null)
   @IsEmail()
   @IsOptional()
   email?: string;

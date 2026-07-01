@@ -25,12 +25,12 @@ const sortOptions = [
   { label: 'Popular', value: 'orderCount-DESC' },
 ];
 
-export default function BrowsePage() {
+export default function BrowsePage({ initialCategory = '' }: { initialCategory?: string }) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const { location } = useLocationStore();
 
-  const [activeCategory, setActiveCategory] = useState('');
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const [showSort, setShowSort] = useState(false);
@@ -50,7 +50,9 @@ export default function BrowsePage() {
 
   const products = Array.isArray(data)
     ? data
-    : (data as { products?: unknown[] })?.products ?? [];
+    : (data as { data?: unknown[]; products?: unknown[] })?.data
+      ?? (data as { products?: unknown[] })?.products
+      ?? [];
 
   const handleSort = (val: string) => {
     const [by, order] = val.split('-');

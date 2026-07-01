@@ -21,7 +21,7 @@ const publicRoutes = [
   '/profile',
 ];
 
-const sellerRoutes = ['/seller', '/seller-onboarding'];
+const sellerRoutes = ['/seller', '/seller-onboarding', '/dashboard'];
 const adminRoutes = ['/admin'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {

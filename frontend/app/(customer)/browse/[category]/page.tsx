@@ -5,8 +5,7 @@ import BrowsePage from '../page';
 
 export default function CategoryPage() {
   const params = useParams();
-  const category = params.category as string;
+  const category = (params.category as string).replace(/-/g, '_');
 
-  // Just render the main BrowsePage which handles category via searchParams
-  return <BrowsePage />;
+  return <BrowsePage initialCategory={category} />;
 }

@@ -10,11 +10,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RazorpayButton } from '@/components/payment/razorpay-button';
 import { formatPrice } from '@/lib/utils';
-import { useOrder } from '@/hooks/use-order';
+import { useCartStore } from '@/store/cart-store';
 
 export default function PaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const clearCart = useCartStore((s) => s.clearCart);
   const orderId = searchParams.get('orderId');
   const amount = searchParams.get('amount');
 
@@ -29,7 +30,8 @@ export default function PaymentPage() {
     setLoading(false);
   }, [orderId, amount, router]);
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
+    await clearCart();
     toast.success('Payment successful!');
     router.push(`/orders/${orderId}`);
   };

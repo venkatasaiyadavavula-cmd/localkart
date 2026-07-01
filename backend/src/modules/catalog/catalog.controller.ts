@@ -54,6 +54,18 @@ export class CatalogController {
   }
 
   @Public()
+  @Get('sponsored')
+  async getSponsored(
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+  ) {
+    return this.searchService.getSponsoredProducts(
+      lat ? parseFloat(lat) : undefined,
+      lng ? parseFloat(lng) : undefined,
+    );
+  }
+
+  @Public()
   @Get('categories')
   async getCategories() {
     return this.catalogService.getCategories();

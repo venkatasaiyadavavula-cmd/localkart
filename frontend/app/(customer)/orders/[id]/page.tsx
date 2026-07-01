@@ -38,6 +38,7 @@ import {
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useOrder } from '@/hooks/use-order';
 import { useCancelOrder } from '@/hooks/use-cancel-order';
+import { ordersApi } from '@/lib/api/orders';
 import { formatPrice } from '@/lib/utils';
 import { OrderStatus, statusColors, statusLabels } from '@/types/order';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -76,12 +77,7 @@ export default function OrderDetailPage() {
   const handleVerifyOtp = async () => {
     setIsVerifying(true);
     try {
-      // Call API to verify OTP
-      await fetch(`/api/orders/${orderId}/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp }),
-      });
+      await ordersApi.verifyDeliveryOtp(orderId, otp);
       toast.success('Order confirmed successfully');
       setShowOtpDialog(false);
       refetch();
