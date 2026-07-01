@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { normalizeList, unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -22,7 +23,7 @@ export function useAdCampaigns() {
       const { data } = await apiClient.get('/seller/ads', {
         headers: getAuthHeaders(),
       });
-      const campaigns = Array.isArray(data.data) ? data.data : [];
+      const campaigns = normalizeList(unwrapApiData(data));
       return {
         sponsored: campaigns.filter((c: { adType?: string }) => c.adType === 'sponsored' || !c.adType),
         video: campaigns.filter((c: { adType?: string }) => c.adType === 'video'),
@@ -36,7 +37,7 @@ export function useAdCampaigns() {
       const { data } = await apiClient.post('/seller/ads', campaignData, {
         headers: getAuthHeaders(),
       });
-      return data.data;
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
@@ -80,7 +81,7 @@ export function useAdCampaigns() {
         headers: getAuthHeaders(),
       });
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
-      return data.data;
+      return unwrapApiData(data);
     },
   };
 }

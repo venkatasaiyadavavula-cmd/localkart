@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { unwrapApiData } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-const WS  = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace('/api', '');
+const WS  = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1').replace(/\/api\/v1\/?$/, '');
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 const LeafletMap = dynamic(() => import('@/components/map/tracking-map'), {
@@ -58,7 +58,19 @@ export default function TrackOrderPage() {
     enabled: !!orderId,
   });
 
-  useEffect(() => { if (order) setOrderStatus(order.status); }, [order]);
+  useEffect(() => {
+    if (order) {
+      setOrderStatus(order.status);
+      if (order.deliveryLatitude && order.deliveryLongitude) {
+        setLiveLocation({
+          latitude: Number(order.deliveryLatitude),
+          longitude: Number(order.deliveryLongitude),
+          updatedAt: order.locationUpdatedAt ?? new Date().toISOString(),
+          staffName: order.deliveryStaffName,
+        });
+      }
+    }
+  }, [order]);
 
   useEffect(() => {
     if (!orderId) return;
@@ -118,9 +130,17 @@ export default function TrackOrderPage() {
 
         {/* Map */}
         <div className="relative rounded-3xl overflow-hidden border border-gray-100" style={{ height: '260px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
-          {isOutForDelivery && liveLocation ? (
+          {isOutForDelivery && (liveLocation || (order?.deliveryLatitude && order?.deliveryLongitude)) ? (
             <>
-              <LeafletMap deliveryLocation={liveLocation} customerLocation={order?.deliveryAddress} shopLocation={{ lat: order?.shop?.latitude, lng: order?.shop?.longitude }} />
+              <LeafletMap
+                deliveryLocation={liveLocation ?? {
+                  latitude: Number(order.deliveryLatitude),
+                  longitude: Number(order.deliveryLongitude),
+                  updatedAt: order.locationUpdatedAt ?? new Date().toISOString(),
+                }}
+                customerLocation={order?.deliveryAddress}
+                shopLocation={{ lat: order?.shop?.latitude, lng: order?.shop?.longitude }}
+              />
               <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.95)', boxShadow: '0 4px 12px rgba(16,185,129,0.35)' }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 <span className="text-[11px] font-extrabold text-white">Live tracking</span>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { unwrapApiData } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -53,11 +54,17 @@ export function RazorpayButton({
     try {
       // Create Razorpay order from backend
       const token = localStorage.getItem('accessToken');
-      const { data } = await axios.post(
+      const { data: raw } = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/payments/create-order`,
         { orderId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      const data = unwrapApiData<{
+        orderId: string;
+        amount: number | string;
+        currency: string;
+        key?: string;
+      }>(raw);
 
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -67,7 +74,7 @@ export function RazorpayButton({
       }
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || data.key,
         amount: data.amount,
         currency: data.currency,
         name: 'LocalKart',

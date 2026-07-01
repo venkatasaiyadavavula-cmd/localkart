@@ -70,7 +70,11 @@ export default function ShopSettingsPage() {
   const onSubmit = async (data: ShopFormData) => {
     setIsUpdating(true);
     try {
-      await updateShop(data);
+      await updateShop({
+        ...data,
+        latitude: shop?.latitude ?? 0,
+        longitude: shop?.longitude ?? 0,
+      });
       toast.success('Shop settings updated successfully');
     } catch (error) {
       toast.error('Failed to update shop settings');

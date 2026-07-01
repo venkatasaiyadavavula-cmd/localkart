@@ -11,6 +11,7 @@ import {
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { UpdateDeliveryLocationDto } from './dto/update-delivery-location.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
@@ -80,6 +81,16 @@ export class OrdersController {
   @Get('track/:orderNumber')
   async trackOrder(@Param('orderNumber') orderNumber: string) {
     return this.ordersService.trackOrderByNumber(orderNumber);
+  }
+
+  @Put('seller/:id/location')
+  @Roles(UserRole.SELLER)
+  async updateDeliveryLocation(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() dto: UpdateDeliveryLocationDto,
+  ) {
+    return this.ordersService.updateDeliveryLocation(id, user.id, dto);
   }
 
   @Put('seller/:id/status')

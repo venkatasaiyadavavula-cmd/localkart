@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -13,16 +14,6 @@ function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/** Normalize paginated API payloads: { data: T[], meta } or bare array */
-export function normalizeList<T>(payload: unknown): T[] {
-  if (Array.isArray(payload)) return payload;
-  if (payload && typeof payload === 'object') {
-    const obj = payload as { data?: T[] };
-    if (Array.isArray(obj.data)) return obj.data;
-  }
-  return [];
-}
-
 export function useSellerProducts(params: Record<string, unknown> = {}) {
   const queryClient = useQueryClient();
 
@@ -32,13 +23,14 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value));
+          const paramKey = key === 'search' ? 'search' : key;
+          searchParams.append(paramKey, String(value));
         }
       });
       const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`, {
         headers: getAuthHeaders(),
       });
-      return normalizeList(data.data);
+      return normalizeList(data);
     },
   });
 

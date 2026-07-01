@@ -67,6 +67,7 @@ export default function EditProductPage() {
     handleSubmit,
     setValue,
     reset,
+    watch,
     formState: { errors, isDirty },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -328,10 +329,4 @@ export default function EditProductPage() {
       </form>
     </div>
   );
-}
-
-// Helper to watch form values
-function watch(field: string) {
-  // This is simplified; in real code use react-hook-form's watch
-  return '';
 }

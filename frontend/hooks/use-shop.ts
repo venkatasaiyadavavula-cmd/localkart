@@ -38,10 +38,16 @@ export function useShop(slug?: string) {
 
   const updateMutation = useMutation({
     mutationFn: async (shopData: Record<string, unknown>) => {
-      const { data } = await apiClient.put('/seller/shop', shopData, {
+      const currentShop = queryClient.getQueryData<Record<string, unknown>>(['seller', 'shop']);
+      const payload = {
+        ...shopData,
+        latitude: shopData.latitude ?? currentShop?.latitude ?? 0,
+        longitude: shopData.longitude ?? currentShop?.longitude ?? 0,
+      };
+      const { data } = await apiClient.put('/seller/shop', payload, {
         headers: getAuthHeaders(),
       });
-      return data.data;
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'shop'] });

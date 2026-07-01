@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { normalizeList, unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -8,28 +9,42 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('accessToken');
+  return { Authorization: `Bearer ${token}` };
+}
+
 export function useAdminDisputes(params: { status?: string } = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['admin', 'disputes', params],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
-      const { data } = await apiClient.get(`/admin/disputes?${searchParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const { data } = await apiClient.get(`/returns/admin/all?${searchParams.toString()}`, {
+        headers: getAuthHeaders(),
       });
-      return data.data;
+      return normalizeList(data);
     },
   });
 
   const resolveMutation = useMutation({
     mutationFn: async ({ disputeId, action }: { disputeId: string; action: string }) => {
-      const token = localStorage.getItem('accessToken');
-      return apiClient.put(`/admin/disputes/${disputeId}/resolve`, { action }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (action === 'refund') {
+        return apiClient.post(`/returns/admin/${disputeId}/process-refund`, {}, {
+          headers: getAuthHeaders(),
+        });
+      }
+      const statusMap: Record<string, string> = {
+        approve: 'approved',
+        reject: 'rejected',
+      };
+      return apiClient.put(
+        `/returns/admin/${disputeId}/status`,
+        { status: statusMap[action] || action },
+        { headers: getAuthHeaders() },
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });

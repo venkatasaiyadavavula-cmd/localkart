@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -16,7 +17,7 @@ export function useSellerDashboard(period: 'week' | 'month' | 'year' = 'week') {
       const { data } = await apiClient.get(`/seller/dashboard?period=${period}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return data.data;
+      return unwrapApiData(data);
     },
   });
 }

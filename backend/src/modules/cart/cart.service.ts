@@ -84,11 +84,14 @@ export class CartService {
       items.push({
         productId: product.id,
         shopId: product.shopId,
+        shopName: product.shop?.name,
         name: product.name,
         price: Number(product.price),
         quantity,
         image: product.images?.[0] || null,
         maxQuantity: product.stock,
+        slug: product.slug,
+        categoryType: product.categoryType,
       });
     }
 

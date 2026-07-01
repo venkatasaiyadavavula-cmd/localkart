@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -19,7 +19,7 @@ export default function WishlistPage() {
     queryKey: ['wishlist'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/wishlist`, { headers: auth() });
-      return data;
+      return unwrapApiData(data) ?? [];
     },
   });
 
