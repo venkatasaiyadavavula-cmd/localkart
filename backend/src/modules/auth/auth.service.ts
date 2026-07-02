@@ -57,7 +57,7 @@ export class AuthService {
       phone: normalizedPhone,
       email: email || null,
       password: hashedPassword,
-      role: (role as UserRole) || UserRole.CUSTOMER,
+      role: UserRole.CUSTOMER,
       isPhoneVerified: true,
     });
 

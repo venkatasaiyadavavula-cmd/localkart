@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, User, Phone, Mail, Lock, ArrowRight, Loader2, Store } from 'lucide-react';
+import { Eye, EyeOff, User, Phone, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,6 @@ const registerSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6),
-  role: z.enum(['customer', 'seller']),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -32,42 +31,40 @@ export default function RegisterPage() {
   const { register: registerUser, isLoading } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'customer' | 'seller'>('customer');
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', phone: '', email: '', password: '', confirmPassword: '', role: 'customer' },
+    defaultValues: { name: '', phone: '', email: '', password: '', confirmPassword: '' },
   });
 
-const onSubmit = async (data: RegisterFormData) => {
-  try {
-    const { confirmPassword, ...payload } = data;
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      const { confirmPassword, ...payload } = data;
 
-    await registerUser({
-      ...payload,
-      role: selectedRole,
-    });
+      await registerUser({
+        ...payload,
+        role: 'customer',
+      });
 
-    toast.success('Account created successfully!');
-    router.push('/login');
-  } catch (error: any) {
-    toast.error(
-      error?.response?.data?.message ||
-      'Registration failed. Please try again.'
-    );
-  }
-};
+      toast.success('Account created successfully! Please sign in.');
+      router.push('/login');
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+        'Registration failed. Please try again.'
+      );
+    }
+  };
 
   return (
     <div style={{ position: 'relative', zIndex: 10 }}>
       <div className="mb-8 text-center">
         <h1 className="font-heading text-2xl font-bold sm:text-3xl">Create Account</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Join LocalKart and start shopping or selling</p>
+        <p className="mt-2 text-sm text-muted-foreground">Join LocalKart and start shopping from local stores</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -122,23 +119,13 @@ const onSubmit = async (data: RegisterFormData) => {
           {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
         </div>
 
-        <div className="space-y-3">
-          <Label>I want to</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <button type="button" onClick={() => { setSelectedRole('customer'); setValue('role', 'customer'); }}
-              className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center transition-all ${selectedRole === 'customer' ? 'border-primary bg-primary/5' : 'border-muted bg-card hover:bg-muted/50'}`}>
-              <User className="mb-2 h-6 w-6" />
-              <span className="font-medium">Customer</span>
-              <span className="text-xs text-muted-foreground">Shop from local stores</span>
-            </button>
-            <button type="button" onClick={() => { setSelectedRole('seller'); setValue('role', 'seller'); }}
-              className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center transition-all ${selectedRole === 'seller' ? 'border-primary bg-primary/5' : 'border-muted bg-card hover:bg-muted/50'}`}>
-              <Store className="mb-2 h-6 w-6" />
-              <span className="font-medium">Seller</span>
-              <span className="text-xs text-muted-foreground">Sell products online</span>
-            </button>
-          </div>
-        </div>
+        <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+          Want to sell on LocalKart?{' '}
+          <Link href="/login?redirect=%2Fseller-onboarding" className="font-medium text-primary hover:underline">
+            Become a Seller
+          </Link>{' '}
+          after creating your account.
+        </p>
 
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || isLoading}>
           {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</> : <>Create Account<ArrowRight className="ml-2 h-4 w-4" /></>}

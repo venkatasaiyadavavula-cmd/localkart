@@ -232,7 +232,9 @@ export default function ProfilePage() {
           <div className="flex-1 min-w-0">
             <p className="text-base font-extrabold text-gray-900 truncate">{user?.name}</p>
             <p className="text-sm text-gray-400">{user?.phone}</p>
-            <Badge className="mt-1.5" variant="outline">{user?.role === 'customer' ? 'Customer' : 'Seller'}</Badge>
+            <Badge className="mt-1.5" variant="outline">
+              {user?.role === 'admin' ? 'Admin' : user?.role === 'seller' ? 'Seller' : 'Customer'}
+            </Badge>
           </div>
           <button onClick={handleLogout} disabled={isLoggingOut}
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors"

@@ -9,6 +9,7 @@ const publicRoutes = [
   '/login',
   '/register',
   '/verify-otp',
+  '/forgot-password',
   '/browse',
   '/product',
   '/shop',
@@ -17,12 +18,16 @@ const publicRoutes = [
   '/cart',
   '/wishlist',
   '/videos',
-  '/orders',
-  '/profile',
+  '/terms',
+  '/privacy',
 ];
 
 const sellerRoutes = ['/seller', '/dashboard'];
 const adminRoutes = ['/admin'];
+
+function matchesRoute(pathname: string, route: string) {
+  return pathname === route || pathname.startsWith(route + '/');
+}
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -30,26 +35,20 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
 
+  const isPublicRoute = publicRoutes.some((route) => matchesRoute(pathname, route));
+  const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-otp'].some((route) =>
+    matchesRoute(pathname, route),
+  );
+
   useEffect(() => {
-    // Max 3 seconds wait - timeout fix
-    const timeout = setTimeout(() => {
-      setIsChecking(false);
-    }, 3000);
+    const timeout = setTimeout(() => setIsChecking(false), 2000);
 
     if (isLoading) return;
 
-    const isPublicRoute = publicRoutes.some(
-      (route) => pathname === route || pathname.startsWith(route + '/')
-    );
+    const isSellerRoute = sellerRoutes.some((route) => matchesRoute(pathname, route));
+    const isAdminRoute = adminRoutes.some((route) => matchesRoute(pathname, route));
 
-    const isSellerRoute = sellerRoutes.some(
-      (route) => pathname === route || pathname.startsWith(route + '/'),
-    );
-    const isAdminRoute = adminRoutes.some(
-      (route) => pathname === route || pathname.startsWith(route + '/'),
-    );
-
-    if (!isAuthenticated && !isPublicRoute) {
+    if (!isAuthenticated && !isPublicRoute && !isAuthPage) {
       router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       clearTimeout(timeout);
       setIsChecking(false);
@@ -72,9 +71,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     clearTimeout(timeout);
     setIsChecking(false);
-  }, [isLoading, isAuthenticated, user, pathname, router]);
+  }, [isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
 
-  if (isLoading && isChecking) {
+  // Never block login/register pages behind a spinner
+  if (isLoading && isChecking && !isPublicRoute && !isAuthPage) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
