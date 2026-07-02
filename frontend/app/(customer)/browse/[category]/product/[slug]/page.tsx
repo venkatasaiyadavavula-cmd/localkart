@@ -72,8 +72,9 @@ export default function ProductDetailPage() {
         { productId: product.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setIsWishlisted(data.added);
-      toast.success(data.added ? '❤️ Added to wishlist!' : 'Removed from wishlist');
+      const result = data?.data ?? data;
+      setIsWishlisted(result.added);
+      toast.success(result.added ? '❤️ Added to wishlist!' : 'Removed from wishlist');
     } catch {
       toast.error('Login to save to wishlist');
     } finally {

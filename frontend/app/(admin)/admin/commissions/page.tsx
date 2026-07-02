@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -36,6 +35,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAdminCommissions } from '@/hooks/use-admin-commissions';
 
 const categoryOptions = [
   { value: 'groceries', label: 'Groceries' },
@@ -52,51 +52,32 @@ export default function AdminCommissionsPage() {
   const [newRate, setNewRate] = useState<string>('');
   const [showRateDialog, setShowRateDialog] = useState(false);
 
-  // ✅ Dummy data (deploy success kosam)
-  const data = {
-    totalCommission: 12500,
-    totalRevenue: 85000,
-    pendingSettlements: 5000,
-    currentRates: {
-      groceries: 5,
-      fashion: 8,
-      electronics: 10,
-      home_essentials: 6,
-      beauty: 7,
-      accessories: 9,
-    },
-    shopEarnings: [
-      {
-        id: '1',
-        name: 'Sai Kirana Store',
-        totalEarnings: 20000,
-        pendingSettlement: 3000,
-        lastSettlement: new Date(),
-      },
-      {
-        id: '2',
-        name: 'Trendy Fashion Hub',
-        totalEarnings: 35000,
-        pendingSettlement: 2000,
-        lastSettlement: null,
-      },
-    ],
+  const { data, isLoading, updateCommissionRate, settleShopEarnings } = useAdminCommissions(period);
+
+  const handleUpdateRate = async () => {
+    if (!selectedCategory || !newRate) return;
+    try {
+      await updateCommissionRate(selectedCategory, Number(newRate));
+      toast.success('Commission rate updated');
+      setShowRateDialog(false);
+      setSelectedCategory('');
+      setNewRate('');
+    } catch {
+      toast.error('Failed to update commission rate');
+    }
   };
 
-  const isLoading = false;
-
-  const updateCommissionRate = async () => {
-    toast.success('Commission rate updated (dummy)');
-    setShowRateDialog(false);
-    setSelectedCategory('');
-    setNewRate('');
+  const handleSettle = async (shopId: string) => {
+    try {
+      await settleShopEarnings(shopId);
+      toast.success('Settlement processed');
+    } catch {
+      toast.error('Failed to settle earnings');
+    }
   };
 
-  const settleShopEarnings = async () => {
-    toast.success('Earnings settled (dummy)');
-  };
-
-  const currentRates: Record<string, number> = data.currentRates;
+  const currentRates: Record<string, number> = data?.currentRates ?? {};
+  const shopEarnings = data?.shopEarnings ?? [];
 
   return (
     <div className="space-y-6">
@@ -107,7 +88,7 @@ export default function AdminCommissionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+          <Tabs value={period} onValueChange={(v) => setPeriod(v as 'week' | 'month' | 'year')}>
             <TabsList>
               <TabsTrigger value="week">Week</TabsTrigger>
               <TabsTrigger value="month">Month</TabsTrigger>
@@ -141,7 +122,7 @@ export default function AdminCommissionsPage() {
                     <SelectContent>
                       {categoryOptions.map((cat) => (
                         <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label} ({currentRates[cat.value]}%)
+                          {cat.label} ({currentRates[cat.value] ?? 0}%)
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -152,6 +133,8 @@ export default function AdminCommissionsPage() {
                   <Label>New Rate (%)</Label>
                   <Input
                     type="number"
+                    min={0}
+                    max={100}
                     value={newRate}
                     onChange={(e) => setNewRate(e.target.value)}
                   />
@@ -162,7 +145,7 @@ export default function AdminCommissionsPage() {
                 <Button variant="outline" onClick={() => setShowRateDialog(false)}>
                   Cancel
                 </Button>
-                <Button onClick={updateCommissionRate}>
+                <Button onClick={handleUpdateRate} disabled={!selectedCategory || !newRate}>
                   Update Rate
                 </Button>
               </DialogFooter>
@@ -171,25 +154,27 @@ export default function AdminCommissionsPage() {
         </div>
       </div>
 
-      {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader><CardTitle>Total Commission</CardTitle></CardHeader>
-          <CardContent>{formatPrice(data.totalCommission)}</CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Total Revenue</CardTitle></CardHeader>
-          <CardContent>{formatPrice(data.totalRevenue)}</CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Pending</CardTitle></CardHeader>
-          <CardContent>{formatPrice(data.pendingSettlements)}</CardContent>
-        </Card>
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+        ) : (
+          <>
+            <Card>
+              <CardHeader><CardTitle>Total Commission</CardTitle></CardHeader>
+              <CardContent>{formatPrice(Number(data?.totalCommission ?? 0))}</CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Total Revenue</CardTitle></CardHeader>
+              <CardContent>{formatPrice(Number(data?.totalRevenue ?? 0))}</CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Pending Settlements</CardTitle></CardHeader>
+              <CardContent>{formatPrice(Number(data?.pendingSettlements ?? 0))}</CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
-      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>Shop Earnings</CardTitle>
@@ -200,31 +185,53 @@ export default function AdminCommissionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Shop</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead>Total Earnings</TableHead>
                 <TableHead>Pending</TableHead>
-                <TableHead>Last</TableHead>
+                <TableHead>Last Settlement</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {data.shopEarnings.map((shop) => (
-                <TableRow key={shop.id}>
-                  <TableCell>{shop.name}</TableCell>
-                  <TableCell>{formatPrice(shop.totalEarnings)}</TableCell>
-                  <TableCell>{formatPrice(shop.pendingSettlement)}</TableCell>
-                  <TableCell>
-                    {shop.lastSettlement
-                      ? formatDate(shop.lastSettlement)
-                      : 'Never'}
-                  </TableCell>
-                  <TableCell>
-                    <Button onClick={settleShopEarnings}>
-                      Settle
-                    </Button>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
+                  </TableRow>
+                ))
+              ) : shopEarnings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    No shop earnings data yet
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                shopEarnings.map((shop: {
+                  id: string;
+                  name: string;
+                  totalEarnings: number;
+                  pendingSettlement: number;
+                  lastSettlement: string | null;
+                }) => (
+                  <TableRow key={shop.id}>
+                    <TableCell>{shop.name}</TableCell>
+                    <TableCell>{formatPrice(Number(shop.totalEarnings))}</TableCell>
+                    <TableCell>{formatPrice(Number(shop.pendingSettlement))}</TableCell>
+                    <TableCell>
+                      {shop.lastSettlement ? formatDate(shop.lastSettlement) : 'Never'}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        disabled={Number(shop.pendingSettlement) <= 0}
+                        onClick={() => handleSettle(shop.id)}
+                      >
+                        Settle
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

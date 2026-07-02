@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -115,7 +116,7 @@ export function CategoriesSection() {
     queryKey: ['categories'],
     queryFn: async () => {
       const { data } = await axios.get(`${API_URL}/catalog/categories`);
-      return data;
+      return normalizeList(data);
     },
   });
 

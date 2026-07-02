@@ -3,6 +3,7 @@ if (!(global as any).crypto) { (global as any).crypto = webcrypto; }
 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
@@ -24,6 +25,8 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
+  
+  app.useWebSocketAdapter(new IoAdapter(app));
   
   app.setGlobalPrefix('api/v1');
   

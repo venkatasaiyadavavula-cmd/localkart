@@ -8,7 +8,7 @@ import { MapPin, Store } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { formatDistance } from '@/lib/utils';
+import { formatDistance, normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -24,7 +24,7 @@ export function NearbyShopsSection({ latitude, longitude }: NearbyShopsSectionPr
       const { data } = await axios.get(`${API_URL}/location/nearby-shops`, {
         params: { latitude, longitude, radius: 10, limit: 8 },
       });
-      return data.data;
+      return normalizeList(data);
     },
     enabled: !!latitude && !!longitude,
   });

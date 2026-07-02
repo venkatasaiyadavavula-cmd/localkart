@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatPrice } from '@/lib/utils';
+import { normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -32,7 +32,7 @@ export default function SellerOffersPage() {
       const { data } = await axios.get(`${API_URL}/seller/daily-offers`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      return data.data ?? [];
+      return normalizeList(data);
     },
   });
 
@@ -42,8 +42,8 @@ export default function SellerOffersPage() {
       const { data } = await axios.get(`${API_URL}/catalog/seller/products?limit=100`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      const payload = data.data;
-      return Array.isArray(payload) ? payload : payload?.data ?? [];
+      const payload = normalizeList(data);
+      return payload;
     },
   });
 

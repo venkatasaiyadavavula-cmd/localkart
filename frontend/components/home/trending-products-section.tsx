@@ -5,7 +5,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag, Star, Flame, TrendingUp, Plus } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, normalizeList } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -43,7 +43,7 @@ export function TrendingProductsSection() {
       const { data } = await axios.get(`${API_URL}/catalog/products`, {
         params: { sortBy: 'orderCount', sortOrder: 'DESC', limit: 6 },
       });
-      return data.data;
+      return normalizeList(data);
     },
   });
 

@@ -118,7 +118,7 @@ export default function AdminDisputesPage() {
                   <TableRow key={dispute.id}>
                     <TableCell className="font-medium">{dispute.order?.orderNumber}</TableCell>
                     <TableCell>{dispute.customer?.name}</TableCell>
-                    <TableCell>{dispute.shop?.name}</TableCell>
+                    <TableCell>{dispute.order?.shop?.name}</TableCell>
                     <TableCell className="capitalize">{dispute.reason.replace(/_/g, ' ')}</TableCell>
                     <TableCell>{formatPrice(dispute.refundAmount)}</TableCell>
                     <TableCell>
@@ -154,7 +154,7 @@ export default function AdminDisputesPage() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {dispute.status === 'approved' && !dispute.refunded && (
+                          {['approved', 'picked_up'].includes(dispute.status) && (
                             <DropdownMenuItem onClick={() => handleResolve(dispute.id, 'refund')}>
                               <CheckCircle className="mr-2 h-4 w-4 text-blue-600" /> Process Refund
                             </DropdownMenuItem>
@@ -189,7 +189,7 @@ export default function AdminDisputesPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Shop</p>
-                  <p>{selectedDispute.shop?.name}</p>
+                  <p>{selectedDispute.order?.shop?.name}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Reason</p>

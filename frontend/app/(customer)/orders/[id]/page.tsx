@@ -167,7 +167,14 @@ export default function OrderDetailPage() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <Link href={`/product/${item.productId}`} className="font-medium hover:text-primary">
+                      <Link
+                        href={
+                          item.product?.slug && item.product?.categoryType
+                            ? `/browse/${item.product.categoryType}/product/${item.product.slug}`
+                            : '/browse'
+                        }
+                        className="font-medium hover:text-primary"
+                      >
                         {item.productName}
                       </Link>
                       <p className="text-sm text-muted-foreground">

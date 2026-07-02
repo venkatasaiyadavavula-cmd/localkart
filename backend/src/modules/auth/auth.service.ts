@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../../core/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { WhatsappService } from '../notifications/whatsapp.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -195,6 +196,42 @@ export class AuthService {
         isPhoneVerified: true,
       },
     };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const { phone, otp, newPassword } = dto;
+    const normalizedPhone = this.normalizePhone(phone);
+
+    const users = await this.userRepository.query(
+      `SELECT * FROM users WHERE phone = $1`,
+      [normalizedPhone],
+    );
+
+    if (!users?.length) {
+      throw new BadRequestException('User not found');
+    }
+
+    const user = users[0];
+    const otpExpiryTime = 5 * 60 * 1000;
+
+    if (
+      !user.lastOtpSentAt ||
+      Date.now() - new Date(user.lastOtpSentAt).getTime() > otpExpiryTime
+    ) {
+      throw new BadRequestException('OTP expired. Please request a new one.');
+    }
+
+    if (String(user.lastOtp).trim() !== String(otp).trim()) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.query(
+      `UPDATE users SET password = $1, "lastOtp" = null, "lastOtpSentAt" = null WHERE phone = $2`,
+      [hashedPassword, normalizedPhone],
+    );
+
+    return { message: 'Password reset successfully. You can now login with your new password.' };
   }
 
   async logout(userId: string) {

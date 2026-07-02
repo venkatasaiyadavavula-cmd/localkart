@@ -1,16 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-});
-
-function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { apiClient } from '@/lib/api/client';
 
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
@@ -39,9 +28,7 @@ export function useUpdateProduct() {
         });
       }
 
-      const { data: response } = await apiClient.put(`/catalog/seller/products/${productId}`, payload, {
-        headers: getAuthHeaders(),
-      });
+      const { data: response } = await apiClient.put(`/catalog/seller/products/${productId}`, payload);
       return response.data;
     },
     onSuccess: (_, variables) => {

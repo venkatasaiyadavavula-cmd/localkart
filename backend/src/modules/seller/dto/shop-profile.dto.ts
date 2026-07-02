@@ -38,12 +38,12 @@ export class ShopProfileDto {
   pincode: string;
 
   @IsNumber()
-  @IsNotEmpty()
-  latitude: number;
+  @IsOptional()
+  latitude?: number;
 
   @IsNumber()
-  @IsNotEmpty()
-  longitude: number;
+  @IsOptional()
+  longitude?: number;
 
   @IsPhoneNumber('IN')
   @IsNotEmpty()

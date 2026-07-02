@@ -1,17 +1,31 @@
 import {
   Controller, Get, Post, Param, Body,
-  UseGuards, Request, Query,
+  UseGuards, Request, Query, NotFoundException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CommissionService } from './commission.service';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { Shop } from '../../core/entities/shop.entity';
 
 @Controller('commission')
 @UseGuards(JwtAuthGuard)
 export class CommissionController {
-  constructor(private readonly commissionService: CommissionService) {}
+  constructor(
+    private readonly commissionService: CommissionService,
+    @InjectRepository(Shop)
+    private readonly shopRepository: Repository<Shop>,
+  ) {}
+
+  private async resolveShopId(user: { id: string; shopId?: string }): Promise<string> {
+    if (user.shopId) return user.shopId;
+    const shop = await this.shopRepository.findOne({ where: { ownerId: user.id } });
+    if (!shop) throw new NotFoundException('Shop not found');
+    return shop.id;
+  }
 
   // Seller: get my bills
   @Get('my-bills')
@@ -22,7 +36,7 @@ export class CommissionController {
     @Query('page') page = '1',
     @Query('limit') limit = '30',
   ) {
-    const shopId = req.user.shopId;
+    const shopId = await this.resolveShopId(req.user);
     return this.commissionService.getShopBills(shopId, +page, +limit);
   }
 
@@ -31,7 +45,8 @@ export class CommissionController {
   @Roles(UserRole.SELLER)
   @UseGuards(RolesGuard)
   async initiatePayment(@Request() req: any, @Param('billId') billId: string) {
-    return this.commissionService.createCommissionPaymentOrder(req.user.shopId, billId);
+    const shopId = await this.resolveShopId(req.user);
+    return this.commissionService.createCommissionPaymentOrder(shopId, billId);
   }
 
   // Seller: verify payment after Razorpay callback
@@ -47,8 +62,9 @@ export class CommissionController {
       razorpaySignature: string;
     },
   ) {
+    const shopId = await this.resolveShopId(req.user);
     return this.commissionService.verifyCommissionPayment(
-      req.user.shopId,
+      shopId,
       billId,
       body.razorpayPaymentId,
       body.razorpayOrderId,

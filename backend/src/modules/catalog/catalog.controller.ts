@@ -10,14 +10,21 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
+import { BulkUploadService } from './bulk-upload.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
+import { VisualSearchDto } from './dto/visual-search.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
@@ -33,6 +40,7 @@ export class CatalogController {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly searchService: SearchService,
+    private readonly bulkUploadService: BulkUploadService,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     @InjectRepository(DailyOffer)
@@ -85,6 +93,13 @@ export class CatalogController {
       lat ? parseFloat(lat) : undefined,
       lng ? parseFloat(lng) : undefined,
     );
+  }
+
+  @Public()
+  @Post('visual-search')
+  @HttpCode(HttpStatus.OK)
+  async visualSearch(@Body() dto: VisualSearchDto) {
+    return this.searchService.visualSearch(dto.categoryType, dto.limit);
   }
 
   @Public()
@@ -172,6 +187,25 @@ export class CatalogController {
   @Roles(UserRole.SELLER)
   async getSellerProductLimit(@CurrentUser() user: any) {
     return this.catalogService.getSellerProductLimit(user.id);
+  }
+
+  @Get('seller/bulk-upload/template')
+  @Roles(UserRole.SELLER)
+  async downloadBulkTemplate(@Res() res: Response) {
+    const buffer = this.bulkUploadService.generateTemplate();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=localkart-products-template.xlsx');
+    res.send(buffer);
+  }
+
+  @Post('seller/bulk-upload')
+  @Roles(UserRole.SELLER)
+  @UseInterceptors(FileInterceptor('file'))
+  async bulkUpload(
+    @CurrentUser() user: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.bulkUploadService.processUpload(user.id, file);
   }
 
   // ==================== ADMIN ENDPOINTS ====================
