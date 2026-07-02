@@ -34,13 +34,13 @@ export default function HomePage() {
                 Discover products from local shops in your city. Same-day delivery, best prices, and support your community.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/products">
+                <Link href="/browse">
                   <Button size="lg" className="w-full sm:w-auto">
                     <ShoppingBag className="mr-2 h-5 w-5" />
                     Start Shopping
                   </Button>
                 </Link>
-                <Link href="/seller/register">
+                <Link href="/seller-onboarding">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto">
                     <Store className="mr-2 h-5 w-5" />
                     Become a Seller
@@ -181,7 +181,7 @@ export default function HomePage() {
                   <span className="text-gray-700 dark:text-gray-300">Flexible subscription plans for every business size</span>
                 </li>
               </ul>
-              <Link href="/seller/register">
+              <Link href="/seller-onboarding">
                 <Button size="lg" className="w-full sm:w-auto">
                   <TrendingUp className="mr-2 h-5 w-5" />
                   Start Selling Today
@@ -240,16 +240,16 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: 'Groceries', icon: '🛒', color: 'from-green-100 to-green-200 dark:from-green-900 dark:to-green-800' },
-              { name: 'Electronics', icon: '📱', color: 'from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800' },
-              { name: 'Fashion', icon: '👔', color: 'from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800' },
-              { name: 'Home & Kitchen', icon: '🏠', color: 'from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800' },
-              { name: 'Beauty', icon: '💄', color: 'from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800' },
-              { name: 'Sports', icon: '⚽', color: 'from-red-100 to-red-200 dark:from-red-900 dark:to-red-800' },
-              { name: 'Books', icon: '📚', color: 'from-yellow-100 to-yellow-200 dark:from-yellow-900 dark:to-yellow-800' },
-              { name: 'Pharmacy', icon: '💊', color: 'from-teal-100 to-teal-200 dark:from-teal-900 dark:to-teal-800' },
+              { name: 'Groceries', icon: '🛒', slug: 'groceries', color: 'from-green-100 to-green-200 dark:from-green-900 dark:to-green-800' },
+              { name: 'Electronics', icon: '📱', slug: 'electronics', color: 'from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800' },
+              { name: 'Fashion', icon: '👔', slug: 'fashion', color: 'from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800' },
+              { name: 'Home & Kitchen', icon: '🏠', slug: 'home_essentials', color: 'from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800' },
+              { name: 'Beauty', icon: '💄', slug: 'beauty', color: 'from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800' },
+              { name: 'Sports', icon: '⚽', slug: 'sports', color: 'from-red-100 to-red-200 dark:from-red-900 dark:to-red-800' },
+              { name: 'Books', icon: '📚', slug: 'books', color: 'from-yellow-100 to-yellow-200 dark:from-yellow-900 dark:to-yellow-800' },
+              { name: 'Pharmacy', icon: '💊', slug: 'groceries', color: 'from-teal-100 to-teal-200 dark:from-teal-900 dark:to-teal-800' },
             ].map((category) => (
-              <Link key={category.name} href={`/products?category=${category.name.toLowerCase()}`}>
+              <Link key={category.name} href={`/browse/${category.slug}`}>
                 <Card className={`cursor-pointer hover:shadow-xl transition-all bg-gradient-to-br ${category.color}`}>
                   <CardContent className="p-6 text-center">
                     <div className="text-4xl mb-3">{category.icon}</div>
@@ -278,7 +278,7 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/products">
+            <Link href="/browse">
               <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/10 text-white border-white/30 hover:bg-white/20">
                 Browse Products
               </Button>
