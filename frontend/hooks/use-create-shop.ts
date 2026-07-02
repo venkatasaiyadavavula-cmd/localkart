@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
+import { useAuthStore } from './use-auth';
 
 export function useCreateShop() {
   const router = useRouter();
@@ -10,7 +11,15 @@ export function useCreateShop() {
       const { data } = await apiClient.post('/seller/shop', shopData);
       return data.data;
     },
-    onSuccess: () => {
+    onSuccess: (shop) => {
+      const { user, setUser } = useAuthStore.getState();
+      if (user) {
+        setUser({
+          ...user,
+          role: 'seller',
+          shopId: shop?.id ?? user.shopId,
+        });
+      }
       router.push('/dashboard');
     },
   });

@@ -21,7 +21,7 @@ const publicRoutes = [
   '/profile',
 ];
 
-const sellerRoutes = ['/seller', '/seller-onboarding', '/dashboard'];
+const sellerRoutes = ['/seller', '/dashboard'];
 const adminRoutes = ['/admin'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -42,8 +42,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       (route) => pathname === route || pathname.startsWith(route + '/')
     );
 
-    const isSellerRoute = sellerRoutes.some((route) => pathname.startsWith(route));
-    const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
+    const isSellerRoute = sellerRoutes.some(
+      (route) => pathname === route || pathname.startsWith(route + '/'),
+    );
+    const isAdminRoute = adminRoutes.some(
+      (route) => pathname === route || pathname.startsWith(route + '/'),
+    );
 
     if (!isAuthenticated && !isPublicRoute) {
       router.push(`/login?redirect=${encodeURIComponent(pathname)}`);

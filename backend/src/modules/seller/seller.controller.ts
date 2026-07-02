@@ -61,6 +61,7 @@ export class SellerController {
   }
 
   @Post('shop')
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async createShop(@CurrentUser() user: any, @Body() shopProfileDto: ShopProfileDto) {
     return this.sellerService.createShop(user.id, shopProfileDto);
   }
