@@ -22,8 +22,6 @@ const CATEGORIES = [
   { label: 'Beauty',      labelTe: 'బ్యూటీ',        slug: 'beauty',          emoji: '💄', color: '#7C3AED', bg: '#F5F3FF', hover: '#EDE9FE' },
   { label: 'Home',        labelTe: 'హోమ్',          slug: 'home_essentials', emoji: '🏠', color: '#D97706', bg: '#FFFBEB', hover: '#FEF3C7' },
   { label: 'Accessories', labelTe: 'యాక్సెసరీస్',    slug: 'accessories',     emoji: '⌚', color: '#0891B2', bg: '#ECFEFF', hover: '#CFFAFE' },
-  { label: 'Sports',      labelTe: 'స్పోర్ట్స్',      slug: 'sports',          emoji: '⚽', color: '#65A30D', bg: '#F7FEE7', hover: '#ECFCCB' },
-  { label: 'Books',       labelTe: 'పుస్తకాలు',      slug: 'books',           emoji: '📚', color: '#EA580C', bg: '#FFF7ED', hover: '#FFEDD5' },
 ] as const;
 
 /* quick-search suggestions */
