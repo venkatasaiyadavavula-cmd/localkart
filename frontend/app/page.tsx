@@ -245,9 +245,7 @@ export default function HomePage() {
               { name: 'Fashion', icon: '👔', slug: 'fashion', color: 'from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800' },
               { name: 'Home & Kitchen', icon: '🏠', slug: 'home_essentials', color: 'from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800' },
               { name: 'Beauty', icon: '💄', slug: 'beauty', color: 'from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800' },
-              { name: 'Sports', icon: '⚽', slug: 'sports', color: 'from-red-100 to-red-200 dark:from-red-900 dark:to-red-800' },
-              { name: 'Books', icon: '📚', slug: 'books', color: 'from-yellow-100 to-yellow-200 dark:from-yellow-900 dark:to-yellow-800' },
-              { name: 'Pharmacy', icon: '💊', slug: 'groceries', color: 'from-teal-100 to-teal-200 dark:from-teal-900 dark:to-teal-800' },
+              { name: 'Accessories', icon: '⌚', slug: 'accessories', color: 'from-cyan-100 to-cyan-200 dark:from-cyan-900 dark:to-cyan-800' },
             ].map((category) => (
               <Link key={category.name} href={`/browse/${category.slug}`}>
                 <Card className={`cursor-pointer hover:shadow-xl transition-all bg-gradient-to-br ${category.color}`}>
