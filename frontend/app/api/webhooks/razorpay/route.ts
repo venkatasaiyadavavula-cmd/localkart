@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
+  if (process.env.PAYMENTS_ENABLED !== 'true') {
+    return NextResponse.json({ error: 'Payment gateway not available' }, { status: 503 });
+  }
+
   const signature = req.headers.get('x-razorpay-signature');
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 

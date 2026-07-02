@@ -97,6 +97,10 @@ export class OrdersService {
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
     const { paymentMethod = PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
 
+    if (paymentMethod === PaymentMethod.RAZORPAY && process.env.PAYMENTS_ENABLED !== 'true') {
+      throw new BadRequestException('Online payment is not available. Please use Cash on Delivery.');
+    }
+
     const { cart, products } = await this.cartService.validateCartForCheckout(userId);
     if (cart.items.length === 0) {
       throw new BadRequestException('Cart is empty');

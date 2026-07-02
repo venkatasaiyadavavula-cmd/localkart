@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import * as crypto from 'crypto';
 import { PaymentsService } from './payments.service';
 import { Public } from '../../core/decorators/public.decorator';
+import { isPaymentsEnabled } from './payments.config';
 
 @Controller('webhooks')
 export class WebhookController {
@@ -16,6 +17,10 @@ export class WebhookController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    if (!isPaymentsEnabled()) {
+      return res.status(503).json({ error: 'Payment gateway not available' });
+    }
+
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     if (!webhookSecret) {

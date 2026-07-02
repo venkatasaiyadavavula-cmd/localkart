@@ -10,6 +10,7 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
 import { Shop } from '../../core/entities/shop.entity';
+import { assertPaymentsEnabled } from './payments.config';
 
 @Controller('commission')
 @UseGuards(JwtAuthGuard)
@@ -45,6 +46,7 @@ export class CommissionController {
   @Roles(UserRole.SELLER)
   @UseGuards(RolesGuard)
   async initiatePayment(@Request() req: any, @Param('billId') billId: string) {
+    assertPaymentsEnabled();
     const shopId = await this.resolveShopId(req.user);
     return this.commissionService.createCommissionPaymentOrder(shopId, billId);
   }
@@ -62,6 +64,7 @@ export class CommissionController {
       razorpaySignature: string;
     },
   ) {
+    assertPaymentsEnabled();
     const shopId = await this.resolveShopId(req.user);
     return this.commissionService.verifyCommissionPayment(
       shopId,
