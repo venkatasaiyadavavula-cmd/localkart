@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
+import { getProductUrl } from '@/lib/product-url';
 
 interface CartItemProps {
   item: {
@@ -14,6 +15,8 @@ interface CartItemProps {
     quantity: number;
     image?: string;
     maxQuantity: number;
+    slug?: string;
+    categoryType?: string;
   };
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onRemove: (productId: string) => void;
@@ -44,7 +47,7 @@ export function CartItem({
         <div className="flex justify-between">
           <div>
             <Link
-              href={`/product/${item.productId}`}
+              href={getProductUrl(item)}
               className="font-medium hover:text-primary"
             >
               {item.name}

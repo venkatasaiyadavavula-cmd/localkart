@@ -19,7 +19,7 @@ export default async function SellerDashboardLayout({
   const session = await getServerSession();
 
   if (!session || session.user.role !== 'seller') {
-    redirect('/login?redirect=/dashboard');
+    redirect('/login?intent=seller&redirect=/dashboard');
   }
 
   const hasShop = !!(session.user.shopId ?? (session.user as { shop?: { id?: string } }).shop?.id);

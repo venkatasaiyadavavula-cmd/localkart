@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { getProductUrl } from '@/lib/product-url';
 
 interface CartDrawerProps {
   trigger?: React.ReactNode;
@@ -80,7 +81,7 @@ export function CartDrawer({ trigger }: CartDrawerProps) {
                       <div className="flex flex-1 flex-col">
                         <div className="flex justify-between">
                           <Link
-                            href={`/product/${item.productId}`}
+                            href={getProductUrl(item)}
                             className="line-clamp-1 text-sm font-medium hover:text-primary"
                             onClick={() => setOpen(false)}
                           >

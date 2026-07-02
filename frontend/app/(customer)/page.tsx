@@ -17,6 +17,7 @@ import { TodayOffersSection }      from '@/components/home/today-offers-section'
 import { HowItWorksSection }       from '@/components/home/how-it-works-section';
 import { FounderSection }          from '@/components/home/founder-section';
 import { LocationDialog }          from '@/components/location/location-dialog';
+import { buildLoginUrl, buildRegisterUrl, SELLER_ONBOARDING_PATH } from '@/lib/auth-routes';
 
 const BANNERS = [
   { gradient: 'linear-gradient(135deg,#3D5AF1 0%,#6D28D9 55%,#4338CA 100%)', glowColor: 'rgba(109,40,217,0.45)', badge: '🔥 Flash Sale', headline: 'Up to 70% OFF', sub: 'Fashion & Clothing', emoji: '👗', cta: 'Shop Fashion' },
@@ -289,7 +290,7 @@ export default function HomePage() {
                 </span>
               </p>
               <p className="text-xs text-white/50 font-semibold mt-2">Reach 10,000+ local customers today</p>
-              <Link href="/seller-onboarding">
+              <Link href={buildLoginUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH })}>
                 <button className="mt-4 inline-flex items-center gap-2 bg-white font-extrabold text-xs px-5 py-2.5 rounded-xl active:scale-[0.97] transition-all"
                   style={{ color: '#3D5AF1', boxShadow: '0 4px 20px rgba(255,255,255,0.20)' }}>
                   Start Selling Free <ArrowRight className="h-3.5 w-3.5" />
@@ -298,6 +299,50 @@ export default function HomePage() {
             </div>
             <span className="text-6xl select-none flex-shrink-0 animate-float" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.4))', animationDelay: '0.8s' }}>🏪</span>
           </div>
+        </div>
+      </div>
+
+      {/* ── JOIN LOCALKART CTA ── */}
+      <div className="px-4 py-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link href={buildRegisterUrl({ intent: 'customer' })}>
+            <div
+              className="relative overflow-hidden rounded-3xl p-5 h-full"
+              style={{
+                background: 'linear-gradient(135deg,#EEF0FE 0%,#FFFFFF 100%)',
+                border: '1px solid rgba(61,90,241,0.12)',
+                boxShadow: '0 8px 32px rgba(61,90,241,0.08)',
+              }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-2">For Shoppers</p>
+              <p className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display,Syne,sans-serif)' }}>
+                Become a Customer
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Shop local stores with same-day delivery</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-extrabold text-indigo-600">
+                Create free account <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          </Link>
+          <Link href={buildRegisterUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH })}>
+            <div
+              className="relative overflow-hidden rounded-3xl p-5 h-full"
+              style={{
+                background: 'linear-gradient(135deg,#F5F3FF 0%,#FFF7ED 100%)',
+                border: '1px solid rgba(124,58,237,0.12)',
+                boxShadow: '0 8px 32px rgba(124,58,237,0.08)',
+              }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-wider text-violet-600 mb-2">For Businesses</p>
+              <p className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display,Syne,sans-serif)' }}>
+                Become a Seller
+              </p>
+              <p className="text-xs text-gray-500 mt-1">List products and grow your local shop online</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-extrabold text-violet-600">
+                Start selling free <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          </Link>
         </div>
       </div>
 

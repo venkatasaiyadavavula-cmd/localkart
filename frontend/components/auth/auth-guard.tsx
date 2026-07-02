@@ -3,24 +3,23 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { buildLoginUrl } from '@/lib/auth-routes';
 
 const publicRoutes = [
   '/',
   '/login',
   '/register',
-  '/verify-otp',
   '/forgot-password',
   '/browse',
-  '/product',
   '/shop',
-  '/about',
-  '/contact',
   '/cart',
   '/wishlist',
   '/videos',
   '/terms',
   '/privacy',
 ];
+
+const sellerPublicRoutes: string[] = [];
 
 const sellerRoutes = ['/seller', '/dashboard'];
 const adminRoutes = ['/admin'];
@@ -29,14 +28,22 @@ function matchesRoute(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(route + '/');
 }
 
+function isSellerIntentPath(pathname: string) {
+  return pathname === '/seller-onboarding' ||
+    sellerRoutes.some((route) => matchesRoute(pathname, route));
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
 
-  const isPublicRoute = publicRoutes.some((route) => matchesRoute(pathname, route));
-  const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-otp'].some((route) =>
+  const isPublicRoute =
+    publicRoutes.some((route) => matchesRoute(pathname, route)) ||
+    sellerPublicRoutes.some((route) => matchesRoute(pathname, route));
+
+  const isAuthPage = ['/login', '/register', '/forgot-password'].some((route) =>
     matchesRoute(pathname, route),
   );
 
@@ -49,14 +56,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const isAdminRoute = adminRoutes.some((route) => matchesRoute(pathname, route));
 
     if (!isAuthenticated && !isPublicRoute && !isAuthPage) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      const intent = isSellerIntentPath(pathname) ? 'seller' : 'customer';
+      router.push(buildLoginUrl({ intent, redirect: pathname }));
       clearTimeout(timeout);
       setIsChecking(false);
       return;
     }
 
     if (isAuthenticated && isSellerRoute && user?.role !== 'seller' && user?.role !== 'admin') {
-      router.push('/');
+      router.push('/seller-onboarding');
       clearTimeout(timeout);
       setIsChecking(false);
       return;
@@ -73,7 +81,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     setIsChecking(false);
   }, [isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
 
-  // Never block login/register pages behind a spinner
   if (isLoading && isChecking && !isPublicRoute && !isAuthPage) {
     return (
       <div className="flex min-h-screen items-center justify-center">

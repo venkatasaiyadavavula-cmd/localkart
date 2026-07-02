@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getProductUrl } from '@/lib/product-url';
 
 interface ProductCardProps {
   product: {
@@ -40,9 +41,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     ? Math.round(((mrp - product.price) / mrp) * 100)
     : 0;
 
-  const href = product.categoryType
-    ? `/browse/${product.categoryType}/product/${product.slug}`
-    : `/browse/product/${product.slug}`;
+  const href = getProductUrl(product);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();

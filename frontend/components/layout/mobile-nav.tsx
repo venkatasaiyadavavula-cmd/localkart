@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useAuth } from '@/hooks/use-auth';
 import { useTranslation } from '@/hooks/use-translation';
+import { buildLoginUrl } from '@/lib/auth-routes';
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -45,7 +46,7 @@ export function MobileNav() {
     {
       icon: User,
       label: user ? t('profile') : t('login'),
-      href: user ? '/profile' : '/login',
+      href: user ? '/profile' : buildLoginUrl({ intent: 'customer' }),
     },
   ];
 

@@ -26,6 +26,7 @@ import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useCartStore } from '@/store/cart-store';
 import { useShop } from '@/hooks/use-shop';
 import { formatPrice } from '@/lib/utils';
+import { getProductUrl } from '@/lib/product-url';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CartPage() {
@@ -160,11 +161,7 @@ export default function CartPage() {
                         <div className="flex justify-between">
                           <div>
                             <Link
-                              href={
-                                item.slug && item.categoryType
-                                  ? `/browse/${item.categoryType}/product/${item.slug}`
-                                  : '/browse'
-                              }
+                              href={getProductUrl(item)}
                               className="font-medium hover:text-primary"
                             >
                               {item.name}
