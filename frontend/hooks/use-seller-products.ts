@@ -1,18 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export function useSellerProducts(params: Record<string, unknown> = {}) {
   const queryClient = useQueryClient();
@@ -27,18 +15,14 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
           searchParams.append(paramKey, String(value));
         }
       });
-      const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`, {
-        headers: getAuthHeaders(),
-      });
+      const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`);
       return normalizeList(data);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
-      return apiClient.delete(`/catalog/seller/products/${productId}`, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.delete(`/catalog/seller/products/${productId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
@@ -47,9 +31,7 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ productId, data: updateData }: { productId: string; data: Record<string, unknown> }) => {
-      return apiClient.put(`/catalog/seller/products/${productId}`, updateData, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/catalog/seller/products/${productId}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });

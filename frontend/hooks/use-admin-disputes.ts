@@ -1,18 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { normalizeList, unwrapApiData } from '@/lib/utils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = localStorage.getItem('accessToken');
-  return { Authorization: `Bearer ${token}` };
-}
+import { apiClient } from '@/lib/api/client';
+import { normalizeList } from '@/lib/utils';
 
 export function useAdminDisputes(params: { status?: string } = {}) {
   const queryClient = useQueryClient();
@@ -22,9 +10,7 @@ export function useAdminDisputes(params: { status?: string } = {}) {
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
-      const { data } = await apiClient.get(`/returns/admin/all?${searchParams.toString()}`, {
-        headers: getAuthHeaders(),
-      });
+      const { data } = await apiClient.get(`/returns/admin/all?${searchParams.toString()}`);
       return normalizeList(data);
     },
   });
@@ -32,9 +18,7 @@ export function useAdminDisputes(params: { status?: string } = {}) {
   const resolveMutation = useMutation({
     mutationFn: async ({ disputeId, action }: { disputeId: string; action: string }) => {
       if (action === 'refund') {
-        return apiClient.post(`/returns/admin/${disputeId}/process-refund`, {}, {
-          headers: getAuthHeaders(),
-        });
+        return apiClient.post(`/returns/admin/${disputeId}/process-refund`, {});
       }
       const statusMap: Record<string, string> = {
         approve: 'approved',
@@ -43,7 +27,6 @@ export function useAdminDisputes(params: { status?: string } = {}) {
       return apiClient.put(
         `/returns/admin/${disputeId}/status`,
         { status: statusMap[action] || action },
-        { headers: getAuthHeaders() },
       );
     },
     onSuccess: () => {

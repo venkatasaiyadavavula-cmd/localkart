@@ -1,18 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
@@ -23,10 +11,8 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
       if (params.search) searchParams.append('search', params.search);
-      const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`, {
-        headers: getAuthHeaders(),
-      });
-      let orders = normalizeList(data);
+      const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`);
+      let orders = normalizeList<{ orderNumber?: string }>(data);
       if (params.search) {
         const q = params.search.toLowerCase();
         orders = orders.filter((o: { orderNumber?: string }) =>
@@ -39,9 +25,7 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      return apiClient.put(`/orders/seller/${orderId}/status`, { status }, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/orders/seller/${orderId}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });

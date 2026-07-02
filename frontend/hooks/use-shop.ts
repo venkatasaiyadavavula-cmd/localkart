@@ -1,19 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
+import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils';
-
-function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export function useShop(slug?: string) {
   const queryClient = useQueryClient();
@@ -23,9 +10,7 @@ export function useShop(slug?: string) {
     queryKey: isSellerShop ? ['seller', 'shop'] : ['shop', slug],
     queryFn: async () => {
       if (isSellerShop) {
-        const { data } = await apiClient.get('/seller/shop', {
-          headers: getAuthHeaders(),
-        });
+        const { data } = await apiClient.get('/seller/shop');
         return unwrapApiData(data);
       }
       const isUuid = /^[0-9a-f-]{36}$/i.test(slug!);
@@ -33,7 +18,9 @@ export function useShop(slug?: string) {
       const { data } = await apiClient.get(endpoint);
       return unwrapApiData(data);
     },
-    enabled: isSellerShop ? !!getAuthHeaders().Authorization : !!slug,
+    enabled: isSellerShop
+      ? typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
+      : !!slug,
   });
 
   const updateMutation = useMutation({
@@ -44,9 +31,7 @@ export function useShop(slug?: string) {
         latitude: shopData.latitude ?? currentShop?.latitude ?? 0,
         longitude: shopData.longitude ?? currentShop?.longitude ?? 0,
       };
-      const { data } = await apiClient.put('/seller/shop', payload, {
-        headers: getAuthHeaders(),
-      });
+      const { data } = await apiClient.put('/seller/shop', payload);
       return unwrapApiData(data);
     },
     onSuccess: () => {

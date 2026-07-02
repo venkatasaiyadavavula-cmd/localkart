@@ -1,18 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = localStorage.getItem('accessToken');
-  return { Authorization: `Bearer ${token}` };
-}
 
 export function useAdminShops(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
@@ -27,10 +15,8 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
         params.status === 'pending'
           ? `/admin/shops/pending?${searchParams.toString()}`
           : `/admin/shops?${searchParams.toString()}`;
-      const { data } = await apiClient.get(endpoint, {
-        headers: getAuthHeaders(),
-      });
-      let shops = normalizeList(data);
+      const { data } = await apiClient.get(endpoint);
+      let shops = normalizeList<{ name?: string; city?: string }>(data);
       if (params.search) {
         const q = params.search.toLowerCase();
         shops = shops.filter(
@@ -44,9 +30,7 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
 
   const approveMutation = useMutation({
     mutationFn: async (shopId: string) => {
-      return apiClient.put(`/admin/shops/${shopId}/approve`, {}, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/admin/shops/${shopId}/approve`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
@@ -55,9 +39,7 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
 
   const rejectMutation = useMutation({
     mutationFn: async ({ shopId, reason }: { shopId: string; reason: string }) => {
-      return apiClient.put(`/admin/shops/${shopId}/reject`, { reason }, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/admin/shops/${shopId}/reject`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
@@ -66,9 +48,7 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
 
   const suspendMutation = useMutation({
     mutationFn: async ({ shopId, reason }: { shopId: string; reason: string }) => {
-      return apiClient.put(`/admin/shops/${shopId}/suspend`, { reason }, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/admin/shops/${shopId}/suspend`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });

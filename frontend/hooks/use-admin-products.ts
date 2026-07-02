@@ -1,18 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = localStorage.getItem('accessToken');
-  return { Authorization: `Bearer ${token}` };
-}
 
 interface AdminProductsParams {
   status?: string;
@@ -35,10 +23,8 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
         !params.status || params.status === 'pending'
           ? `/admin/products/pending?${searchParams.toString()}`
           : `/admin/products/pending?limit=0`;
-      const { data } = await apiClient.get(endpoint, {
-        headers: getAuthHeaders(),
-      });
-      const products = normalizeList(data);
+      const { data } = await apiClient.get(endpoint);
+      const products = normalizeList<{ status?: string; name?: string }>(data);
       if (params.status && params.status !== 'pending' && params.status !== 'all') {
         return products.filter((p: { status?: string }) => p.status === params.status);
       }
@@ -52,9 +38,7 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
 
   const approveMutation = useMutation({
     mutationFn: async (productId: string) => {
-      return apiClient.put(`/admin/products/${productId}/approve`, {}, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/admin/products/${productId}/approve`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
@@ -63,9 +47,7 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ productId, reason }: { productId: string; reason: string }) => {
-      return apiClient.put(`/admin/products/${productId}/reject`, { reason }, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/admin/products/${productId}/reject`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
