@@ -10,11 +10,16 @@ import {
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
-const navItems = [
+const navItems: Array<{
+  icon: typeof LayoutDashboard;
+  label: string;
+  href: string;
+  highlight?: boolean;
+}> = [
   { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },
   { icon: Package,         label: 'Products',        href: '/dashboard/products' },
   { icon: ShoppingBag,     label: 'Orders',          href: '/dashboard/orders' },
-  { icon: Zap,             label: "Today's Offers",  href: '/dashboard/offers' },
+  { icon: Zap,             label: 'DAILY OFFERS',    href: '/dashboard/offers', highlight: true },
   { icon: TrendingUp,      label: 'Ads',             href: '/dashboard/ads' },
   { icon: IndianRupee,     label: 'Commission',      href: '/dashboard/commission' },
   { icon: BarChart2,       label: 'Earnings',        href: '/dashboard/earnings' },
@@ -41,6 +46,7 @@ export function SellerSidebar() {
       <nav className="flex flex-col gap-1 p-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isHighlight = 'highlight' in item && item.highlight;
           return (
             <Link
               key={item.href}
@@ -49,7 +55,9 @@ export function SellerSidebar() {
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : isHighlight
+                    ? 'bg-orange-50 text-orange-700 font-extrabold border border-orange-100 hover:bg-orange-100'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" />

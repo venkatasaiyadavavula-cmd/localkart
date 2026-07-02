@@ -1,4 +1,12 @@
-import { IsNumber, IsString, IsNotEmpty, Min } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsNotEmpty,
+  Min,
+  IsOptional,
+  MaxLength,
+  IsObject,
+} from 'class-validator';
 
 export class CreateDailyOfferDto {
   @IsString()
@@ -6,6 +14,15 @@ export class CreateDailyOfferDto {
   productId: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(1)
   offerPrice: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  sellerNotes?: string;
+
+  @IsOptional()
+  @IsObject()
+  offerDetails?: Record<string, string | number>;
 }

@@ -141,6 +141,7 @@ export class CatalogController {
         where: { productId: product.id, isActive: true, expiresAt: MoreThan(now) },
       });
       (product as any).daily_offer = offer;
+      (product as any).daily_offers = offer ? [offer] : [];
     }
 
     return { data: products };

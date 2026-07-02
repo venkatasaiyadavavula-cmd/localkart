@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { SlidersHorizontal, X, ChevronDown, Zap } from 'lucide-react';
 import { ProductCard } from '@/components/product/product-card';
 import { useProducts } from '@/hooks/use-products';
 import { useLocationStore } from '@/store/location-store';
 import { Skeleton } from '@/components/ui/skeleton';
+import { normalizeList } from '@/lib/utils';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const categories = [
   { label: 'All', value: '' },
@@ -28,6 +33,7 @@ const sortOptions = [
 export default function BrowsePage({ initialCategory = '' }: { initialCategory?: string }) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
+  const saleMode = searchParams.get('sale') === 'true';
   const { location } = useLocationStore();
 
   const [activeCategory, setActiveCategory] = useState(initialCategory);
@@ -48,11 +54,27 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
     query: initialQuery,
   });
 
-  const products = Array.isArray(data)
-    ? data
-    : (data as { data?: unknown[]; products?: unknown[] })?.data
-      ?? (data as { products?: unknown[] })?.products
-      ?? [];
+  const { data: saleOffers, isLoading: saleLoading } = useQuery({
+    queryKey: ['today-offers-browse', location?.latitude, location?.longitude],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (location?.latitude) params.append('lat', String(location.latitude));
+      if (location?.longitude) params.append('lng', String(location.longitude));
+      const { data: res } = await axios.get(`${API_URL}/catalog/today-offers?${params}`);
+      return normalizeList(res);
+    },
+    enabled: saleMode,
+  });
+
+  const products = saleMode
+    ? (saleOffers || [])
+    : Array.isArray(data)
+      ? data
+      : (data as { data?: unknown[]; products?: unknown[] })?.data
+        ?? (data as { products?: unknown[] })?.products
+        ?? [];
+
+  const loading = saleMode ? saleLoading : isLoading;
 
   const handleSort = (val: string) => {
     const [by, order] = val.split('-');
@@ -112,6 +134,13 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
         </div>
       </div>
 
+      {saleMode && (
+        <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-100 px-4 py-3">
+          <Zap className="h-4 w-4 text-orange-500" />
+          <p className="text-sm font-bold text-orange-800">Today&apos;s Daily Offers — 24h only</p>
+        </div>
+      )}
+
       {/* Search query banner */}
       {initialQuery && (
         <div className="px-4 py-2 bg-primary/5 flex items-center justify-between">
@@ -126,7 +155,7 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
 
       {/* Product grid */}
       <div className="grid grid-cols-2 gap-0.5 md:grid-cols-3 lg:grid-cols-4">
-        {isLoading
+        {loading
           ? Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white">
                 <Skeleton className="aspect-square w-full" />
@@ -142,7 +171,7 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
         }
       </div>
 
-      {!isLoading && (!products || products.length === 0) && (
+      {!loading && (!products || products.length === 0) && (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <p className="text-4xl mb-3">🔍</p>
           <p className="text-sm font-medium">No products found</p>
