@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerOrders } from '@/hooks/use-seller-orders';
 import { formatPrice } from '@/lib/utils';
+import { formatDeliveryAddress } from '@/lib/utils/api';
 import { OrderStatus, statusColors, statusLabels } from '@/types/order';
 import { cn } from '@/lib/utils';
 
@@ -180,7 +181,7 @@ export default function SellerOrdersPage() {
                   {order.deliveryAddress && (
                     <div className="mt-2 flex items-start gap-1.5 bg-gray-50 rounded-xl p-2.5">
                       <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-gray-600">{order.deliveryAddress}</p>
+                      <p className="text-xs text-gray-600">{formatDeliveryAddress(order.deliveryAddress)}</p>
                     </div>
                   )}
 
@@ -189,7 +190,7 @@ export default function SellerOrdersPage() {
                     {order.items?.slice(0, 3).map((item: any) => (
                       <div key={item.id} className="flex items-center justify-between text-xs">
                         <span className="text-gray-600 truncate max-w-[200px]">
-                          {item.quantity}× {item.product?.name}
+                          {item.quantity}× {item.productName || item.product?.name}
                         </span>
                         <span className="font-semibold text-gray-800 flex-shrink-0">
                           {formatPrice(item.price * item.quantity)}

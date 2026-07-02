@@ -1,14 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import axios from 'axios';
 import { toast } from 'sonner';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
+import { apiClient } from '@/lib/api/client';
 
 interface CartItem {
   productId: string;
@@ -44,10 +37,7 @@ export const useCartStore = create<CartStore>()(
       addItem: async (productId, quantity = 1) => {
         set({ isLoading: true });
         try {
-          const token = localStorage.getItem('accessToken');
-          const { data } = await apiClient.post('/cart/items', { productId, quantity }, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const { data } = await apiClient.post('/cart/items', { productId, quantity });
           const cart = data.data;
           set({
             items: cart.items,
@@ -66,10 +56,7 @@ export const useCartStore = create<CartStore>()(
       updateQuantity: async (productId, quantity) => {
         set({ isLoading: true });
         try {
-          const token = localStorage.getItem('accessToken');
-          const { data } = await apiClient.put(`/cart/items/${productId}`, { quantity }, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const { data } = await apiClient.put(`/cart/items/${productId}`, { quantity });
           const cart = data.data;
           set({
             items: cart.items,
@@ -87,10 +74,7 @@ export const useCartStore = create<CartStore>()(
       removeItem: async (productId) => {
         set({ isLoading: true });
         try {
-          const token = localStorage.getItem('accessToken');
-          const { data } = await apiClient.delete(`/cart/items/${productId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const { data } = await apiClient.delete(`/cart/items/${productId}`);
           const cart = data.data;
           set({
             items: cart.items,
@@ -113,10 +97,7 @@ export const useCartStore = create<CartStore>()(
       syncWithServer: async () => {
         set({ isLoading: true });
         try {
-          const token = localStorage.getItem('accessToken');
-          const { data } = await apiClient.get('/cart', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const { data } = await apiClient.get('/cart');
           const cart = data.data;
           set({
             items: cart.items,

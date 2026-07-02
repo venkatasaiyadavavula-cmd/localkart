@@ -1,26 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-function normalizeOrders(payload: unknown) {
-  if (Array.isArray(payload)) return payload;
-  if (payload && typeof payload === 'object') {
-    const obj = payload as { data?: unknown[] };
-    if (Array.isArray(obj.data)) return obj.data;
-  }
-  return [];
-}
+import { apiClient } from '@/lib/api/client';
+import { normalizeList } from '@/lib/utils';
 
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
@@ -31,18 +11,21 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
       if (params.search) searchParams.append('search', params.search);
-      const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`, {
-        headers: getAuthHeaders(),
-      });
-      return normalizeOrders(data.data);
+      const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`);
+      let orders = normalizeList<{ orderNumber?: string }>(data);
+      if (params.search) {
+        const q = params.search.toLowerCase();
+        orders = orders.filter((o: { orderNumber?: string }) =>
+          o.orderNumber?.toLowerCase().includes(q),
+        );
+      }
+      return orders;
     },
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      return apiClient.put(`/orders/seller/${orderId}/status`, { status }, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/orders/seller/${orderId}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });

@@ -160,7 +160,11 @@ export default function CartPage() {
                         <div className="flex justify-between">
                           <div>
                             <Link
-                              href={`/product/${item.productId}`}
+                              href={
+                                item.slug && item.categoryType
+                                  ? `/browse/${item.categoryType}/product/${item.slug}`
+                                  : '/browse'
+                              }
                               className="font-medium hover:text-primary"
                             >
                               {item.name}

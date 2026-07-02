@@ -1,12 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
+import { apiClient } from '@/lib/api/client';
+import { normalizeList } from '@/lib/utils';
 
 export function useAdminDisputes(params: { status?: string } = {}) {
   const queryClient = useQueryClient();
@@ -14,22 +8,26 @@ export function useAdminDisputes(params: { status?: string } = {}) {
   const query = useQuery({
     queryKey: ['admin', 'disputes', params],
     queryFn: async () => {
-      const token = localStorage.getItem('accessToken');
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
-      const { data } = await apiClient.get(`/admin/disputes?${searchParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return data.data;
+      const { data } = await apiClient.get(`/returns/admin/all?${searchParams.toString()}`);
+      return normalizeList(data);
     },
   });
 
   const resolveMutation = useMutation({
     mutationFn: async ({ disputeId, action }: { disputeId: string; action: string }) => {
-      const token = localStorage.getItem('accessToken');
-      return apiClient.put(`/admin/disputes/${disputeId}/resolve`, { action }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (action === 'refund') {
+        return apiClient.post(`/returns/admin/${disputeId}/process-refund`, {});
+      }
+      const statusMap: Record<string, string> = {
+        approve: 'approved',
+        reject: 'rejected',
+      };
+      return apiClient.put(
+        `/returns/admin/${disputeId}/status`,
+        { status: statusMap[action] || action },
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });

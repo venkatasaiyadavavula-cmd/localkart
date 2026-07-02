@@ -7,8 +7,18 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Webcam from 'react-webcam';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { normalizeList, unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+const VISUAL_CATEGORIES = [
+  'groceries',
+  'fashion',
+  'electronics',
+  'home_essentials',
+  'beauty',
+  'accessories',
+] as const;
 
 interface VisualSearchButtonProps {
   onResults: (products: unknown[]) => void;
@@ -28,18 +38,34 @@ export function VisualSearchButton({ onResults }: VisualSearchButtonProps) {
         return;
       }
 
-      const { pipeline } = await import('@xenova/transformers');
-      const classifier = await pipeline('image-feature-extraction', 'Xenova/clip-vit-base-patch32');
-      const output = await classifier(imageSrc);
-      const embeddingArray = Array.from(output.data as Float32Array);
+      let categoryType: string | undefined;
+
+      try {
+        const { pipeline } = await import('@xenova/transformers');
+        const classifier = await pipeline(
+          'zero-shot-image-classification',
+          'Xenova/clip-vit-base-patch32',
+        );
+        const output = await classifier(imageSrc, [...VISUAL_CATEGORIES]);
+        const top = Array.isArray(output) ? output[0] : null;
+        categoryType = top?.label;
+      } catch (mlError) {
+        console.warn('CLIP classification unavailable, using general search', mlError);
+      }
 
       const { data } = await axios.post(`${API_URL}/catalog/visual-search`, {
-        embedding: embeddingArray,
+        categoryType,
+        limit: 12,
       });
 
-      onResults(data.data ?? []);
+      const products = normalizeList(unwrapApiData(data));
+      onResults(products);
       setOpen(false);
-      toast.success(`Found ${data.data?.length ?? 0} similar products`);
+      toast.success(
+        products.length
+          ? `Found ${products.length} similar products${categoryType ? ` in ${categoryType.replace('_', ' ')}` : ''}`
+          : 'No matching products found',
+      );
     } catch (error) {
       console.error('Visual search error:', error);
       toast.error('Search failed. Please try again.');
@@ -93,7 +119,7 @@ export function VisualSearchButton({ onResults }: VisualSearchButtonProps) {
             </Button>
           </div>
           <p className="text-center text-sm text-muted-foreground">
-            Point camera at a product to find similar items
+            Point camera at a product to find similar items by category
           </p>
         </DialogContent>
       </Dialog>

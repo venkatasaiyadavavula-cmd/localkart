@@ -9,6 +9,7 @@ import {
   XCircle, AlertCircle, ChevronLeft, Sparkles, ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { unwrapApiData } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
@@ -43,7 +44,7 @@ export default function BulkUploadPage() {
     queryKey: ['plan-info'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/catalog/seller/product-limit`, { headers: auth() });
-      return data.data ?? data;
+      return unwrapApiData<PlanInfo>(data);
     },
   });
 
@@ -54,7 +55,7 @@ export default function BulkUploadPage() {
       const { data } = await axios.post(`${API}/catalog/seller/bulk-upload`, form, {
         headers: { ...auth(), 'Content-Type': 'multipart/form-data' },
       });
-      return data as BulkUploadResult;
+      return unwrapApiData<BulkUploadResult>(data);
     },
     onSuccess: (data) => {
       setResult(data);

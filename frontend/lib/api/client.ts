@@ -33,14 +33,14 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (storedRefreshToken) {
           const response = await axios.post(`${API_URL}/auth/refresh`, {
-            refreshToken,
+            refreshToken: storedRefreshToken,
           });
-          const { accessToken, refreshToken } = response.data.data ?? response.data;
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data ?? response.data;
           localStorage.setItem('accessToken', accessToken);
-          if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+          if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
           document.cookie = `accessToken=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return apiClient(originalRequest);
@@ -81,4 +81,5 @@ export const clearAuthTokens = () => {
 };
 
 // Helper function to get stored token
-export const getAccessToken = () => localStorage.getItem('accessToken');
+export const getAccessToken = () =>
+  typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;

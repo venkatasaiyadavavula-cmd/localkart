@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import axios from 'axios';
 import { toast } from 'sonner';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { apiClient } from '@/lib/api/client';
 
 const setAuthCookie = (accessToken: string) => {
   if (typeof document !== 'undefined') {
@@ -16,11 +14,6 @@ const clearAuthCookie = () => {
     document.cookie = 'accessToken=; path=/; max-age=0';
   }
 };
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
 
 interface User {
   id: string;
@@ -90,7 +83,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         set({ isLoading: true });
         try {
-          await apiClient.post('/auth/logout');
+          await apiClient.post('/auth/logout', {});
         } finally {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');

@@ -61,7 +61,6 @@ export default function CheckoutPage() {
   const shopId = items[0]?.shopId;
   const { data: shopDetails } = useShop(shopId);
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'razorpay'>('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [deliveryNotes, setDeliveryNotes] = useState('');
@@ -131,7 +130,7 @@ export default function CheckoutPage() {
             latitude: location?.latitude,
             longitude: location?.longitude,
           },
-          paymentMethod,
+          paymentMethod: 'cod',
           deliveryNotes,
         }),
       });
@@ -143,15 +142,9 @@ export default function CheckoutPage() {
         throw new Error((raw as { message?: string }).message || 'Failed to create order');
       }
 
-      const orderTotal = order.finalAmount ?? order.totalAmount ?? totalAmount;
-
-      if (paymentMethod === 'cod') {
-        await clearCart();
-        toast.success('Order placed successfully!');
-        router.push(`/orders/${order.id}`);
-      } else {
-        router.push(`/checkout/payment?orderId=${order.id}&amount=${orderTotal}`);
-      }
+      await clearCart();
+      toast.success('Order placed successfully!');
+      router.push(`/orders/${order.id}`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to place order');
     } finally {
@@ -353,33 +346,13 @@ export default function CheckoutPage() {
                 <h2 className="font-heading text-lg font-semibold">Payment Method</h2>
               </div>
 
-              <RadioGroup
-                value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as 'cod' | 'razorpay')}
-                className="space-y-3"
-              >
-                <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50">
-                  <RadioGroupItem value="cod" id="cod" />
-                  <Label htmlFor="cod" className="flex flex-1 cursor-pointer items-center gap-3">
-                    <Wallet className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Cash on Delivery (COD)</p>
-                      <p className="text-sm text-muted-foreground">Pay with cash when you receive your order</p>
-                    </div>
-                  </Label>
+              <div className="flex items-center gap-3 rounded-lg border p-4 bg-muted/30">
+                <Wallet className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Cash on Delivery (COD)</p>
+                  <p className="text-sm text-muted-foreground">Pay with cash when you receive your order</p>
                 </div>
-
-                <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50">
-                  <RadioGroupItem value="razorpay" id="razorpay" />
-                  <Label htmlFor="razorpay" className="flex flex-1 cursor-pointer items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Pay Online (Razorpay)</p>
-                      <p className="text-sm text-muted-foreground">UPI, Cards, NetBanking & more</p>
-                    </div>
-                  </Label>
-                </div>
-              </RadioGroup>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -440,8 +413,6 @@ export default function CheckoutPage() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
-                ) : paymentMethod === 'razorpay' ? (
-                  'Continue to Payment'
                 ) : (
                   'Place COD Order'
                 )}

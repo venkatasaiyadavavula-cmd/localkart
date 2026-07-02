@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { assertPaymentsEnabled } from './payments.config';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard)
@@ -26,6 +27,7 @@ export class PaymentsController {
     @CurrentUser() user: any,
     @Body() createPaymentDto: CreatePaymentDto,
   ) {
+    assertPaymentsEnabled();
     return this.paymentsService.createRazorpayOrder(user.id, createPaymentDto);
   }
 
@@ -36,6 +38,7 @@ export class PaymentsController {
     @CurrentUser() user: any,
     @Body() verifyPaymentDto: VerifyPaymentDto,
   ) {
+    assertPaymentsEnabled();
     const isValid = await this.paymentsService.verifyPayment(
       user.id,
       verifyPaymentDto,
@@ -52,6 +55,7 @@ export class PaymentsController {
     @CurrentUser() user: any,
     @Body() createPaymentDto: CreatePaymentDto,
   ) {
+    assertPaymentsEnabled();
     return this.paymentsService.initiateCodOrder(user.id, createPaymentDto);
   }
 }

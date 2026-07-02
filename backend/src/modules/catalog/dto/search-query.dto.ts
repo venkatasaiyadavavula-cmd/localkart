@@ -54,6 +54,10 @@ export class SearchQueryDto {
   query?: string;
 
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsNumber()
   @Type(() => Number)

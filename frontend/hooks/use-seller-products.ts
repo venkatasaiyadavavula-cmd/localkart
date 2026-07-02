@@ -1,27 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-/** Normalize paginated API payloads: { data: T[], meta } or bare array */
-export function normalizeList<T>(payload: unknown): T[] {
-  if (Array.isArray(payload)) return payload;
-  if (payload && typeof payload === 'object') {
-    const obj = payload as { data?: T[] };
-    if (Array.isArray(obj.data)) return obj.data;
-  }
-  return [];
-}
+import { apiClient } from '@/lib/api/client';
+import { normalizeList } from '@/lib/utils';
 
 export function useSellerProducts(params: Record<string, unknown> = {}) {
   const queryClient = useQueryClient();
@@ -32,21 +11,18 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value));
+          const paramKey = key === 'search' ? 'search' : key;
+          searchParams.append(paramKey, String(value));
         }
       });
-      const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`, {
-        headers: getAuthHeaders(),
-      });
-      return normalizeList(data.data);
+      const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`);
+      return normalizeList(data);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
-      return apiClient.delete(`/catalog/seller/products/${productId}`, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.delete(`/catalog/seller/products/${productId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
@@ -55,9 +31,7 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ productId, data: updateData }: { productId: string; data: Record<string, unknown> }) => {
-      return apiClient.put(`/catalog/seller/products/${productId}`, updateData, {
-        headers: getAuthHeaders(),
-      });
+      return apiClient.put(`/catalog/seller/products/${productId}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });

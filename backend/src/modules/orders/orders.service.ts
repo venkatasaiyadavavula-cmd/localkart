@@ -15,7 +15,9 @@ import { User, UserRole } from '../../core/entities/user.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { UpdateDeliveryLocationDto } from './dto/update-delivery-location.dto';
 import { OrderStateMachine } from './workflows/order-state-machine';
+import { TrackingGateway } from './tracking.gateway';
 import { CartService } from '../cart/cart.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
@@ -41,6 +43,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly stateMachine: OrderStateMachine,
     private readonly notificationsService: NotificationsService,
+    private readonly trackingGateway: TrackingGateway,
   ) {}
 
   private formatOrderResponse(order: Order) {
@@ -93,6 +96,10 @@ export class OrdersService {
 
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
     const { paymentMethod = PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
+
+    if (paymentMethod === PaymentMethod.RAZORPAY && process.env.PAYMENTS_ENABLED !== 'true') {
+      throw new BadRequestException('Online payment is not available. Please use Cash on Delivery.');
+    }
 
     const { cart, products } = await this.cartService.validateCartForCheckout(userId);
     if (cart.items.length === 0) {
@@ -326,7 +333,7 @@ export class OrdersService {
   async getOrderById(id: string, userId: string, role: UserRole) {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['items', 'shop', 'customer'],
+      relations: ['items', 'items.product', 'shop', 'customer'],
     });
 
     if (!order) {
@@ -435,6 +442,7 @@ export class OrdersService {
 
     const order = await this.orderRepository.findOne({
       where: { id: orderId, shopId: shop.id },
+      relations: ['shop'],
     });
 
     if (!order) {
@@ -448,8 +456,16 @@ export class OrdersService {
     }
 
     order.status = status;
-    if (status === OrderStatus.OUT_FOR_DELIVERY && order.paymentMethod === PaymentMethod.COD) {
-      order.deliveryOtp = generateOtp();
+    if (status === OrderStatus.OUT_FOR_DELIVERY) {
+      order.deliveryOtp = order.deliveryOtp || generateOtp();
+      if (!order.deliveryLatitude && order.shop?.latitude) {
+        order.deliveryLatitude = Number(order.shop.latitude);
+        order.deliveryLongitude = Number(order.shop.longitude);
+        order.locationUpdatedAt = new Date();
+      }
+      if (!order.deliveryStaffName) {
+        order.deliveryStaffName = 'Delivery Partner';
+      }
       this.logger.log(`Delivery OTP for order ${order.orderNumber}: ${order.deliveryOtp}`);
     }
     if (notes) {
@@ -457,6 +473,17 @@ export class OrdersService {
     }
 
     await this.orderRepository.save(order);
+
+    this.trackingGateway.emitStatusUpdate(orderId, { status });
+
+    if (order.deliveryLatitude && order.deliveryLongitude) {
+      this.trackingGateway.emitLocationUpdate(orderId, {
+        latitude: Number(order.deliveryLatitude),
+        longitude: Number(order.deliveryLongitude),
+        updatedAt: new Date().toISOString(),
+        staffName: order.deliveryStaffName ?? undefined,
+      });
+    }
 
     // WhatsApp status update to customer
     const fullOrder = await this.orderRepository.findOne({
@@ -474,6 +501,47 @@ export class OrdersService {
 
     return order;
   }
+
+  async updateDeliveryLocation(
+    orderId: string,
+    sellerId: string,
+    dto: UpdateDeliveryLocationDto,
+  ) {
+    const shop = await this.shopRepository.findOne({ where: { ownerId: sellerId } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId, shopId: shop.id },
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.status !== OrderStatus.OUT_FOR_DELIVERY) {
+      throw new BadRequestException('Location updates allowed only during delivery');
+    }
+
+    order.deliveryLatitude = dto.latitude;
+    order.deliveryLongitude = dto.longitude;
+    order.locationUpdatedAt = new Date();
+    if (dto.staffName) order.deliveryStaffName = dto.staffName;
+    if (dto.staffPhone) order.deliveryStaffPhone = dto.staffPhone;
+
+    await this.orderRepository.save(order);
+
+    const payload = {
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      updatedAt: new Date().toISOString(),
+      staffName: order.deliveryStaffName ?? undefined,
+    };
+    this.trackingGateway.emitLocationUpdate(orderId, payload);
+
+    return { message: 'Location updated', ...payload };
+  }
+
   async adminUpdateOrderStatus(id: string, dto: any) {
     const order = await this.orderRepository.findOne({ where: { id } });
     if (!order) throw new Error("Order not found");

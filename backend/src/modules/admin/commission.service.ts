@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../../core/entities/transaction.entity';
-import { Shop } from '../../core/entities/shop.entity';
+import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { Category } from '../../core/entities/category.entity';
 import { ProductCategoryType } from '../../core/entities/product.entity';
 
@@ -55,12 +55,49 @@ export class CommissionService {
       .getRawOne();
 
     return {
-      totalCommission: summary?.totalCommission || 0,
-      totalRevenue: summary?.totalRevenue || 0,
-      orderCount: summary?.orderCount || 0,
-      pendingSettlements: pendingSettlements?.pending || 0,
+      totalCommission: Number(summary?.totalCommission || 0),
+      totalRevenue: Number(summary?.totalRevenue || 0),
+      orderCount: Number(summary?.orderCount || 0),
+      pendingSettlements: Number(pendingSettlements?.pending || 0),
       currentRates: this.commissionRates,
+      shopEarnings: await this.getShopEarningsList(),
     };
+  }
+
+  async getShopEarningsList() {
+    const shops = await this.shopRepository.find({
+      where: { status: ShopStatus.APPROVED },
+      order: { name: 'ASC' },
+    });
+
+    const results = [];
+    for (const shop of shops) {
+      const pendingRow = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoin('order.transactions', 't', 't.type = :type', { type: TransactionType.SETTLEMENT })
+        .where('order.shopId = :shopId', { shopId: shop.id })
+        .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
+        .andWhere('t.id IS NULL')
+        .select('COALESCE(SUM(order.totalAmount - order.commissionAmount), 0)', 'pending')
+        .getRawOne();
+
+      const lastSettlement = await this.transactionRepository
+        .createQueryBuilder('t')
+        .where('t.type = :type', { type: TransactionType.SETTLEMENT })
+        .andWhere("t.metadata->>'shopId' = :shopId", { shopId: shop.id })
+        .orderBy('t.createdAt', 'DESC')
+        .getOne();
+
+      results.push({
+        id: shop.id,
+        name: shop.name,
+        totalEarnings: Number(shop.totalEarnings || 0),
+        pendingSettlement: Number(pendingRow?.pending || 0),
+        lastSettlement: lastSettlement?.createdAt ?? null,
+      });
+    }
+
+    return results;
   }
 
   async getCommissionTransactions(page: number, limit: number) {

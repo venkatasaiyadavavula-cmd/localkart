@@ -2,7 +2,7 @@ import { apiClient } from './client';
 import { unwrapApiData } from '@/lib/utils';
 
 export interface CreateOrderData {
-  paymentMethod: 'cod' | 'razorpay';
+  paymentMethod: 'cod';
   shippingAddress: {
     name: string;
     phone: string;
