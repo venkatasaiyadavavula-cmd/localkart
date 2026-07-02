@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Package, ChevronRight, Search, Filter } from 'lucide-react';
+import { Package, ChevronRight, Search, Navigation, Radio } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { useOrders } from '@/hooks/use-orders';
 import { formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderStatus } from '@/types/order';
+import { canTrackLive } from '@/lib/order-tracking';
 
 const statusColors: Record<string, string> = {
   pending_otp: 'bg-yellow-100 text-yellow-800',
@@ -121,9 +122,9 @@ export default function OrdersPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Link href={`/orders/${order.id}`}>
-                <Card className="overflow-hidden transition-shadow hover:shadow-soft">
-                  <CardContent className="p-0">
+              <Card className="overflow-hidden transition-shadow hover:shadow-soft">
+                <CardContent className="p-0">
+                  <Link href={`/orders/${order.id}`}>
                     <div className="border-b bg-muted/30 px-4 py-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -133,6 +134,12 @@ export default function OrdersPage() {
                           <Badge className={statusColors[order.status as OrderStatus] || ''}>
                             {statusLabels[order.status as OrderStatus] || order.status}
                           </Badge>
+                          {order.status === 'out_for_delivery' && (
+                            <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700">
+                              <Radio className="h-2.5 w-2.5 animate-pulse" />
+                              LIVE
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(order.createdAt), 'dd MMM yyyy')}
@@ -177,9 +184,27 @@ export default function OrdersPage() {
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                  </Link>
+
+                  {canTrackLive(order.status) && order.status !== 'pending_otp' && (
+                    <div className="border-t px-4 py-3">
+                      <Link
+                        href={`/orders/track?id=${order.id}`}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                        style={{
+                          background:
+                            order.status === 'out_for_delivery'
+                              ? 'linear-gradient(135deg,#059669,#047857)'
+                              : 'linear-gradient(135deg,#3D5AF1,#6D28D9)',
+                        }}
+                      >
+                        <Navigation className="h-4 w-4" />
+                        {order.status === 'out_for_delivery' ? 'Track Live on Map' : 'Track Order'}
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           ))
         )}

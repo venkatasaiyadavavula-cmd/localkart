@@ -12,8 +12,6 @@ import {
   Phone,
   Clock,
   Truck,
-  CheckCircle,
-  XCircle,
   RotateCcw,
   ChevronLeft,
   Copy,
@@ -40,6 +38,8 @@ import { useOrder } from '@/hooks/use-order';
 import { useCancelOrder } from '@/hooks/use-cancel-order';
 import { ordersApi } from '@/lib/api/orders';
 import { formatPrice } from '@/lib/utils';
+import { OrderProgress } from '@/components/orders/order-progress';
+import { canTrackLive } from '@/lib/order-tracking';
 import { OrderStatus, statusColors, statusLabels } from '@/types/order';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -141,8 +141,16 @@ export default function OrderDetailPage() {
             <CardContent className="p-6">
               <h2 className="font-heading text-lg font-semibold">Order Progress</h2>
               <div className="mt-6">
-                <OrderTimeline status={order.status} />
+                <OrderProgress status={order.status} />
               </div>
+              {canTrackLive(order.status) && (
+                <Button className="mt-4 w-full" asChild>
+                  <Link href={`/orders/track?id=${order.id}`}>
+                    <Truck className="mr-2 h-4 w-4" />
+                    Track Live
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -276,17 +284,18 @@ export default function OrderDetailPage() {
                     </Link>
                   </Button>
                 )}
+                {canTrackLive(order.status) && order.status !== 'pending_otp' && (
+                  <Button className="w-full" asChild>
+                    <Link href={`/orders/track?id=${order.id}`}>
+                      <Truck className="mr-2 h-4 w-4" />
+                      {order.status === 'out_for_delivery' ? '📍 Live Map Tracking' : 'Track Live'}
+                    </Link>
+                  </Button>
+                )}
                 {order.status === 'out_for_delivery' && (
-                  <>
-                    <Button variant="outline" className="w-full" asChild style={{ borderColor: '#3D5AF1', color: '#3D5AF1' }}>
-                      <Link href={`/orders/track?id=${order.id}`}>
-                        📍 Live Track Order
-                      </Link>
-                    </Button>
-                    <Button className="w-full" onClick={() => setShowOtpDialog(true)}>
-                      Confirm Delivery
-                    </Button>
-                  </>
+                  <Button className="w-full" onClick={() => setShowOtpDialog(true)}>
+                    Confirm Delivery
+                  </Button>
                 )}
               </div>
             </CardContent>
@@ -349,60 +358,6 @@ export default function OrderDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function OrderTimeline({ status }: { status: OrderStatus }) {
-  const steps = [
-    { key: 'confirmed', label: 'Confirmed', icon: CheckCircle },
-    { key: 'processing', label: 'Processing', icon: Package },
-    { key: 'out_for_delivery', label: 'Out for Delivery', icon: Truck },
-    { key: 'delivered', label: 'Delivered', icon: CheckCircle },
-  ];
-
-  const currentStepIndex = steps.findIndex((s) => s.key === status);
-  const isCancelled = status === 'cancelled';
-
-  if (isCancelled) {
-    return (
-      <div className="flex items-center gap-3 text-destructive">
-        <XCircle className="h-5 w-5" />
-        <span className="font-medium">Order Cancelled</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <div className="absolute left-5 top-5 h-full w-0.5 -translate-x-1/2 bg-muted" />
-      <div className="space-y-6">
-        {steps.map((step, index) => {
-          const StepIcon = step.icon;
-          const isCompleted = index <= currentStepIndex;
-          const isCurrent = index === currentStepIndex;
-
-          return (
-            <div key={step.key} className="relative flex items-start gap-4">
-              <div
-                className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                  isCompleted
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-muted-foreground/30 bg-card text-muted-foreground'
-                }`}
-              >
-                <StepIcon className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <p className={`font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  {step.label}
-                </p>
-                {isCurrent && <p className="text-sm text-muted-foreground">In progress</p>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

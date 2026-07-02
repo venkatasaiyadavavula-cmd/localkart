@@ -308,6 +308,8 @@ export class OrdersService {
 
     await this.orderRepository.save(order);
 
+    this.trackingGateway.emitStatusUpdate(orderId, { status: order.status });
+
     return { message: 'OTP verified successfully', order };
   }
 
@@ -391,6 +393,8 @@ export class OrdersService {
 
       await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
+
+      this.trackingGateway.emitStatusUpdate(orderId, { status: OrderStatus.CANCELLED });
 
       return { message: 'Order cancelled successfully', order };
     } catch (error) {
