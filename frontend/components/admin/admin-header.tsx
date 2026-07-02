@@ -56,7 +56,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/profile')}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/admin/settings')}>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               Logout

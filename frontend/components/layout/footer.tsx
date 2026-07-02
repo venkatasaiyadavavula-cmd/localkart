@@ -2,31 +2,27 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { buildLoginUrl, buildRegisterUrl, SELLER_ONBOARDING_PATH } from '@/lib/auth-routes';
 
 const footerLinks = {
-  company: [
-    { label: 'About Us', href: '/' },
-              ],
+  company: [{ label: 'About Us', href: '/about' }],
   support: [
-    { label: 'Help Center', href: 'mailto:support@localkart.com' },
-    { label: 'Contact Us', href: 'mailto:support@localkart.com' },
-    { label: 'Shipping Policy', href: '/orders' },
-    { label: 'Returns & Refunds', href: '/orders' },
+    { label: 'Help Center', href: 'mailto:support@localkart.com', external: true },
+    { label: 'Contact Us', href: 'mailto:support@localkart.com', external: true },
+    { label: 'Shipping Policy', href: '/terms' },
+    { label: 'Returns & Refunds', href: '/terms' },
   ],
   seller: [
-    { label: 'Sell on LocalKart', href: '/seller-onboarding' },
-    { label: 'Seller Dashboard', href: '/dashboard' },
-        { label: 'Commission Structure', href: '/dashboard/commission' },
+    { label: 'Become a Seller', href: buildRegisterUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH }) },
+    { label: 'Seller Login', href: buildLoginUrl({ intent: 'seller', redirect: '/dashboard' }) },
+    { label: 'Commission Structure', href: buildLoginUrl({ intent: 'seller', redirect: '/dashboard/commission' }) },
   ],
   legal: [
     { label: 'Terms of Service', href: '/terms' },
     { label: 'Privacy Policy', href: '/privacy' },
-      ],
+  ],
 };
 
 const socialLinks = [
@@ -36,19 +32,25 @@ const socialLinks = [
   { icon: Youtube, href: 'https://youtube.com/localkart', label: 'YouTube' },
 ];
 
+function FooterLink({ link }: { link: { label: string; href: string; external?: boolean } }) {
+  const className = 'text-sm text-muted-foreground hover:text-primary';
+  if (link.external || link.href.startsWith('mailto:')) {
+    return <a href={link.href} className={className}>{link.label}</a>;
+  }
+  return <Link href={link.href} className={className}>{link.label}</Link>;
+}
+
 export function Footer() {
   return (
     <footer className="border-t bg-muted/20">
       <div className="container py-8 md:py-12">
-        {/* Top Section */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
-          {/* Brand & Newsletter */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-block">
               <Image src="/logo.svg" alt="LocalKart" width={140} height={40} className="h-8 w-auto" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground max-w-md">
-              Shop from trusted local stores in your neighborhood. Same-day delivery from shops in Kadapa and across Andhra Pradesh.
+              Shop from trusted local stores in Kadapa. Same-day delivery with Cash on Delivery — pay when your order arrives.
             </p>
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -61,38 +63,14 @@ export function Footer() {
                   support@localkart.com
                 </a>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <a href="tel:+919876543210" className="hover:text-primary">
-                  +91 98765 43210
-                </a>
-              </div>
-            </div>
-
-            {/* Newsletter */}
-            <div className="mt-6">
-              <p className="text-sm font-medium">Subscribe to our newsletter</p>
-              <form className="mt-2 flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="Your email"
-                  className="max-w-xs bg-background"
-                />
-                <Button size="sm">Subscribe</Button>
-              </form>
             </div>
           </div>
 
-          {/* Links */}
           <div>
             <h3 className="font-heading text-sm font-semibold uppercase tracking-wider">Company</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.company.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary">
-                    {link.label}
-                  </Link>
-                </li>
+                <li key={link.label}><FooterLink link={link} /></li>
               ))}
             </ul>
           </div>
@@ -101,11 +79,7 @@ export function Footer() {
             <h3 className="font-heading text-sm font-semibold uppercase tracking-wider">Support</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.support.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary">
-                    {link.label}
-                  </Link>
-                </li>
+                <li key={link.label}><FooterLink link={link} /></li>
               ))}
             </ul>
           </div>
@@ -114,11 +88,7 @@ export function Footer() {
             <h3 className="font-heading text-sm font-semibold uppercase tracking-wider">Sell</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.seller.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary">
-                    {link.label}
-                  </Link>
-                </li>
+                <li key={link.label}><FooterLink link={link} /></li>
               ))}
             </ul>
           </div>
@@ -126,12 +96,10 @@ export function Footer() {
 
         <Separator className="my-8" />
 
-        {/* Bottom Section */}
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} LocalKart. All rights reserved.
           </p>
-
           <div className="flex gap-4">
             {socialLinks.map((social) => (
               <a
@@ -146,10 +114,9 @@ export function Footer() {
               </a>
             ))}
           </div>
-
           <div className="flex gap-6">
             {footerLinks.legal.map((link) => (
-              <Link key={link.href} href={link.href} className="text-xs text-muted-foreground hover:text-primary">
+              <Link key={link.label} href={link.href} className="text-xs text-muted-foreground hover:text-primary">
                 {link.label}
               </Link>
             ))}

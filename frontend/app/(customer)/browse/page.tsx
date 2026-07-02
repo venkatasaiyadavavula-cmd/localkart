@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { ProductCard } from '@/components/product/product-card';
 import { useProducts } from '@/hooks/use-products';
-import { useLocationStore } from '@/store/location-store';
+import { useLocationStore } from '@/lib/store/location-store';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const categories = [

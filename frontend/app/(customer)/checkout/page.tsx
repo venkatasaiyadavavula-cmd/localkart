@@ -34,7 +34,7 @@ import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useCartStore } from '@/store/cart-store';
 import { useShop } from '@/hooks/use-shop';
 import { useAuth } from '@/hooks/use-auth';
-import { useLocationStore } from '@/store/location-store';
+import { useLocationStore } from '@/lib/store/location-store';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { LocationPicker } from '@/components/map/location-picker';
 

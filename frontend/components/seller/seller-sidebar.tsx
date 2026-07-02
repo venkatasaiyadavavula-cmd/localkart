@@ -1,28 +1,11 @@
 'use client';
 
+import { Store } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, Package, ShoppingBag, TrendingUp,
-  CreditCard, Settings, Store, Zap, Users,
-  BarChart2, IndianRupee, Upload,
-} from 'lucide-react';
+import { sellerNavItems } from '@/lib/seller-nav';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },
-  { icon: Package,         label: 'Products',        href: '/dashboard/products' },
-  { icon: ShoppingBag,     label: 'Orders',          href: '/dashboard/orders' },
-  { icon: Zap,             label: "Today's Offers",  href: '/dashboard/offers' },
-  { icon: TrendingUp,      label: 'Ads',             href: '/dashboard/ads' },
-  { icon: IndianRupee,     label: 'Commission',      href: '/dashboard/commission' },
-  { icon: BarChart2,       label: 'Earnings',        href: '/dashboard/earnings' },
-  { icon: Users,           label: 'Staff',           href: '/dashboard/staff' },
-  { icon: Upload,          label: 'Bulk Upload',     href: '/dashboard/products/bulk-upload' },
-  { icon: CreditCard,      label: 'Subscription',    href: '/dashboard/subscription' },
-  { icon: Settings,        label: 'Settings',        href: '/dashboard/shop-settings' },
-];
 
 export function SellerSidebar() {
   const pathname = usePathname();
@@ -39,7 +22,7 @@ export function SellerSidebar() {
       </div>
 
       <nav className="flex flex-col gap-1 p-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-        {navItems.map((item) => {
+        {sellerNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link

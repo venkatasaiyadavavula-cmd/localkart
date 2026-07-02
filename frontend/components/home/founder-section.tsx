@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { MapPin, User } from 'lucide-react';
 
 export function FounderSection() {
@@ -16,9 +17,14 @@ export function FounderSection() {
           <span>Kadapa, Andhra Pradesh, India</span>
         </div>
         <p className="mt-4 text-muted-foreground max-w-md mx-auto">
-          Building LocalKart to empower local shop owners and connect them with nearby customers.
-          Our mission is to make hyperlocal commerce accessible, fast, and reliable.
+          Building LocalKart to empower local shop owners and connect them with nearby customers in Kadapa.
         </p>
+        <Link
+          href="/about"
+          className="mt-4 inline-flex text-sm font-semibold text-primary hover:underline"
+        >
+          Read our story →
+        </Link>
       </div>
     </div>
   );

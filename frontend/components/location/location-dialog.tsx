@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { reverseGeocode } from '@/lib/geocode';
 import { useGeolocation } from '@/lib/hooks/use-geolocation';
 import { useLocationStore, MAX_DELIVERY_RADIUS_KM, calculateDeliveryCharge, DELIVERY_CHARGES } from '@/lib/store/location-store';
 import { toast } from 'sonner';
@@ -52,12 +53,15 @@ export function LocationDialog({
     try {
       const coords = await detectLocation();
       if (coords) {
+        const geo = await reverseGeocode(coords.latitude, coords.longitude);
         setLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
           source: 'gps',
-          city: 'Kadapa',
-          state: 'Andhra Pradesh',
+          city: geo.city,
+          state: geo.state,
+          pincode: geo.pincode,
+          address: geo.address,
         });
         setPermissionStatus('granted');
 

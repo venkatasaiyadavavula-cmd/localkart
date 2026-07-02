@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <h2 className="text-lg font-semibold text-gray-800 mt-6">2. How We Use Your Information</h2>
         <p>Your information is used to process orders, send order updates via WhatsApp/SMS, and improve our service. We do not sell your personal data to third parties.</p>
         <h2 className="text-lg font-semibold text-gray-800 mt-6">3. Data Sharing</h2>
-        <p>Order details are shared with the relevant seller to fulfill your order. Payment information is processed securely via Razorpay and is not stored on our servers.</p>
+        <p>Order details are shared with the relevant seller to fulfill your order. We use Cash on Delivery — you pay the delivery person when your order arrives. We do not store card or UPI payment details on our servers.</p>
         <h2 className="text-lg font-semibold text-gray-800 mt-6">4. Your Rights</h2>
         <p>You can update or delete your account information anytime from your profile, or by contacting support@localkart.com.</p>
         <h2 className="text-lg font-semibold text-gray-800 mt-6">5. Contact</h2>

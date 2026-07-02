@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice, normalizeList } from '@/lib/utils';
-import { useLocationStore } from '@/store/location-store';
+import { useLocationStore } from '@/lib/store/location-store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
