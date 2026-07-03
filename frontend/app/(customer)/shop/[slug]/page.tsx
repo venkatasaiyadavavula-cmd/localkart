@@ -106,10 +106,19 @@ export default function ShopPage() {
                     </div>
                   </div>
 
-                  <Button variant="outline">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Contact
-                  </Button>
+                  {shop.contactPhone ? (
+                    <Button variant="outline" asChild>
+                      <a href={`tel:${shop.contactPhone}`}>
+                        <Phone className="mr-2 h-4 w-4" />
+                        Contact
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button variant="outline" disabled>
+                      <Phone className="mr-2 h-4 w-4" />
+                      Contact
+                    </Button>
+                  )}
                 </div>
 
                 {/* Shop Status Banner */}

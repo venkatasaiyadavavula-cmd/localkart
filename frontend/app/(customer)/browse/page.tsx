@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { ProductCard } from '@/components/product/product-card';
 import { useProducts } from '@/hooks/use-products';
 import { useLocationStore } from '@/store/location-store';
+import { normalizeList } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const categories = [
   { label: 'All', value: '' },
@@ -25,9 +30,10 @@ const sortOptions = [
   { label: 'Popular', value: 'orderCount-DESC' },
 ];
 
-export default function BrowsePage({ initialCategory = '' }: { initialCategory?: string }) {
+function BrowseContent({ initialCategory = '' }: { initialCategory?: string }) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
+  const isSaleView = searchParams.get('sale') === 'true';
   const { location } = useLocationStore();
 
   const [activeCategory, setActiveCategory] = useState(initialCategory);
@@ -38,7 +44,7 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
 
   const { data, isLoading } = useProducts({
-    categoryType: activeCategory,
+    categoryType: isSaleView ? undefined : activeCategory,
     minPrice,
     maxPrice,
     sortBy,
@@ -48,11 +54,29 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
     query: initialQuery,
   });
 
-  const products = Array.isArray(data)
-    ? data
-    : (data as { data?: unknown[]; products?: unknown[] })?.data
-      ?? (data as { products?: unknown[] })?.products
-      ?? [];
+  const { data: offerProducts, isLoading: offersLoading } = useQuery({
+    queryKey: ['browse-today-offers', location?.latitude, location?.longitude],
+    queryFn: async () => {
+      const { data } = await axios.get(`${API_URL}/catalog/today-offers`, {
+        params: {
+          lat: location?.latitude,
+          lng: location?.longitude,
+        },
+      });
+      return normalizeList(data);
+    },
+    enabled: isSaleView,
+  });
+
+  const products = isSaleView
+    ? (offerProducts ?? [])
+    : (Array.isArray(data)
+      ? data
+      : (data as { data?: unknown[]; products?: unknown[] })?.data
+        ?? (data as { products?: unknown[] })?.products
+        ?? []);
+
+  const loading = isSaleView ? offersLoading : isLoading;
 
   const handleSort = (val: string) => {
     const [by, order] = val.split('-');
@@ -63,7 +87,6 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Category pills */}
       <div className="bg-white border-b sticky top-0 z-30">
         <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
           {categories.map((cat) => (
@@ -80,28 +103,31 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Sort bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-t">
-          <p className="text-xs text-gray-500">
-            {Array.isArray(products) ? products.length : 0} products
-          </p>
+      <div className="px-4 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">
+            {isSaleView ? "Today's Deals" : initialQuery ? `Results for "${initialQuery}"` : 'Browse Products'}
+          </h1>
+          <p className="text-xs text-gray-500">{products.length} products found</p>
+        </div>
+        {!isSaleView && (
           <div className="relative">
             <button
               onClick={() => setShowSort(!showSort)}
-              className="flex items-center gap-1 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium"
             >
-              <SlidersHorizontal className="h-3 w-3" />
-              Sort
-              <ChevronDown className="h-3 w-3" />
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Sort <ChevronDown className="h-3 w-3" />
             </button>
             {showSort && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border z-50 min-w-[180px]">
+              <div className="absolute right-0 top-full mt-1 bg-white border rounded-xl shadow-lg z-20 py-1 min-w-[160px]">
                 {sortOptions.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => handleSort(opt.value)}
-                    className="w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl"
+                    className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50"
                   >
                     {opt.label}
                   </button>
@@ -109,48 +135,49 @@ export default function BrowsePage({ initialCategory = '' }: { initialCategory?:
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Search query banner */}
-      {initialQuery && (
-        <div className="px-4 py-2 bg-primary/5 flex items-center justify-between">
-          <p className="text-xs text-gray-600">
-            Results for: <span className="font-semibold text-primary">"{initialQuery}"</span>
-          </p>
-          <button onClick={() => window.location.href = '/browse'}>
-            <X className="h-4 w-4 text-gray-400" />
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px px-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-square rounded-none" />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-gray-500">No products found</p>
+          <button onClick={() => window.location.href = '/browse'} className="mt-3 text-primary text-sm font-semibold">
+            Clear filters
           </button>
         </div>
-      )}
-
-      {/* Product grid */}
-      <div className="grid grid-cols-2 gap-0.5 md:grid-cols-3 lg:grid-cols-4">
-        {isLoading
-          ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white">
-                <Skeleton className="aspect-square w-full" />
-                <div className="p-2 space-y-1.5">
-                  <Skeleton className="h-3 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              </div>
-            ))
-          : Array.isArray(products) && products.map((product: any) => (
-              <ProductCard key={product.id} product={product} />
-            ))
-        }
-      </div>
-
-      {!isLoading && (!products || products.length === 0) && (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="text-sm font-medium">No products found</p>
-          <p className="text-xs mt-1">Try a different category or search</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-gray-200 px-4 pb-24">
+          {products.map((product: any) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
       )}
-
-      <div className="h-20" />
     </div>
+  );
+}
+
+function BrowseFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="grid grid-cols-2 gap-px">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="aspect-square" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function BrowsePage({ initialCategory = '' }: { initialCategory?: string }) {
+  return (
+    <Suspense fallback={<BrowseFallback />}>
+      <BrowseContent initialCategory={initialCategory} />
+    </Suspense>
   );
 }

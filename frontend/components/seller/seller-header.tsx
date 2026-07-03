@@ -30,8 +30,10 @@ export function SellerHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="relative" asChild>
+          <Link href="/dashboard/orders" title="Orders">
+            <Bell className="h-5 w-5" />
+          </Link>
         </Button>
 
         <Button variant="ghost" size="sm" asChild>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { AlertCircle, CheckCircle2, Clock, IndianRupee, TrendingUp, Calendar, CreditCard, ChevronRight } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -41,7 +41,7 @@ export default function CommissionPage() {
       const { data } = await axios.get(`${API}/commission/my-bills`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return data;
+      return unwrapApiData(data);
     },
   });
 
@@ -50,7 +50,7 @@ export default function CommissionPage() {
       const { data } = await axios.post(`${API}/commission/pay/${billId}`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return { ...data, billId };
+      return { ...(unwrapApiData(data) as object), billId };
     },
     onSuccess: (data) => openRazorpay(data),
     onError: () => toast.error('Failed to initiate payment'),
@@ -61,7 +61,7 @@ export default function CommissionPage() {
       const { data } = await axios.post(`${API}/commission/verify/${payload.billId}`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return data;
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       toast.success('Commission paid successfully! ✅');
@@ -70,29 +70,36 @@ export default function CommissionPage() {
   });
 
   const openRazorpay = (orderData: any) => {
+    const payload = unwrapApiData<any>(orderData) ?? orderData;
+    if (window.Razorpay) {
+      launchRazorpay(payload);
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => {
-      const rzp = new window.Razorpay({
-        key:         RAZORPAY_KEY,
-        amount:      orderData.amount,
-        currency:    orderData.currency,
-        order_id:    orderData.razorpayOrderId,
-        name:        'LocalKart',
-        description: `Commission for ${orderData.billDetails.billDate}`,
-        theme:       { color: '#3D5AF1' },
-        handler: (response: any) => {
-          verifyMutation.mutate({
-            billId:             orderData.billId,
-            razorpayPaymentId:  response.razorpay_payment_id,
-            razorpayOrderId:    response.razorpay_order_id,
-            razorpaySignature:  response.razorpay_signature,
-          });
-        },
-      });
-      rzp.open();
-    };
+    script.onload = () => launchRazorpay(payload);
     document.body.appendChild(script);
+  };
+
+  const launchRazorpay = (orderData: any) => {
+    const rzp = new window.Razorpay({
+      key:         RAZORPAY_KEY,
+      amount:      orderData.amount,
+      currency:    orderData.currency,
+      order_id:    orderData.razorpayOrderId,
+      name:        'LocalKart',
+      description: `Commission for ${orderData.billDetails?.billDate ?? 'bill'}`,
+      theme:       { color: '#3D5AF1' },
+      handler: (response: any) => {
+        verifyMutation.mutate({
+          billId:             orderData.billId,
+          razorpayPaymentId:  response.razorpay_payment_id,
+          razorpayOrderId:    response.razorpay_order_id,
+          razorpaySignature:  response.razorpay_signature,
+        });
+      },
+    });
+    rzp.open();
   };
 
   if (isLoading) {

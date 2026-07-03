@@ -26,6 +26,15 @@ export function useUpdateProduct() {
             payload[key] = str;
           }
         });
+
+        const existingImages = formData.get('existingImages');
+        const existingVideos = formData.get('existingVideos');
+        if (existingImages) {
+          payload.images = JSON.parse(String(existingImages));
+        }
+        if (existingVideos) {
+          payload.videos = JSON.parse(String(existingVideos));
+        }
       }
 
       const { data: response } = await apiClient.put(`/catalog/seller/products/${productId}`, payload);

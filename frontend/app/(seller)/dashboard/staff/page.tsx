@@ -9,6 +9,7 @@ import {
   ChevronRight, X, AlertTriangle, Clock, Wifi,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { unwrapApiData, normalizeList } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
@@ -189,7 +190,7 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['staff'] });
-      onAdded(data);
+      onAdded(unwrapApiData<NewCredentials>(data) as NewCredentials);
       onClose();
       setForm({ name: '', phone: '', role: 'delivery_staff', note: '' });
     },
@@ -298,7 +299,7 @@ export default function StaffPage() {
     queryKey: ['staff'],
     queryFn:  async () => {
       const { data } = await axios.get(`${API}/seller/staff`, { headers: auth() });
-      return data;
+      return normalizeList<StaffMember>(data);
     },
   });
 
@@ -308,7 +309,8 @@ export default function StaffPage() {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(data.message);
+      const result = unwrapApiData<{ message?: string }>(data);
+      toast.success(result?.message || 'Staff member removed');
       qc.invalidateQueries({ queryKey: ['staff'] });
       setDeleteId(null);
     },
@@ -321,7 +323,8 @@ export default function StaffPage() {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`New password: ${data.newPassword}`, { duration: 8000 });
+      const result = unwrapApiData<{ newPassword?: string }>(data);
+      toast.success(`New password: ${result?.newPassword || 'updated'}`, { duration: 8000 });
     },
     onError: () => toast.error('Failed to reset password'),
   });

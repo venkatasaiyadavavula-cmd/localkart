@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Star, ThumbsUp, CheckCircle2, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, unwrapApiData } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -29,7 +29,7 @@ export function ProductReviews({ productId }: Props) {
     queryKey: ['reviews', productId],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/reviews/product/${productId}`);
-      return data;
+      return unwrapApiData(data);
     },
   });
 
@@ -40,7 +40,7 @@ export function ProductReviews({ productId }: Props) {
         const { data } = await axios.get(`${API}/reviews/can-review?productId=${productId}`, {
           headers: auth(),
         });
-        return data;
+        return unwrapApiData<{ canReview: boolean; orderId?: string }>(data) ?? { canReview: false };
       } catch {
         return { canReview: false };
       }

@@ -23,6 +23,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerProduct } from '@/hooks/use-product';
 import { useUpdateProduct } from '@/hooks/use-update-product';
+import { uploadMediaFiles } from '@/lib/utils/media';
 import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
@@ -140,25 +141,44 @@ export default function EditProductPage() {
       return;
     }
 
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        formData.append(key, String(value));
-      }
-    });
-    formData.append('existingImages', JSON.stringify(existingImages));
-    formData.append('existingVideos', JSON.stringify(existingVideos));
-    newImages.forEach((file) => formData.append('newImages', file));
-    newVideos.forEach((file) => formData.append('newVideos', file));
-
     try {
-      await updateProduct({ productId, formData });
+      let uploadedImageUrls: string[] = [];
+      if (newImages.length > 0) {
+        uploadedImageUrls = await uploadMediaFiles(newImages);
+      }
+
+      let uploadedVideoUrls: string[] = [];
+      if (newVideos.length > 0) {
+        uploadedVideoUrls = await uploadMediaFiles(newVideos);
+      }
+
+      const allImages = [...existingImages, ...uploadedImageUrls];
+      const allVideos = [...existingVideos, ...uploadedVideoUrls];
+
+      await updateProduct({
+        productId,
+        data: {
+          ...data,
+          images: allImages,
+          videos: allVideos,
+        },
+      });
       toast.success('Product updated successfully. Changes pending approval.');
       router.push('/dashboard/products');
     } catch (error) {
       toast.error('Failed to update product');
     }
   };
+
+  const hasMediaChanges =
+    newImages.length > 0 ||
+    newVideos.length > 0 ||
+    (product && (
+      JSON.stringify(existingImages) !== JSON.stringify(product.images || []) ||
+      JSON.stringify(existingVideos) !== JSON.stringify(product.videos || [])
+    ));
+
+  const canSave = isDirty || hasMediaChanges;
 
   if (productLoading) {
     return (
@@ -318,7 +338,7 @@ export default function EditProductPage() {
                 <CardTitle>Update</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button type="submit" className="w-full" disabled={!isDirty || isUpdating}>
+                <Button type="submit" className="w-full" disabled={!canSave || isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Save Changes
                 </Button>

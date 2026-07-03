@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { SellerHeader } from '@/components/seller/seller-header';
 import { SellerSidebar } from '@/components/seller/seller-sidebar';
+import { SellerMobileNav } from '@/components/seller/seller-mobile-nav';
 import { getServerSession } from '@/lib/auth';
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default async function SellerDashboardLayout({
       <SellerSidebar />
       <div className="flex flex-1 flex-col lg:pl-64">
         <SellerHeader />
+        <SellerMobileNav />
         <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>

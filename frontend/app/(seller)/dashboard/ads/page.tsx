@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Video, Calendar, DollarSign, Play, Pause, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -253,9 +254,4 @@ export default function SellerAdsPage() {
       </div>
     </div>
   );
-}
-
-// Helper function
-function format(date: Date, formatStr: string): string {
-  return new Intl.DateTimeFormat('en-IN').format(date);
 }

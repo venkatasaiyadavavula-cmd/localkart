@@ -9,7 +9,7 @@ import {
   Volume2, VolumeX, ChevronUp, ChevronDown, X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, normalizeList } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -26,7 +26,7 @@ export default function VideoFeedPage() {
       const { data } = await axios.get(`${API}/catalog/products`, {
         params: { hasVideo: true, limit: 20, sortBy: 'createdAt', sortOrder: 'DESC' },
       });
-      return (data.data || data || []).filter((p: any) => p.videos?.length > 0);
+      return normalizeList(data).filter((p: { videos?: string[] }) => p.videos?.length);
     },
   });
 

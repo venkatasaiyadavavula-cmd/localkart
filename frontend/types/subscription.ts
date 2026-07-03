@@ -30,22 +30,22 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanDetails[] = [
   {
     plan: 'starter',
     name: 'Starter',
-    productLimit: 30,
+    productLimit: 40,
     price: 0,
-    features: ['30 product listings', 'Basic analytics', 'Email support'],
+    features: ['40 product listings', 'Basic analytics', 'Email support'],
   },
   {
     plan: 'growth',
     name: 'Growth',
-    productLimit: 60,
+    productLimit: 150,
     price: 199,
-    features: ['60 product listings', 'Advanced analytics', 'Priority support', 'Sponsored product discount'],
+    features: ['150 product listings', 'Advanced analytics', 'Priority support', '2 free video uploads/month'],
   },
   {
     plan: 'business',
     name: 'Business',
-    productLimit: 100,
+    productLimit: 500,
     price: 499,
-    features: ['100 product listings', 'Premium analytics', '24/7 dedicated support', 'Free video uploads (5/month)'],
+    features: ['500 product listings', 'Premium analytics', '24/7 dedicated support', '5 free video uploads/month'],
   },
 ];

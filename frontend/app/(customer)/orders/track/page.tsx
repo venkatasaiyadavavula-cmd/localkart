@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -40,6 +40,18 @@ const STATUS_ORDER = STATUS_STEPS.map(s => s.key);
 interface LiveLocation { latitude: number; longitude: number; updatedAt: string; staffName?: string; }
 
 export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F5F7FA' }}>
+        <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    }>
+      <TrackOrderContent />
+    </Suspense>
+  );
+}
+
+function TrackOrderContent() {
   const params  = useSearchParams();
   const orderId = params.get('id') ?? '';
   const router  = useRouter();
@@ -95,6 +107,19 @@ export default function TrackOrderPage() {
   const currentStepIdx   = STATUS_ORDER.indexOf(orderStatus);
   const isOutForDelivery = orderStatus === 'out_for_delivery';
   const isDelivered      = orderStatus === 'delivered';
+
+  if (!orderId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: '#F5F7FA' }}>
+        <AlertCircle className="h-12 w-12 text-amber-500" />
+        <h1 className="text-lg font-bold text-gray-900">Invalid tracking link</h1>
+        <p className="text-sm text-gray-500">Open an order from My Orders and tap Track Order.</p>
+        <button onClick={() => router.push('/orders')} className="mt-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold">
+          Go to My Orders
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#F5F7FA' }}>

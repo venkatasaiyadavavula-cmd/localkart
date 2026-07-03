@@ -158,7 +158,7 @@ export default function SellerDashboardPage() {
             { icon: Plus, label: 'Add New Product', sub: 'List a product for sale', href: '/dashboard/products/new', color: 'bg-primary/10 text-primary' },
             { icon: ShoppingBag, label: 'View Orders', sub: `${pendingOrders} pending`, href: '/dashboard/orders', color: 'bg-blue-50 text-blue-600' },
             { icon: Zap, label: 'Create Daily Offer', sub: 'Boost sales with deals', href: '/dashboard/offers', color: 'bg-orange-50 text-orange-500' },
-            { icon: BarChart3, label: 'View Analytics', sub: 'Sales & performance', href: '/dashboard/ads', color: 'bg-purple-50 text-purple-600' },
+            { icon: BarChart3, label: 'View Earnings', sub: 'Sales & performance', href: '/dashboard/earnings', color: 'bg-purple-50 text-purple-600' },
           ].map((action) => (
             <Link key={action.href} href={action.href}>
               <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-t first:border-0">

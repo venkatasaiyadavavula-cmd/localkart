@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,17 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useShop } from '@/hooks/use-shop';
 import { Skeleton } from '@/components/ui/skeleton';
+
+function isShopManuallyClosed(opening?: string, closing?: string): boolean {
+  const open = opening?.slice(0, 5) ?? '';
+  const close = closing?.slice(0, 5) ?? '';
+  return open === '00:00' && close === '00:00';
+}
+
+function normalizeTime(value?: string): string {
+  if (!value) return '';
+  return value.slice(0, 5);
+}
 
 const shopSchema = z.object({
   name: z.string().min(2, 'Shop name is required').max(150),
@@ -38,11 +49,14 @@ export default function ShopSettingsPage() {
   const { data: shop, isLoading, updateShop } = useShop();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
+  const [savedHours, setSavedHours] = useState({ open: '09:00', close: '21:00' });
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isDirty },
   } = useForm<ShopFormData>({
     resolver: zodResolver(shopSchema),
@@ -50,6 +64,15 @@ export default function ShopSettingsPage() {
 
   useEffect(() => {
     if (shop) {
+      const manuallyClosed = isShopManuallyClosed(shop.openingTime, shop.closingTime);
+      const open = normalizeTime(shop.openingTime) || '09:00';
+      const close = normalizeTime(shop.closingTime) || '21:00';
+
+      if (!manuallyClosed) {
+        setSavedHours({ open, close });
+      }
+      setIsOpen(!manuallyClosed);
+
       reset({
         name: shop.name,
         description: shop.description || '',
@@ -59,19 +82,39 @@ export default function ShopSettingsPage() {
         pincode: shop.pincode,
         contactPhone: shop.contactPhone,
         contactEmail: shop.contactEmail || '',
-        openingTime: shop.openingTime || '',
-        closingTime: shop.closingTime || '',
+        openingTime: manuallyClosed ? '09:00' : open,
+        closingTime: manuallyClosed ? '21:00' : close,
         deliveryCharge: shop.deliveryCharge,
         freeDeliveryAbove: shop.freeDeliveryAbove,
       });
     }
   }, [shop, reset]);
 
+  const handleShopStatusToggle = (open: boolean) => {
+    setIsOpen(open);
+    const currentOpen = watch('openingTime') || savedHours.open;
+    const currentClose = watch('closingTime') || savedHours.close;
+
+    if (open) {
+      setValue('openingTime', savedHours.open || currentOpen, { shouldDirty: true });
+      setValue('closingTime', savedHours.close || currentClose, { shouldDirty: true });
+    } else {
+      setSavedHours({ open: currentOpen, close: currentClose });
+      setValue('openingTime', '00:00', { shouldDirty: true });
+      setValue('closingTime', '00:00', { shouldDirty: true });
+    }
+  };
+
   const onSubmit = async (data: ShopFormData) => {
     setIsUpdating(true);
     try {
+      const openingTime = isOpen ? (data.openingTime || savedHours.open || '09:00') : '00:00';
+      const closingTime = isOpen ? (data.closingTime || savedHours.close || '21:00') : '00:00';
+
       await updateShop({
         ...data,
+        openingTime,
+        closingTime,
         latitude: shop?.latitude ?? 0,
         longitude: shop?.longitude ?? 0,
       });
@@ -196,7 +239,7 @@ export default function ShopSettingsPage() {
                     <p className="font-medium">Shop Status</p>
                     <p className="text-sm text-muted-foreground">Temporarily close or open your shop</p>
                   </div>
-                  <Switch checked={isOpen} onCheckedChange={setIsOpen} />
+                  <Switch checked={isOpen} onCheckedChange={handleShopStatusToggle} />
                 </div>
               </CardContent>
             </Card>

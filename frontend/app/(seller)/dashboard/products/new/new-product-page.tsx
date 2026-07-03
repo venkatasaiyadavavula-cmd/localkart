@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { useCreateProduct } from '@/hooks/use-create-product';
 import { AiDescriptionGenerator } from '@/components/seller/ai-description-generator';
+import { uploadMediaFiles } from '@/lib/utils/media';
 
 enum ProductCategoryType {
   GROCERIES       = 'groceries',
@@ -99,10 +100,20 @@ export default function NewProductPage() {
 
   const onSubmit = async (data: ProductFormData) => {
     try {
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        imageUrls = await uploadMediaFiles(images);
+      }
+
+      let videoUrls: string[] = [];
+      if (videos.length > 0) {
+        videoUrls = await uploadMediaFiles(videos);
+      }
+
       await createProduct({
         ...data,
-        images: [],
-        videos: [],
+        images: imageUrls,
+        videos: videoUrls,
       });
       toast.success('Product created successfully. Awaiting approval.');
       router.push('/dashboard/products');

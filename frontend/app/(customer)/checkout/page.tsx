@@ -127,6 +127,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           shippingAddress: {
             ...data,
+            phone: data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '').slice(-10)}`,
             latitude: location?.latitude,
             longitude: location?.longitude,
           },

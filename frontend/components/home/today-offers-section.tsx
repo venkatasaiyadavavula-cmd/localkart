@@ -8,7 +8,7 @@ import { Clock, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatPrice, normalizeList } from '@/lib/utils';
+import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 import { useLocationStore } from '@/store/location-store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -51,7 +51,7 @@ export function TodayOffersSection() {
           data?.map((product: any) => {
             const offer = product.daily_offers?.[0];
             return (
-              <Link key={product.id} href={`/product/${product.slug}`}>
+              <Link key={product.id} href={getProductUrl(product)}>
                 <Card className="relative w-40 flex-shrink-0 overflow-hidden border-accent/30 hover:shadow-soft">
                   <div className="absolute left-2 top-2 z-10">
                     <Badge className="bg-accent text-white">
@@ -60,7 +60,7 @@ export function TodayOffersSection() {
                   </div>
                   <div className="relative aspect-square">
                     <Image
-                      src={product.images?.[0] || '/placeholder.svg'}
+                      src={product.images?.[0] || '/assets/placeholders/product-placeholder.svg'}
                       alt={product.name}
                       fill
                       className="object-cover"

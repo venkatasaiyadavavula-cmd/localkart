@@ -8,7 +8,7 @@ import {
   MoreHorizontal, Loader2, ChevronLeft, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, unwrapApiData } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +37,7 @@ export default function AddressesPage() {
     queryKey: ['addresses'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/addresses`, { headers: auth() });
-      return data;
+      return unwrapApiData<any[]>(data) ?? [];
     },
   });
 

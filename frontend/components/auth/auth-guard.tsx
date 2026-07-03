@@ -16,7 +16,6 @@ const publicRoutes = [
   '/about',
   '/contact',
   '/cart',
-  '/wishlist',
   '/videos',
   '/terms',
   '/privacy',

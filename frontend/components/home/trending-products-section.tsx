@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag, Star, Flame, TrendingUp, Plus } from 'lucide-react';
 import { formatPrice, normalizeList } from '@/lib/utils';
+import { useCartStore } from '@/store/cart-store';
+import { toast } from 'sonner';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -37,6 +39,7 @@ function ProductSkeleton() {
 }
 
 export function TrendingProductsSection() {
+  const { addItem } = useCartStore();
   const { data, isLoading } = useQuery({
     queryKey: ['trending-products'],
     queryFn: async () => {
@@ -157,7 +160,15 @@ export function TrendingProductsSection() {
 
                   {/* Quick-add button — appears on hover (desktop) */}
                   <button
-                    onClick={e => { e.preventDefault(); /* add to cart */ }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      try {
+                        await addItem(product.id, 1);
+                        toast.success('Added to cart!');
+                      } catch {
+                        toast.error('Failed to add to cart');
+                      }
+                    }}
                     className="absolute bottom-1.5 right-1.5 hidden md:flex items-center justify-center w-7 h-7 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200"
                     style={{
                       background:   'white',

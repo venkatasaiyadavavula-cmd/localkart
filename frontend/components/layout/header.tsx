@@ -431,7 +431,7 @@ export function Header() {
               <Heart className="h-[18px] w-[18px] text-gray-500 group-hover:text-pink-500 transition-colors" />
             </IconBtn>
 
-            <IconBtn href="/orders" title="Notifications" badge={true}>
+            <IconBtn href="/orders" title={t('myOrders')}>
               <Bell className="h-[18px] w-[18px] text-gray-500 group-hover:text-primary transition-colors" />
             </IconBtn>
 
@@ -504,7 +504,7 @@ export function Header() {
                         { href: '/profile', icon: Settings, label: 'Settings' },
                       ].map(({ href, icon: Icon, label }) => (
                         <Link
-                          key={href}
+                          key={label}
                           href={href}
                           onClick={closeAll}
                           className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 transition-colors"

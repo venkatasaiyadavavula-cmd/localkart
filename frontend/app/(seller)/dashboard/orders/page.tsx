@@ -45,16 +45,15 @@ export default function SellerOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const { data: ordersList, isLoading, updateOrderStatus } = useSellerOrders({
-    status: activeTab !== 'all' ? activeTab : undefined,
+  const { data: allOrdersList, isLoading, updateOrderStatus } = useSellerOrders({
     search: searchQuery,
   });
 
-  const orders = ordersList || [];
-
-  // Counts for badges
-  const { data: allOrdersList } = useSellerOrders({});
-  const allOrders = allOrdersList || [];
+  const orders = (allOrdersList || []).filter((o: { status: string }) => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'processing') return ['processing', 'ready_for_pickup'].includes(o.status);
+    return o.status === activeTab;
+  });
   const newCount = allOrders.filter((o: any) => o.status === 'confirmed').length;
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
@@ -193,7 +192,7 @@ export default function SellerOrdersPage() {
                           {item.quantity}× {item.productName || item.product?.name}
                         </span>
                         <span className="font-semibold text-gray-800 flex-shrink-0">
-                          {formatPrice(item.price * item.quantity)}
+                          {formatPrice(item.totalPrice ?? (item.pricePerUnit ?? item.price ?? 0) * item.quantity)}
                         </span>
                       </div>
                     ))}

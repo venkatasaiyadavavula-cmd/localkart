@@ -3,3 +3,5 @@ export * from './currency';
 export * from './distance';
 export * from './date';
 export * from './api';
+export * from './products';
+export * from './media';

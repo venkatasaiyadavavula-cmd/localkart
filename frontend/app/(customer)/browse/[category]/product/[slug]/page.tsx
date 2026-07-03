@@ -19,6 +19,7 @@ import { ProductVideoPlayer } from '@/components/video/product-video-player';
 import { ProductReviews } from '@/components/reviews/product-reviews';
 import { useProduct } from '@/hooks/use-product';
 import { useCartStore } from '@/store/cart-store';
+import { useBuyNowWithWelcome } from '@/hooks/use-buy-now-with-welcome';
 import { formatPrice, formatDistance } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ export default function ProductDetailPage() {
 
   const { data: product, isLoading } = useProduct(slug);
   const { addItem, isLoading: cartLoading } = useCartStore();
+  const { startBuyNow, buyNowWelcomeDialog, isBuyNowLoading } = useBuyNowWithWelcome();
 
   const [quantity,       setQuantity]       = useState(1);
   const [selectedImage,  setSelectedImage]  = useState(0);
@@ -52,14 +54,9 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!product) return;
-    try {
-      await addItem(product.id, quantity);
-      router.push('/checkout');
-    } catch {
-      toast.error('Failed to proceed');
-    }
+    startBuyNow(product.id, quantity);
   };
 
   const handleWishlist = async () => {
@@ -113,6 +110,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {buyNowWelcomeDialog}
       {/* Mobile header */}
       <div className="lg:hidden sticky top-0 z-30 bg-white border-b flex items-center justify-between px-4 py-3">
         <button onClick={() => router.back()} className="p-1.5 hover:bg-gray-100 rounded-full">
@@ -252,7 +250,7 @@ export default function ProductDetailPage() {
               <Button size="lg" variant="outline" className="flex-1 border-primary text-primary hover:bg-primary/5 font-bold" onClick={handleAddToCart} disabled={cartLoading || product.stock === 0}>
                 {addedToCart ? <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Added!</span> : <span className="flex items-center gap-2"><ShoppingBag className="h-4 w-4" /> Add to Cart</span>}
               </Button>
-              <Button size="lg" className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={cartLoading || product.stock === 0}>
+              <Button size="lg" className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={isBuyNowLoading || cartLoading || product.stock === 0}>
                 Buy Now
               </Button>
             </div>
@@ -319,7 +317,7 @@ export default function ProductDetailPage() {
         <Button variant="outline" className="flex-1 border-primary text-primary font-bold" onClick={handleAddToCart} disabled={cartLoading || product.stock === 0}>
           {addedToCart ? '✓ Added!' : 'Add to Cart'}
         </Button>
-        <Button className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={cartLoading || product.stock === 0}>
+        <Button className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={isBuyNowLoading || cartLoading || product.stock === 0}>
           Buy Now
         </Button>
       </div>

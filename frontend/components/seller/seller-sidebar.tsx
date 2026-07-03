@@ -40,7 +40,13 @@ export function SellerSidebar() {
 
       <nav className="flex flex-col gap-1 p-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isBulkUpload = item.href === '/dashboard/products/bulk-upload';
+          const isProducts = item.href === '/dashboard/products';
+          const isActive = isProducts
+            ? pathname === item.href || (pathname.startsWith('/dashboard/products/') && !pathname.includes('bulk-upload'))
+            : isBulkUpload
+              ? pathname.startsWith(item.href)
+              : pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}

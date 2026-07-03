@@ -19,35 +19,18 @@ import {
 } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/use-subscription';
 import { formatPrice } from '@/lib/utils';
+import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const plans = [
-  {
-    name: 'Starter',
-    price: 0,
-    productLimit: 30,
-    features: ['30 product listings', 'Basic analytics', 'Email support'],
-    icon: Zap,
-    color: 'bg-gray-100 text-gray-800',
-  },
-  {
-    name: 'Growth',
-    price: 199,
-    productLimit: 60,
-    features: ['60 product listings', 'Advanced analytics', 'Priority support', 'Sponsored product discount'],
-    icon: Sparkles,
-    color: 'bg-blue-100 text-blue-800',
-    popular: true,
-  },
-  {
-    name: 'Business',
-    price: 499,
-    productLimit: 100,
-    features: ['100 product listings', 'Premium analytics', '24/7 dedicated support', 'Free video uploads (5/month)'],
-    icon: Crown,
-    color: 'bg-purple-100 text-purple-800',
-  },
-];
+const plans = SUBSCRIPTION_PLANS.map((p) => ({
+  name: p.name,
+  price: p.price,
+  productLimit: p.productLimit,
+  features: p.features,
+  icon: p.plan === 'starter' ? Zap : p.plan === 'growth' ? Sparkles : Crown,
+  color: p.plan === 'starter' ? 'bg-gray-100 text-gray-800' : p.plan === 'growth' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800',
+  popular: p.plan === 'growth',
+}));
 
 export default function SubscriptionPage() {
   const { data: subscription, isLoading, subscribe } = useSubscription();
@@ -83,7 +66,7 @@ export default function SubscriptionPage() {
 
   const currentPlan = subscription?.plan?.toLowerCase() || 'starter';
   const productCount = subscription?.productCount || 0;
-  const productLimit = subscription?.productLimit || 30;
+  const productLimit = subscription?.productLimit || SUBSCRIPTION_PLANS[0].productLimit;
 
   return (
     <div className="space-y-6">

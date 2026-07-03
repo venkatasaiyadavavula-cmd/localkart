@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { normalizeList } from '@/lib/utils';
+import { normalizeList, formatPrice } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 

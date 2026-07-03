@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag, Star, Heart, Plus } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getProductUrl } from '@/lib/utils';
 import { useState } from 'react';
 import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import axios from 'axios';
 
 interface ProductCardProps {
   product: {
@@ -40,9 +41,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     ? Math.round(((mrp - product.price) / mrp) * 100)
     : 0;
 
-  const href = product.categoryType
-    ? `/browse/${product.categoryType}/product/${product.slug}`
-    : `/browse/product/${product.slug}`;
+  const href = getProductUrl(product);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,11 +57,26 @@ export function ProductCard({ product, className }: ProductCardProps) {
     }
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setWishlisted(!wishlisted);
-    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      toast.error('Please login to use wishlist');
+      return;
+    }
+    try {
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/wishlist/toggle`,
+        { productId: product.id },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const added = data?.data?.added ?? data?.added;
+      setWishlisted(!!added);
+      toast.success(added ? 'Added to wishlist!' : 'Removed from wishlist');
+    } catch {
+      toast.error('Failed to update wishlist');
+    }
   };
 
   const shopName = product.shop?.name || product.shopName;

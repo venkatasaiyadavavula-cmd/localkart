@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,18 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim() || !newsletterEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    toast.success('Thanks for subscribing! We will keep you updated.');
+    setNewsletterEmail('');
+  };
+
   return (
     <footer className="border-t bg-muted/20">
       <div className="container py-8 md:py-12">
@@ -72,13 +86,16 @@ export function Footer() {
             {/* Newsletter */}
             <div className="mt-6">
               <p className="text-sm font-medium">Subscribe to our newsletter</p>
-              <form className="mt-2 flex gap-2">
+              <form className="mt-2 flex gap-2" onSubmit={handleNewsletter}>
                 <Input
                   type="email"
                   placeholder="Your email"
                   className="max-w-xs bg-background"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  required
                 />
-                <Button size="sm">Subscribe</Button>
+                <Button type="submit" size="sm">Subscribe</Button>
               </form>
             </div>
           </div>
