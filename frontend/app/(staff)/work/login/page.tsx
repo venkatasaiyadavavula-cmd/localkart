@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStaffAuth } from '@/hooks/use-staff-auth';
+import { formatWorkerHandle } from '@/components/work/worker-identity';
 
 export default function WorkLoginPage() {
   const router = useRouter();
@@ -23,7 +24,9 @@ export default function WorkLoginPage() {
     setSubmitting(true);
     try {
       await login(staffId, password);
-      toast.success(`Welcome, team member!`);
+      const handle = formatWorkerHandle(staffId.trim().toLowerCase());
+      const session = useStaffAuth.getState().staff;
+      toast.success(`Welcome ${session?.name ?? 'back'}! Signed in as ${handle}`);
       router.push('/work');
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Invalid Login ID or password');
@@ -56,8 +59,8 @@ export default function WorkLoginPage() {
                 id="staffId"
                 value={staffId}
                 onChange={(e) => setStaffId(e.target.value)}
-                placeholder="e.g. ravi.shop or lk-abc-1234"
-                className="pl-10"
+                placeholder="e.g. test_9542"
+                className="pl-10 font-mono"
                 required
               />
             </div>
@@ -72,7 +75,7 @@ export default function WorkLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="e.g. test@123123"
                 className="pl-10 pr-10"
                 required
               />

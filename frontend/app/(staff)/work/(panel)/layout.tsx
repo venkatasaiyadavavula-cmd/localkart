@@ -3,7 +3,10 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { useStaffAuth } from '@/hooks/use-staff-auth';
+import { staffWorkApi } from '@/lib/api/staff-work';
+import { WorkerIdentity } from '@/components/work/worker-identity';
 import { Package, Truck, LayoutDashboard, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,9 +20,23 @@ export default function WorkPanelLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { token, staff, logout, hasPermission } = useStaffAuth();
 
+  const { error } = useQuery({
+    queryKey: ['staff', 'me'],
+    queryFn: () => staffWorkApi.getProfile(),
+    enabled: !!token,
+    retry: false,
+  });
+
   useEffect(() => {
     if (!token) router.replace('/work/login');
   }, [token, router]);
+
+  useEffect(() => {
+    if (error && (error as any)?.response?.status === 401) {
+      logout();
+      router.replace('/work/login');
+    }
+  }, [error, logout, router]);
 
   if (!token || !staff) {
     return (
@@ -33,17 +50,14 @@ export default function WorkPanelLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0 lg:pl-64">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-white lg:block">
         <div className="border-b p-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 font-bold text-white">
-              {staff.name[0]?.toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-gray-900">{staff.name}</p>
-              <p className="truncate text-xs text-gray-500">{staff.shopName}</p>
-            </div>
-          </div>
-          <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-            Team Member
+          <WorkerIdentity
+            variant="sidebar"
+            name={staff.name}
+            staffId={staff.staffId}
+            shopName={staff.shopName}
+          />
+          <span className="mt-3 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+            Work Account Active
           </span>
         </div>
         <nav className="space-y-1 p-2">
@@ -69,15 +83,13 @@ export default function WorkPanelLayout({ children }: { children: React.ReactNod
       </aside>
 
       <header className="sticky top-0 z-20 border-b bg-white px-4 py-3 lg:hidden">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-bold text-gray-900">{staff.shopName}</p>
-            <p className="text-xs font-semibold text-emerald-600">Work Mode · {staff.name}</p>
-          </div>
-          <button onClick={() => { logout(); router.push('/work/login'); }} className="text-xs text-gray-500">
+        <div className="flex items-center justify-between gap-3">
+          <WorkerIdentity variant="compact" name={staff.name} staffId={staff.staffId} />
+          <button onClick={() => { logout(); router.push('/work/login'); }} className="text-xs font-semibold text-gray-500">
             Sign out
           </button>
         </div>
+        <p className="mt-1 truncate text-[11px] text-gray-400">{staff.shopName}</p>
       </header>
 
       <main className="mx-auto max-w-4xl p-4">{children}</main>

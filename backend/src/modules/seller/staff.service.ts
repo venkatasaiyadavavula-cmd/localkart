@@ -70,8 +70,8 @@ export class StaffService {
       const suffix = Math.floor(1000 + Math.random() * 9000);
       staffId = `lk-${shopCode.toLowerCase()}-${suffix}`;
     } else {
-      if (!/^[a-z0-9._-]{4,30}$/.test(staffId)) {
-        throw new BadRequestException('Login ID must be 4–30 characters (letters, numbers, . _ -)');
+      if (!/^[a-z0-9._+-]{4,30}$/.test(staffId)) {
+        throw new BadRequestException('Login ID must be 4–30 characters (letters, numbers, _ . + -)');
       }
     }
 
@@ -140,7 +140,12 @@ export class StaffService {
     await this.staffRepo.save(staff);
 
     this.logger.log(`Staff deactivated: ${staff.staffId} from shop ${shop.name}`);
-    return { success: true, message: `${staff.name}'s access has been removed immediately.` };
+    return {
+      success: true,
+      message: `${staff.name} (@${staff.staffId}) has been removed. They can no longer log in to work.`,
+      removedStaffId: staff.staffId,
+      removedName: staff.name,
+    };
   }
 
   async resetPassword(ownerId: string, staffMemberId: string, newPassword?: string) {

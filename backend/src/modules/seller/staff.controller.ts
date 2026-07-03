@@ -17,7 +17,7 @@ class AddStaffDto {
   @IsEnum(StaffRole) @IsOptional() role?: StaffRole;
   @IsString() @IsOptional() note?: string;
   @IsString() @IsOptional() @MinLength(4) @MaxLength(30)
-  @Matches(/^[a-zA-Z0-9._-]+$/, { message: 'Login ID: letters, numbers, . _ - only' })
+  @Matches(/^[a-zA-Z0-9._+-]+$/, { message: 'Login ID: letters, numbers, _ . + - only' })
   staffId?: string;
   @IsString() @IsOptional() @MinLength(4) @MaxLength(64) password?: string;
 }

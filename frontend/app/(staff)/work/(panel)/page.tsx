@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useStaffAuth } from '@/hooks/use-staff-auth';
+import { WorkerIdentity } from '@/components/work/worker-identity';
 import { Package, Truck, Plus, ArrowRight } from 'lucide-react';
 
 export default function WorkDashboardPage() {
@@ -26,19 +27,22 @@ export default function WorkDashboardPage() {
     },
   ];
 
+  if (!staff) return null;
+
   return (
     <div className="space-y-6">
       <div
         className="rounded-3xl p-6 text-white"
         style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 12px 40px rgba(5,150,105,0.25)' }}
       >
-        <p className="text-sm font-semibold text-white/80">Welcome back</p>
-        <h1 className="mt-1 text-2xl font-black" style={{ fontFamily: 'var(--font-display)' }}>
-          {staff?.name}
-        </h1>
-        <p className="mt-1 text-sm text-white/80">{staff?.shopName}</p>
-        <p className="mt-4 text-xs text-white/70">
-          You have access to work tasks only — products, stock & deliveries.
+        <WorkerIdentity
+          variant="hero"
+          name={staff.name}
+          staffId={staff.staffId}
+          shopName={staff.shopName}
+        />
+        <p className="mt-4 text-center text-xs text-white/70">
+          You are signed in with your work Login ID — products, stock & deliveries only.
         </p>
       </div>
 
