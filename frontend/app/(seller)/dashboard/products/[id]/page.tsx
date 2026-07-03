@@ -53,7 +53,7 @@ export default function EditProductPage() {
   const router = useRouter();
   const productId = params.id as string;
 
-  const { data: product, isLoading: productLoading } = useSellerProduct(productId);
+  const { data: product, isLoading: productLoading, isError: productError } = useSellerProduct(productId);
   const { updateProduct, isLoading: isUpdating } = useUpdateProduct();
 
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -191,6 +191,16 @@ export default function EditProductPage() {
           </div>
           <Skeleton className="h-40 w-full rounded-xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (productError || !product) {
+    return (
+      <div className="space-y-4 py-12 text-center">
+        <h1 className="text-xl font-bold">Product not found</h1>
+        <p className="text-muted-foreground text-sm">This product may have been deleted or you do not have access.</p>
+        <Button onClick={() => router.push('/dashboard/products')}>Back to Products</Button>
       </div>
     );
   }

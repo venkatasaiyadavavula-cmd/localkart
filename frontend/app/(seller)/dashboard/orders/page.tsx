@@ -54,7 +54,7 @@ export default function SellerOrdersPage() {
     if (activeTab === 'processing') return ['processing', 'ready_for_pickup'].includes(o.status);
     return o.status === activeTab;
   });
-  const newCount = allOrders.filter((o: any) => o.status === 'confirmed').length;
+  const newCount = (allOrdersList || []).filter((o: { status: string }) => o.status === 'confirmed').length;
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingId(orderId);

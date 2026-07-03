@@ -99,6 +99,10 @@ export default function NewProductPage() {
   };
 
   const onSubmit = async (data: ProductFormData) => {
+    if (!data.categoryType) {
+      toast.error('Please select a category');
+      return;
+    }
     try {
       let imageUrls: string[] = [];
       if (images.length > 0) {

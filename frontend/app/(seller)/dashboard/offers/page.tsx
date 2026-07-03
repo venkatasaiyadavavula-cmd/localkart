@@ -73,6 +73,7 @@ export default function SellerOffersPage() {
       queryClient.invalidateQueries({ queryKey: ['seller-daily-offers'] });
       toast.success('Offer removed');
     },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to remove offer'),
   });
 
   const offerDiscount = selectedProduct && offerPrice

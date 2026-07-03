@@ -9,7 +9,7 @@ import {
   Volume2, VolumeX, ChevronUp, ChevronDown, X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatPrice, normalizeList } from '@/lib/utils';
+import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -61,7 +61,7 @@ export default function VideoFeedPage() {
   };
 
   const handleShare = async (product: any) => {
-    const url = `${window.location.origin}/browse/${product.categoryType}/product/${product.slug}`;
+    const url = `${window.location.origin}${getProductUrl(product)}`;
     const text = `${product.name} - ${formatPrice(product.price)} - LocalKart lo check cheyyandi!`;
     if (navigator.share) {
       await navigator.share({ title: product.name, text, url });
@@ -177,7 +177,7 @@ export default function VideoFeedPage() {
             <p className="text-white font-medium text-base line-clamp-2 mb-3">{product.name}</p>
 
             {/* Buy button */}
-            <Link href={`/browse/${product.categoryType}/product/${product.slug}`}>
+            <Link href={getProductUrl(product)}>
               <button className="flex items-center gap-2 bg-primary text-white font-bold px-5 py-3 rounded-full text-sm w-full justify-center">
                 <ShoppingBag className="h-4 w-4" />
                 Buy Now — {formatPrice(product.price)}

@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { TrendingUp, TrendingDown, IndianRupee, Package, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, unwrapApiData } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -22,7 +22,7 @@ export default function EarningsPage() {
       const { data } = await axios.get(`${API}/seller/earnings/weekly`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return data.data ?? data;
+      return unwrapApiData(data);
     },
   });
 

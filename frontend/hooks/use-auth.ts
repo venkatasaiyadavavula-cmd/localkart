@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api/client';
+import { useCartStore } from '@/store/cart-store';
 
 const setAuthCookie = (accessToken: string) => {
   if (typeof document !== 'undefined') {
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthStore>()(
           if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
           setAuthCookie(accessToken);
           set({ user, isAuthenticated: true, isLoading: false });
+          useCartStore.getState().syncWithServer().catch(() => {});
         } catch (error: any) {
           set({ isLoading: false });
           throw error;
@@ -107,6 +109,7 @@ export const useAuthStore = create<AuthStore>()(
             if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
             setAuthCookie(accessToken);
             set({ user, isAuthenticated: true });
+            useCartStore.getState().syncWithServer().catch(() => {});
           }
           set({ isLoading: false });
           return data.data;

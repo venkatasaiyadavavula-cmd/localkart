@@ -5,7 +5,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag, Star, Flame, TrendingUp, Plus } from 'lucide-react';
-import { formatPrice, normalizeList } from '@/lib/utils';
+import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 
@@ -85,7 +85,7 @@ export function TrendingProductsSection() {
           return (
             <Link
               key={product.id}
-              href={`/browse/${product.categoryType}/product/${product.slug}`}
+              href={getProductUrl(product)}
               className="outline-none"
             >
               <div
@@ -164,9 +164,8 @@ export function TrendingProductsSection() {
                       e.preventDefault();
                       try {
                         await addItem(product.id, 1);
-                        toast.success('Added to cart!');
                       } catch {
-                        toast.error('Failed to add to cart');
+                        // addItem shows error toast
                       }
                     }}
                     className="absolute bottom-1.5 right-1.5 hidden md:flex items-center justify-center w-7 h-7 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200"

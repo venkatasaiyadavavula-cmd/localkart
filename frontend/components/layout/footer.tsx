@@ -13,17 +13,17 @@ import { Separator } from '@/components/ui/separator';
 const footerLinks = {
   company: [
     { label: 'About Us', href: '/' },
-              ],
+  ],
   support: [
-    { label: 'Help Center', href: 'mailto:support@localkart.com' },
-    { label: 'Contact Us', href: 'mailto:support@localkart.com' },
-    { label: 'Shipping Policy', href: '/orders' },
-    { label: 'Returns & Refunds', href: '/orders' },
+    { label: 'Help Center', href: 'mailto:support@localkart.com', external: true },
+    { label: 'Contact Us', href: 'mailto:support@localkart.com', external: true },
+    { label: 'Shipping Policy', href: '/terms' },
+    { label: 'Returns & Refunds', href: '/terms' },
   ],
   seller: [
     { label: 'Sell on LocalKart', href: '/seller-onboarding' },
     { label: 'Seller Dashboard', href: '/dashboard' },
-        { label: 'Commission Structure', href: '/dashboard/commission' },
+    { label: 'Commission Info', href: '/seller-onboarding' },
   ],
   legal: [
     { label: 'Terms of Service', href: '/terms' },
@@ -118,10 +118,16 @@ export function Footer() {
             <h3 className="font-heading text-sm font-semibold uppercase tracking-wider">Support</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.support.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary">
-                    {link.label}
-                  </Link>
+                <li key={link.label}>
+                  {'external' in link && link.external ? (
+                    <a href={link.href} className="text-sm text-muted-foreground hover:text-primary">
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary">
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

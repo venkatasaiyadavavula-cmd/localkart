@@ -9,6 +9,7 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
     queryKey: ['seller', 'orders', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
+      searchParams.append('limit', '100');
       if (params.status) searchParams.append('status', params.status);
       if (params.search) searchParams.append('search', params.search);
       const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`);

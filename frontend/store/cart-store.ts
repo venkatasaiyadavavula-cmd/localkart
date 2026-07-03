@@ -57,7 +57,8 @@ export const useCartStore = create<CartStore>()(
           toast.success('Item added to cart');
         } catch (error: any) {
           set({ isLoading: false });
-          toast.error(error.response?.data?.message || 'Failed to add item');
+          const message = error.response?.data?.message || 'Failed to add item';
+          toast.error(message);
           throw error;
         }
       },
@@ -126,7 +127,17 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'localkart-cart',
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({
+        items: state.items,
+        totalItems: state.totalItems,
+        totalAmount: state.totalAmount,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.items?.length) {
+          state.totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0);
+          state.totalAmount = state.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        }
+      },
     }
   )
 );

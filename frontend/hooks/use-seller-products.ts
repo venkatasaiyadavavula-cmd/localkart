@@ -4,12 +4,13 @@ import { normalizeList } from '@/lib/utils';
 
 export function useSellerProducts(params: Record<string, unknown> = {}) {
   const queryClient = useQueryClient();
+  const queryParams = { limit: 100, ...params };
 
   const query = useQuery({
-    queryKey: ['seller', 'products', params],
+    queryKey: ['seller', 'products', queryParams],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
+      Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           const paramKey = key === 'search' ? 'search' : key;
           searchParams.append(paramKey, String(value));

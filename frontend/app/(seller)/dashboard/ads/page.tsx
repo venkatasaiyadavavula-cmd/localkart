@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { TrendingUp, Video, Calendar, DollarSign, Play, Pause, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -41,7 +40,7 @@ export default function SellerAdsPage() {
   const { data: productsList } = useSellerProducts({ limit: 100 });
   const { data: campaigns, isLoading, createCampaign, updateCampaign } = useAdCampaigns();
 
-  const products = productsList || [];
+  const products = (productsList || []).filter((p: { status?: string }) => p.status === 'approved');
 
   const handleCreateCampaign = async () => {
     if (!selectedProduct) {
@@ -60,7 +59,7 @@ export default function SellerAdsPage() {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
       });
-      toast.success('Ad campaign created successfully');
+      toast.success('Ad campaign submitted — pending approval');
       setShowNewAdDialog(false);
       setSelectedProduct('');
     } catch (error) {

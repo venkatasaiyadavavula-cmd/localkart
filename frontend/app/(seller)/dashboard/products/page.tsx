@@ -22,7 +22,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet';
 import { useSellerProducts } from '@/hooks/use-seller-products';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getProductUrl } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -83,7 +83,7 @@ export default function SellerProductsPage() {
         stock: Number(quickStock),
         price: Number(quickPrice),
       });
-      toast.success('Product updated!');
+      toast.success('Price & stock updated. Product may need re-approval if it was live.');
       setEditProduct(null);
     } catch {
       toast.error('Failed to update');
@@ -269,11 +269,17 @@ export default function SellerProductsPage() {
                     >
                       <Edit className="h-3.5 w-3.5" /> Quick Edit
                     </button>
-                    <Link href={`/browse/${product.categoryType}/product/${product.slug}`} target="_blank" className="flex-1">
-                      <button className="w-full py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5">
+                    {product.slug ? (
+                      <Link href={getProductUrl(product)} target="_blank" className="flex-1">
+                        <button className="w-full py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5">
+                          <Eye className="h-3.5 w-3.5" /> Preview
+                        </button>
+                      </Link>
+                    ) : (
+                      <button disabled className="flex-1 py-2.5 text-xs font-semibold text-gray-300 cursor-not-allowed flex items-center justify-center gap-1.5">
                         <Eye className="h-3.5 w-3.5" /> Preview
                       </button>
-                    </Link>
+                    )}
                     <button
                       onClick={() => setDeleteId(product.id)}
                       className="flex-1 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"

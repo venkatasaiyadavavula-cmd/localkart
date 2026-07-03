@@ -185,7 +185,9 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data } = await axios.post(`${API}/seller/staff`, form, { headers: auth() });
+      const digits = form.phone.replace(/\D/g, '').slice(-10);
+      const phone = digits.length === 10 ? `+91${digits}` : form.phone;
+      const { data } = await axios.post(`${API}/seller/staff`, { ...form, phone }, { headers: auth() });
       return data;
     },
     onSuccess: (data) => {

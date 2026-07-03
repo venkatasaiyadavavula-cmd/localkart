@@ -121,6 +121,30 @@ export default function CheckoutPage() {
   const onSubmit = async (data: AddressFormData) => {
     setIsSubmitting(true);
     try {
+      if (data.saveAddress) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+            body: JSON.stringify({
+              name: data.name,
+              phone: data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '').slice(-10)}`,
+              address: data.address,
+              city: data.city,
+              state: data.state,
+              pincode: data.pincode,
+              type: data.type || 'home',
+              isDefault: false,
+            }),
+          });
+        } catch {
+          // non-blocking — order can still proceed
+        }
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('accessToken')}` },

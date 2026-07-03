@@ -43,13 +43,20 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data, isLoading } = useOrders({
-    status: activeTab !== 'all' ? activeTab : undefined,
+    status: activeTab !== 'all' && activeTab !== 'active' ? activeTab : undefined,
   });
 
+  const ACTIVE_STATUSES = ['pending_otp', 'confirmed', 'processing', 'ready_for_pickup', 'out_for_delivery'];
+
   const filteredOrders = data?.filter(
-    (order: { orderNumber: string; shop: { name: string } }) =>
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.shop.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (order: { orderNumber: string; shop?: { name: string }; status: string }) => {
+      const matchesSearch =
+        order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (order.shop?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      if (!matchesSearch) return false;
+      if (activeTab === 'active') return ACTIVE_STATUSES.includes(order.status);
+      return true;
+    },
   );
 
   return (
@@ -75,7 +82,7 @@ export default function OrdersPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
         <TabsList className="w-full justify-start overflow-x-auto bg-transparent p-0">
           <TabsTrigger value="all">All Orders</TabsTrigger>
-          <TabsTrigger value="confirmed">Active</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="delivered">Delivered</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>

@@ -35,6 +35,7 @@ const PLAN_COLORS: Record<string, { color: string; bg: string; label: string }> 
 };
 
 export default function BulkUploadPage() {
+  const queryClient = useQueryClient();
   const fileInputRef            = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [result,   setResult]   = useState<BulkUploadResult | null>(null);
@@ -59,7 +60,11 @@ export default function BulkUploadPage() {
     },
     onSuccess: (data) => {
       setResult(data);
-      if (data.created > 0) toast.success(`✅ ${data.created} products uploaded!`);
+      if (data.created > 0) {
+        toast.success(`✅ ${data.created} products uploaded!`);
+        queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });
+        queryClient.invalidateQueries({ queryKey: ['plan-info'] });
+      }
       if (data.skipped > 0) toast.warning(`⚠️ ${data.skipped} rows skipped`);
     },
     onError: (err: any) => {

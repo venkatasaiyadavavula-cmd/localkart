@@ -39,13 +39,19 @@ export default function SubscriptionPage() {
 
   const handleSubscribe = async () => {
     if (!selectedPlan) return;
+    const plan = plans.find((p) => p.name === selectedPlan);
     setIsSubscribing(true);
     try {
-      await subscribe(selectedPlan.toLowerCase());
-      toast.success(`Successfully subscribed to ${selectedPlan} plan!`);
+      const result = await subscribe(selectedPlan.toLowerCase());
+      void result;
+      if (plan && plan.price > 0) {
+        toast.info('Plan request submitted. Payment integration coming soon — contact support to activate.');
+      } else {
+        toast.success(`You are on the ${selectedPlan} plan.`);
+      }
       setSelectedPlan(null);
     } catch (error) {
-      toast.error('Failed to subscribe. Please try again.');
+      toast.error('Failed to update subscription. Please try again.');
     } finally {
       setIsSubscribing(false);
     }

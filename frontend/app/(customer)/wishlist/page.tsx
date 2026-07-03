@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatPrice, unwrapApiData } from '@/lib/utils';
+import { formatPrice, unwrapApiData, getProductUrl } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -75,7 +75,7 @@ export default function WishlistPage() {
 
               return (
                 <div key={item.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <Link href={`/browse/${product.categoryType}/product/${product.slug}`}>
+                  <Link href={getProductUrl(product)}>
                     <div className="relative aspect-square bg-gray-100">
                       {product.images?.[0] ? (
                         <Image src={product.images[0]} alt={product.name} fill className="object-cover" />

@@ -68,13 +68,22 @@ function BrowseContent({ initialCategory = '' }: { initialCategory?: string }) {
     enabled: isSaleView,
   });
 
-  const products = isSaleView
+  const rawProducts = isSaleView
     ? (offerProducts ?? [])
     : (Array.isArray(data)
       ? data
       : (data as { data?: unknown[]; products?: unknown[] })?.data
         ?? (data as { products?: unknown[] })?.products
         ?? []);
+
+  const products = isSaleView
+    ? rawProducts.map((p: any) => ({
+        ...p,
+        price: p.daily_offer?.offerPrice ?? p.price,
+        mrp: p.daily_offer?.originalPrice ?? p.mrp,
+        originalPrice: p.daily_offer?.originalPrice ?? p.originalPrice,
+      }))
+    : rawProducts;
 
   const loading = isSaleView ? offersLoading : isLoading;
 
@@ -147,7 +156,7 @@ function BrowseContent({ initialCategory = '' }: { initialCategory?: string }) {
       ) : products.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-gray-500">No products found</p>
-          <button onClick={() => window.location.href = '/browse'} className="mt-3 text-primary text-sm font-semibold">
+          <button onClick={() => { setActiveCategory(''); window.history.replaceState(null, '', '/browse'); }} className="mt-3 text-primary text-sm font-semibold">
             Clear filters
           </button>
         </div>

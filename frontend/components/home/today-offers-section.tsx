@@ -49,7 +49,7 @@ export function TodayOffersSection() {
           ))
         ) : (
           data?.map((product: any) => {
-            const offer = product.daily_offers?.[0];
+            const offer = product.daily_offer;
             return (
               <Link key={product.id} href={getProductUrl(product)}>
                 <Card className="relative w-40 flex-shrink-0 overflow-hidden border-accent/30 hover:shadow-soft">

@@ -61,7 +61,7 @@ function TrackOrderContent() {
   const [orderStatus,  setOrderStatus]  = useState('');
   const socketRef = useRef<Socket | null>(null);
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, isError } = useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/orders/${orderId}`, { headers: auth() });
@@ -126,6 +126,19 @@ function TrackOrderContent() {
       <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   );
+
+  if (isError || !order) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: '#F5F7FA' }}>
+        <AlertCircle className="h-12 w-12 text-amber-500" />
+        <h1 className="text-lg font-bold text-gray-900">Order not found</h1>
+        <p className="text-sm text-gray-500">This order may have been removed or you do not have access.</p>
+        <button onClick={() => router.push('/orders')} className="mt-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold">
+          Go to My Orders
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#F5F7FA', fontFamily: 'var(--font-sans)' }}>

@@ -49,9 +49,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
     setAddingToCart(true);
     try {
       await addItem(product.id, 1);
-      toast.success('Added to cart!');
     } catch {
-      toast.error('Failed to add to cart');
+      // addItem already shows toast on error
     } finally {
       setAddingToCart(false);
     }
