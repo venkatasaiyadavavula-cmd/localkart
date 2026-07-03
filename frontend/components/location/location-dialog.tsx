@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useGeolocation } from '@/lib/hooks/use-geolocation';
-import { useLocationStore, MAX_DELIVERY_RADIUS_KM, calculateDeliveryCharge, DELIVERY_CHARGES } from '@/lib/store/location-store';
+import { useLocationStore, MAX_DELIVERY_RADIUS_KM } from '@/lib/store/location-store';
+import { getDeliveryPricingSummary } from '@/lib/delivery-pricing';
 import { toast } from 'sonner';
 
 interface LocationDialogProps {
@@ -171,10 +172,10 @@ export function LocationDialog({
                   <span>Distance to nearest shop: <strong>{nearestShopDistance.toFixed(1)} km</strong></span>
                 </div>
                 <div className="mt-2 text-xl font-bold text-primary">
-                  Delivery Charge: ₹{deliveryCharge}
+                  {deliveryCharge === 0 ? 'Free Delivery' : `Delivery Charge: ₹${deliveryCharge}`}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  (₹20 for 5km, ₹30 for 10km, ₹50 up to 20km)
+                  ({getDeliveryPricingSummary()})
                 </p>
               </div>
             )}

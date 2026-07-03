@@ -3,6 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { NearbyShopsDto } from './dto/nearby-shops.dto';
+import {
+  MAX_DELIVERY_RADIUS_KM,
+  calculateDeliveryCharge,
+  haversineDistanceKm,
+} from './delivery-pricing';
 
 @Injectable()
 export class LocationService {
@@ -217,8 +222,8 @@ export class LocationService {
   async checkServiceability(
     lat: number,
     lng: number,
-    radius: number = 20,
-  ): Promise<{ serviceable: boolean; shopsCount: number; maxDistance?: number }> {
+    radius: number = MAX_DELIVERY_RADIUS_KM,
+  ): Promise<{ serviceable: boolean; shopsCount: number; maxDistance?: number; deliveryCharge?: number }> {
     if (!lat || !lng) {
       throw new BadRequestException('Latitude and longitude are required');
     }
@@ -246,12 +251,46 @@ export class LocationService {
 
     const shopsCount = parseInt(result.count, 10);
     const minDistanceMeters = result.minDistance ? parseFloat(result.minDistance) : null;
-    const maxDistanceKm = minDistanceMeters ? Math.round(minDistanceMeters / 1000) : undefined;
+    const maxDistanceKm = minDistanceMeters ? Math.round((minDistanceMeters / 1000) * 10) / 10 : undefined;
+    const deliveryCharge = maxDistanceKm !== undefined ? calculateDeliveryCharge(maxDistanceKm) : undefined;
 
     return {
-      serviceable: shopsCount > 0,
+      serviceable: shopsCount > 0 && (deliveryCharge === undefined || deliveryCharge >= 0),
       shopsCount,
       maxDistance: maxDistanceKm,
+      deliveryCharge: deliveryCharge !== undefined && deliveryCharge >= 0 ? deliveryCharge : undefined,
     };
+  }
+
+  /**
+   * Shop to customer distance-based delivery charge (used at checkout)
+   */
+  resolveDeliveryCharge(
+    shop: Pick<Shop, 'latitude' | 'longitude' | 'deliveryCharge' | 'freeDeliveryAbove'>,
+    customerLat?: number,
+    customerLng?: number,
+    subtotal?: number,
+  ): number {
+    if (subtotal !== undefined && shop.freeDeliveryAbove > 0 && subtotal >= shop.freeDeliveryAbove) {
+      return 0;
+    }
+
+    if (customerLat && customerLng && shop.latitude && shop.longitude) {
+      const distanceKm = haversineDistanceKm(
+        shop.latitude,
+        shop.longitude,
+        customerLat,
+        customerLng,
+      );
+      const charge = calculateDeliveryCharge(distanceKm);
+      if (charge < 0) {
+        throw new BadRequestException(
+          `Delivery not available beyond ${MAX_DELIVERY_RADIUS_KM} km from the shop`,
+        );
+      }
+      return charge;
+    }
+
+    return shop.deliveryCharge ?? 0;
   }
 }

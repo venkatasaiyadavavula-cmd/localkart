@@ -34,7 +34,7 @@ import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useCartStore } from '@/store/cart-store';
 import { useShop } from '@/hooks/use-shop';
 import { useAuth } from '@/hooks/use-auth';
-import { useLocationStore } from '@/store/location-store';
+import { useLocationStore, useDeliveryCharge } from '@/store/location-store';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { LocationPicker } from '@/components/map/location-picker';
 
@@ -56,6 +56,7 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const { items, totalAmount, clearCart } = useCartStore();
   const { location } = useLocationStore();
+  const deliveryCharge = useDeliveryCharge();
 
   // Get shop details from first item
   const shopId = items[0]?.shopId;
@@ -151,6 +152,9 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  const shippingFee = deliveryCharge ?? 0;
+  const orderTotal = totalAmount + shippingFee;
 
   if (items.length === 0) {
     return null;
@@ -385,12 +389,14 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery</span>
-                  <span className="text-green-600">Free</span>
+                  <span className={shippingFee === 0 ? 'text-green-600' : ''}>
+                    {shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}
+                  </span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span className="font-heading text-xl text-primary">{formatPrice(totalAmount)}</span>
+                  <span className="font-heading text-xl text-primary">{formatPrice(orderTotal)}</span>
                 </div>
               </div>
 

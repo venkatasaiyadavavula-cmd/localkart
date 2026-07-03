@@ -1,8 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
+import {
+  MAX_DELIVERY_RADIUS_KM,
+  calculateDeliveryCharge,
+  DELIVERY_CHARGES,
+} from '@/lib/delivery-pricing';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+export { MAX_DELIVERY_RADIUS_KM, DELIVERY_CHARGES, calculateDeliveryCharge };
 
 // కడప జిల్లా కేంద్రం
 export const KADAPA_CENTER = {
@@ -10,36 +17,6 @@ export const KADAPA_CENTER = {
   lng: 78.8242,
 };
 
-// గరిష్ట డెలివరీ దూరం (కి.మీ.లలో)
-export const MAX_DELIVERY_RADIUS_KM = 20;
-
-// ==========================================
-// డెలివరీ ఛార్జీలు (దూరం ఆధారంగా)
-// ==========================================
-export const DELIVERY_CHARGES = [
-  { maxDistance: 5, charge: 20 },   // 5 కి.మీ లోపు = ₹20
-  { maxDistance: 10, charge: 30 },  // 10 కి.మీ లోపు = ₹30
-  { maxDistance: 20, charge: 50 },  // 20 కి.మీ లోపు = ₹50
-];
-
-/**
- * దూరం ఆధారంగా డెలివరీ ఛార్జ్ ని లెక్కిస్తుంది
- */
-export const calculateDeliveryCharge = (distanceInKm: number): number => {
-  if (distanceInKm <= 0) return 0;
-  
-  for (const tier of DELIVERY_CHARGES) {
-    if (distanceInKm <= tier.maxDistance) {
-      return tier.charge;
-    }
-  }
-  // 20 కి.మీ కంటే ఎక్కువ అయితే డెలివరీ అందుబాటులో లేదు
-  return -1;
-};
-
-/**
- * దూరాన్ని బట్టి డెలివరీ ఛార్జ్ మరియు అది సర్వీస్ చేయదగినదో కాదో తెలుపుతుంది
- */
 export const getDeliveryInfo = (distanceInKm: number): { serviceable: boolean; charge: number; message: string } => {
   if (distanceInKm > MAX_DELIVERY_RADIUS_KM) {
     return {
@@ -50,16 +27,20 @@ export const getDeliveryInfo = (distanceInKm: number): { serviceable: boolean; c
   }
 
   const charge = calculateDeliveryCharge(distanceInKm);
+  if (charge < 0) {
+    return {
+      serviceable: false,
+      charge: 0,
+      message: `Delivery not available beyond ${MAX_DELIVERY_RADIUS_KM} km`,
+    };
+  }
+
   return {
     serviceable: true,
     charge,
-    message: `Delivery charge: ₹${charge}`,
+    message: charge === 0 ? 'Free delivery' : `Delivery charge: ₹${charge}`,
   };
 };
-
-// ==========================================
-// Helper Functions
-// ==========================================
 
 export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371;
@@ -75,7 +56,12 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
   return R * c;
 };
 
-export const checkServiceability = async (lat: number, lng: number): Promise<{ serviceable: boolean; shopsCount: number; maxDistance?: number }> => {
+export const checkServiceability = async (lat: number, lng: number): Promise<{
+  serviceable: boolean;
+  shopsCount: number;
+  maxDistance?: number;
+  deliveryCharge?: number;
+}> => {
   try {
     const response = await axios.get(`${API_URL}/location/check-serviceability`, {
       params: { lat, lng, radius: MAX_DELIVERY_RADIUS_KM },
@@ -86,10 +72,6 @@ export const checkServiceability = async (lat: number, lng: number): Promise<{ s
     return { serviceable: false, shopsCount: 0 };
   }
 };
-
-// ==========================================
-// Location Store Interface & Implementation
-// ==========================================
 
 interface SavedLocation {
   latitude: number;
@@ -168,15 +150,15 @@ export const useLocationStore = create<LocationStore>()(
         try {
           const result = await checkServiceability(lat, lng);
           set({ isServiceable: result.serviceable });
-          
+
           if (result.serviceable && result.maxDistance !== undefined) {
             set({ nearestShopDistance: result.maxDistance });
-            const charge = calculateDeliveryCharge(result.maxDistance);
+            const charge = result.deliveryCharge ?? calculateDeliveryCharge(result.maxDistance);
             set({ deliveryCharge: charge });
           }
-          
+
           return result.serviceable;
-        } catch (error) {
+        } catch {
           set({ isServiceable: false });
           return false;
         }
