@@ -14,7 +14,7 @@ import { SalesChart } from '@/components/seller/sales-chart';
 import { RecentOrders } from '@/components/seller/recent-orders';
 import { TopProducts } from '@/components/seller/top-products';
 import { formatPrice, formatNumber } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { WeeklyEarningsPopup } from '@/components/seller/weekly-earnings-popup';
 
 export default function SellerDashboardPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
@@ -60,6 +60,27 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <WeeklyEarningsPopup />
+
+      {/* Team management hero */}
+      <Link
+        href="/dashboard/staff"
+        className="mx-4 mt-4 block overflow-hidden rounded-2xl border-0 text-white transition-transform hover:scale-[1.01]"
+        style={{ background: 'linear-gradient(135deg,#7C3AED,#4F46E5)', boxShadow: '0 8px 32px rgba(124,58,237,0.30)' }}
+      >
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Team Management</p>
+            <p className="mt-0.5 text-lg font-black" style={{ fontFamily: 'var(--font-display)' }}>
+              Add Employees
+            </p>
+            <p className="mt-1 text-xs text-white/80">Up to 5 team members · custom login IDs</p>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-2xl">
+            👥
+          </div>
+        </div>
+      </Link>
       {/* Header */}
       <div className="bg-white border-b px-4 pt-4 pb-3 sticky top-0 z-20">
         <div className="flex items-center justify-between mb-3">

@@ -18,7 +18,7 @@ const navItems = [
   { icon: TrendingUp,      label: 'Ads',             href: '/dashboard/ads' },
   { icon: IndianRupee,     label: 'Commission',      href: '/dashboard/commission' },
   { icon: BarChart2,       label: 'Earnings',        href: '/dashboard/earnings' },
-  { icon: Users,           label: 'Staff',           href: '/dashboard/staff' },
+  { icon: Users,           label: 'Team',            href: '/dashboard/staff', highlight: true },
   { icon: Upload,          label: 'Bulk Upload',     href: '/dashboard/products/bulk-upload' },
   { icon: CreditCard,      label: 'Subscription',    href: '/dashboard/subscription' },
   { icon: Settings,        label: 'Settings',        href: '/dashboard/shop-settings' },
@@ -41,6 +41,7 @@ export function SellerSidebar() {
       <nav className="flex flex-col gap-1 p-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isHighlight = 'highlight' in item && item.highlight;
           return (
             <Link
               key={item.href}
@@ -49,7 +50,9 @@ export function SellerSidebar() {
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : isHighlight
+                    ? 'bg-violet-50 text-violet-700 hover:bg-violet-100 font-semibold'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" />

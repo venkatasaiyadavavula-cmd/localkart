@@ -6,13 +6,14 @@ import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { User } from '../../core/entities/user.entity';
+import { StaffMember } from '../../core/entities/staff-member.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, StaffMember]),
     PassportModule,
     NotificationsModule,
     JwtModule.registerAsync({

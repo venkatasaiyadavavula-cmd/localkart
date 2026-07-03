@@ -6,6 +6,7 @@ import {
 import { Shop } from './shop.entity';
 
 export enum StaffRole {
+  WORKER           = 'worker',
   PRODUCTS_MANAGER = 'products_manager',
   DELIVERY_STAFF   = 'delivery_staff',
   STORE_MANAGER    = 'store_manager',

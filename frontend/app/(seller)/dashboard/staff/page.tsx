@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 const API = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
-type StaffRole = 'store_manager' | 'products_manager' | 'delivery_staff';
+type StaffRole = 'worker' | 'store_manager' | 'products_manager' | 'delivery_staff';
 type StaffStatus = 'active' | 'inactive';
 
 interface StaffMember {
@@ -48,6 +48,15 @@ const ROLE_CONFIG: Record<StaffRole, {
   permissions: string;
   gradient:    string;
 }> = {
+  worker: {
+    label:       'Shop Worker',
+    icon:        Users,
+    color:       '#059669',
+    bg:          '#ECFDF5',
+    border:      'rgba(5,150,105,0.20)',
+    gradient:    'linear-gradient(135deg,#059669,#047857)',
+    permissions: 'Products + Stock + Deliveries',
+  },
   store_manager: {
     label:       'Store Manager',
     icon:        Crown,
@@ -179,21 +188,31 @@ function CredentialsModal({ creds, onClose }: { creds: NewCredentials; onClose: 
 }
 
 function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: (c: NewCredentials) => void }) {
-  const [form, setForm] = useState({ name: '', phone: '', role: 'delivery_staff' as StaffRole, note: '' });
+  const [form, setForm] = useState({
+    name: '', phone: '', role: 'worker' as StaffRole, note: '', staffId: '', password: '',
+  });
   const qc = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data } = await axios.post(`${API}/seller/staff`, form, { headers: auth() });
+      const payload: Record<string, string> = {
+        name: form.name,
+        phone: form.phone.startsWith('+') ? form.phone : `+91${form.phone.replace(/\D/g, '').slice(-10)}`,
+        role: form.role,
+      };
+      if (form.note) payload.note = form.note;
+      if (form.staffId.trim()) payload.staffId = form.staffId.trim().toLowerCase();
+      if (form.password.trim()) payload.password = form.password;
+      const { data } = await axios.post(`${API}/seller/staff`, payload, { headers: auth() });
       return data;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['staff'] });
       onAdded(data);
       onClose();
-      setForm({ name: '', phone: '', role: 'delivery_staff', note: '' });
+      setForm({ name: '', phone: '', role: 'worker', note: '', staffId: '', password: '' });
     },
-    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed to add staff'),
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed to add employee'),
   });
 
   if (!open) return null;
@@ -204,8 +223,8 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>Add Staff Member</h2>
-            <p className="text-xs text-gray-400 mt-0.5">They get a separate login — no access to your account</p>
+            <h2 className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>Add Employee</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Set custom Login ID & password · max 5 members</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
             <X className="h-4 w-4 text-gray-500" />
@@ -236,31 +255,36 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
             />
           </div>
 
-          {/* Role selection */}
+          {/* Custom Login ID */}
           <div>
-            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-2 block">Role & Access *</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(ROLE_CONFIG) as [StaffRole, typeof ROLE_CONFIG[StaffRole]][]).map(([role, cfg]) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => setForm(p => ({ ...p, role }))}
-                  className="flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-200 text-center"
-                  style={{
-                    borderColor: form.role === role ? cfg.color : '#E5E9F2',
-                    background:  form.role === role ? cfg.bg    : 'white',
-                  }}
-                >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: form.role === role ? cfg.bg : '#F3F4F6' }}>
-                    <cfg.icon className="h-4.5 w-4.5" style={{ color: form.role === role ? cfg.color : '#9CA3AF' }} />
-                  </div>
-                  <span className="text-[11px] font-extrabold leading-tight" style={{ color: form.role === role ? cfg.color : '#6B7280' }}>
-                    {cfg.label}
-                  </span>
-                  <span className="text-[9px] text-gray-400 leading-tight">{cfg.permissions}</span>
-                </button>
-              ))}
+            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-1.5 block">Login ID (optional)</label>
+            <input
+              value={form.staffId}
+              onChange={e => setForm(p => ({ ...p, staffId: e.target.value }))}
+              placeholder="e.g. ravi.shop (auto-generated if empty)"
+              className="input-base font-mono text-sm"
+            />
+          </div>
+
+          {/* Custom Password */}
+          <div>
+            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-1.5 block">Password (optional)</label>
+            <input
+              value={form.password}
+              onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+              placeholder="Choose any password for employee"
+              type="text"
+              className="input-base font-mono text-sm"
+            />
+          </div>
+
+          {/* Role - default worker */}
+          <div className="rounded-2xl p-3 border" style={{ background: ROLE_CONFIG.worker.bg, borderColor: ROLE_CONFIG.worker.border }}>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" style={{ color: ROLE_CONFIG.worker.color }} />
+              <p className="text-sm font-extrabold" style={{ color: ROLE_CONFIG.worker.color }}>Shop Worker Access</p>
             </div>
+            <p className="text-[11px] text-gray-500 mt-1">Products add · Stock update · Delivery manage only</p>
           </div>
 
           {/* Note */}
@@ -280,7 +304,7 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
             className="w-full py-4 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.97] disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 20px rgba(61,90,241,0.30)' }}
           >
-            {mutation.isPending ? 'Adding...' : 'Add Staff Member'}
+            {mutation.isPending ? 'Adding...' : 'Add Employee'}
           </button>
         </div>
       </div>
@@ -327,7 +351,7 @@ export default function StaffPage() {
   });
 
   const activeStaff  = staff.filter(s => s.status === 'active');
-  const MAX_STAFF    = 10;
+  const MAX_STAFF = 5;
 
   if (isLoading) {
     return (
@@ -346,10 +370,10 @@ export default function StaffPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
-            Staff Management
+            Team / Employees
           </h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {activeStaff.length}/{MAX_STAFF} active · Separate logins for each member
+            {activeStaff.length}/{MAX_STAFF} employees · They login at Work as Employee
           </p>
         </div>
         {activeStaff.length < MAX_STAFF && (
@@ -359,7 +383,7 @@ export default function StaffPage() {
             style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 16px rgba(61,90,241,0.30)' }}
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Staff
+            Add Employee
           </button>
         )}
       </div>
@@ -387,15 +411,15 @@ export default function StaffPage() {
           <div className="w-16 h-16 rounded-3xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#EEF0FE' }}>
             <Users className="h-8 w-8" style={{ color: '#3D5AF1' }} />
           </div>
-          <p className="font-extrabold text-gray-700 text-base">No staff members yet</p>
-          <p className="text-sm text-gray-400 mt-1 mb-5">Add workers — they get their own secure login</p>
+          <p className="font-extrabold text-gray-700 text-base">No employees yet</p>
+          <p className="text-sm text-gray-400 mt-1 mb-5">Add your shop workers — they login separately at Work as Employee</p>
           <button
             onClick={() => setShowAdd(true)}
             className="inline-flex items-center gap-2 text-sm font-extrabold text-white px-6 py-3 rounded-2xl"
             style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 16px rgba(61,90,241,0.30)' }}
           >
             <Plus className="h-4 w-4" />
-            Add First Staff Member
+            Add First Employee
           </button>
         </div>
       ) : (

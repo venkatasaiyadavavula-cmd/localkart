@@ -46,6 +46,12 @@ export default function HomePage() {
                     Become a Seller
                   </Button>
                 </Link>
+                <Link href="/work/login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                    <Users className="mr-2 h-5 w-5" />
+                    Work as Employee
+                  </Button>
+                </Link>
               </div>
               <div className="flex items-center gap-6 pt-4">
                 <div className="flex items-center gap-2">
