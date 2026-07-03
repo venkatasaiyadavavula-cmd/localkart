@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Search, MapPin, ChevronRight, Bell,
-  Zap, Shield, RefreshCw, ArrowRight,
+  ChevronRight, Zap, Shield, RefreshCw, ArrowRight,
   TrendingUp, Store, Sparkles, Star,
   Clock, Package, Play,
 } from 'lucide-react';
@@ -14,9 +13,9 @@ import { NearbyShopsSection }    from '@/components/home/nearby-shops-section';
 import { CategoriesSection }      from '@/components/home/categories-section';
 import { TrendingProductsSection } from '@/components/home/trending-products-section';
 import { TodayOffersSection }      from '@/components/home/today-offers-section';
+import { VideoPreviewSection }     from '@/components/home/video-preview-section';
 import { HowItWorksSection }       from '@/components/home/how-it-works-section';
 import { FounderSection }          from '@/components/home/founder-section';
-import { LocationDialog }          from '@/components/location/location-dialog';
 
 const BANNERS = [
   { gradient: 'linear-gradient(135deg,#3D5AF1 0%,#6D28D9 55%,#4338CA 100%)', glowColor: 'rgba(109,40,217,0.45)', badge: '🔥 Flash Sale', headline: 'Up to 70% OFF', sub: 'Fashion & Clothing', emoji: '👗', cta: 'Shop Fashion' },
@@ -38,13 +37,10 @@ const TICKER = [
 ];
 
 export default function HomePage() {
-  const [showLocationDialog, setShowLocationDialog] = useState(false);
-  const [searchQuery,        setSearchQuery]        = useState('');
-  const [searchFocused,      setSearchFocused]      = useState(false);
   const [activeBanner,       setActiveBanner]       = useState(0);
   const [bannerAnimating,    setBannerAnimating]    = useState(false);
 
-  const { latitude, longitude, loading: locationLoading, error: locationError, detectLocation } = useGeolocation();
+  const { latitude, longitude } = useGeolocation();
   const { location: savedLocation, setLocation } = useLocationStore();
 
   useEffect(() => {
@@ -61,11 +57,6 @@ export default function HomePage() {
     return () => clearInterval(t);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) window.location.href = `/browse?q=${encodeURIComponent(searchQuery)}`;
-  };
-
   const goToBanner = (i: number) => {
     setBannerAnimating(true);
     setTimeout(() => { setActiveBanner(i); setBannerAnimating(false); }, 200);
@@ -75,54 +66,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-sans,sans-serif)' }}>
-      <LocationDialog
-        open={showLocationDialog}
-        onOpenChange={setShowLocationDialog}
-        onDetectLocation={async () => { await detectLocation(); setShowLocationDialog(false); }}
-        locationLoading={locationLoading}
-        locationError={locationError}
-      />
-
-      {/* ── HEADER ── */}
-      <header className="lg:hidden sticky top-0 z-50 glass border-b border-white/70 shadow-soft-sm">
-        <div className="px-4 pt-3 pb-1.5 flex items-center justify-between">
-          <button onClick={() => setShowLocationDialog(true)} className="flex items-center gap-2 group max-w-[70%]">
-            <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-xl" style={{ background: '#EEF0FE' }}>
-              <MapPin className="h-3.5 w-3.5" style={{ color: '#3D5AF1' }} />
-            </span>
-            <div className="text-left min-w-0">
-              <p className="text-[10px] text-gray-400 font-semibold leading-none tracking-wide uppercase">Delivering to</p>
-              <p className="text-sm font-bold text-gray-800 truncate leading-snug flex items-center gap-0.5 mt-0.5">
-                {savedLocation ? 'Kadapa, Andhra Pradesh' : 'Set Location'}
-                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
-              </p>
-            </div>
-          </button>
-          <Link href="/orders" className="relative flex items-center justify-center w-9 h-9 rounded-2xl border border-gray-100 bg-white shadow-xs">
-            <Bell className="h-4.5 w-4.5 text-gray-600" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-white bg-red-500" />
-          </Link>
-        </div>
-        <form onSubmit={handleSearch} className="px-4 pb-3">
-          <div className="relative flex items-center rounded-2xl bg-white border transition-all duration-300"
-            style={{ borderColor: searchFocused ? 'rgba(61,90,241,0.35)' : '#E5E9F2', boxShadow: searchFocused ? '0 0 0 3px rgba(61,90,241,0.10),0 4px 16px rgba(0,0,0,0.06)' : '0 1px 4px rgba(0,0,0,0.05)' }}>
-            <Search className="absolute left-3.5 h-4 w-4 transition-colors duration-200" style={{ color: searchFocused ? '#3D5AF1' : '#9CA3AF' }} />
-            <input
-              type="text"
-              placeholder="Search sarees, mobiles, groceries..."
-              className="w-full pl-10 pr-12 py-3 bg-transparent text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            {searchQuery
-              ? <button type="submit" className="absolute right-2.5 flex items-center justify-center w-8 h-8 rounded-xl text-white" style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)' }}><ArrowRight className="h-3.5 w-3.5" /></button>
-              : <span className="absolute right-3.5 text-[10px] font-bold text-gray-300 tracking-wider">SEARCH</span>
-            }
-          </div>
-        </form>
-      </header>
 
       {/* ── TICKER ── */}
       <div className="overflow-hidden py-2 border-b border-white/60" style={{ background: 'linear-gradient(90deg,#EEF0FE,#F5F0FF,#EEF0FE)' }}>
@@ -240,6 +183,9 @@ export default function HomePage() {
           <NearbyShopsSection latitude={savedLocation.latitude} longitude={savedLocation.longitude} />
         </section>
       )}
+
+      {/* ── SUGGESTED VIDEOS ── */}
+      <VideoPreviewSection />
 
       {/* ── VIDEO REELS CTA ── */}
       <div className="px-4 mt-3">

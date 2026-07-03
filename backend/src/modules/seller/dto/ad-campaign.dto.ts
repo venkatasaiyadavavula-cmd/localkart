@@ -7,6 +7,13 @@ import {
   IsOptional,
 } from 'class-validator';
 import { AdType, AdStatus } from '../../../core/entities/sponsored-product.entity';
+import { AdPackage } from '../ad-packages';
+
+export enum AdPackageType {
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+}
 
 export class CreateAdCampaignDto {
   @IsString()
@@ -17,11 +24,17 @@ export class CreateAdCampaignDto {
   @IsOptional()
   adType?: AdType = AdType.SPONSORED;
 
-  @IsDateString()
-  startDate: string;
+  @IsEnum(AdPackageType)
+  @IsOptional()
+  package?: AdPackage;
 
   @IsDateString()
-  endDate: string;
+  @IsOptional()
+  startDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 
   @IsObject()
   @IsOptional()

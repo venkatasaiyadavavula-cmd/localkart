@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Header } from '@/components/layout/header';
+import { MobileHeader } from '@/components/layout/mobile-header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 
@@ -18,9 +20,12 @@ export default function CustomerLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <MobileHeader />
       <main className="flex-1">{children}</main>
       <Footer />
-      <MobileNav />
+      <Suspense fallback={null}>
+        <MobileNav />
+      </Suspense>
     </div>
   );
 }

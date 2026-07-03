@@ -5,6 +5,7 @@ import { SponsoredProduct, AdStatus, AdType } from '../../core/entities/sponsore
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
+import { AD_PACKAGES, AdPackage } from './ad-packages';
 
 @Injectable()
 export class AdCampaignService {
@@ -52,16 +53,30 @@ export class AdCampaignService {
       throw new BadRequestException('Product already has an active ad campaign');
     }
 
-    const startDate = new Date(dto.startDate);
-    const endDate = new Date(dto.endDate);
-    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const costPerDay = dto.adType === AdType.SPONSORED ? 100 : 10;
-    const totalCost = days * costPerDay;
+    const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
+    let endDate: Date;
+    let totalCost: number;
+    let costPerDay: number;
+
+    if (dto.package && AD_PACKAGES[dto.package as AdPackage]) {
+      const pkg = AD_PACKAGES[dto.package as AdPackage];
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + pkg.days);
+      totalCost = pkg.price;
+      costPerDay = parseFloat((pkg.price / pkg.days).toFixed(2));
+    } else {
+      endDate = new Date(dto.endDate);
+      const days = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      costPerDay = 50;
+      totalCost = days * costPerDay;
+    }
+
+    const adType = dto.adType || AdType.SPONSORED;
 
     const campaign = this.adRepository.create({
       productId: dto.productId,
       shopId: shop.id,
-      adType: dto.adType || AdType.SPONSORED,
+      adType,
       status: AdStatus.PENDING,
       costPerDay,
       startDate,

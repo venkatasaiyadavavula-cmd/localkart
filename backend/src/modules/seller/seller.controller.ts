@@ -20,6 +20,8 @@ import { SubscriptionService } from './subscription.service';
 import { EarningsService } from './earnings.service';
 import { AdCampaignService } from './ad-campaign.service';
 import { DailyOfferService } from './daily-offer.service';
+import { FeaturedVideoService } from './featured-video.service';
+import { PromoteFeaturedVideoDto } from './dto/promote-featured-video.dto';
 import { CreateDailyOfferDto } from './dto/daily-offer.dto';
 import { ShopProfileDto } from './dto/shop-profile.dto';
 import { SubscribeDto } from './dto/subscription-plan.dto';
@@ -40,6 +42,7 @@ export class SellerController {
     private readonly earningsService: EarningsService,
     private readonly adCampaignService: AdCampaignService,
     private readonly dailyOfferService: DailyOfferService,
+    private readonly featuredVideoService: FeaturedVideoService,
   ) {}
 
   // Shop Profile
@@ -185,6 +188,17 @@ export class SellerController {
   @Get('ads/:id/stats')
   async getAdStats(@CurrentUser() user: any, @Param('id') id: string) {
     return this.adCampaignService.getCampaignStats(user.id, id);
+  }
+
+  // Featured homepage videos (₹29 / 24h)
+  @Get('featured-videos')
+  async getFeaturedVideos(@CurrentUser() user: any) {
+    return this.featuredVideoService.getSellerFeaturedVideos(user.id);
+  }
+
+  @Post('featured-videos')
+  async promoteFeaturedVideo(@CurrentUser() user: any, @Body() dto: PromoteFeaturedVideoDto) {
+    return this.featuredVideoService.promoteVideo(user.id, dto.productId);
   }
 
   // Daily Offers

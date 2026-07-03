@@ -18,6 +18,11 @@ export const translations = {
     wishlist:            'Wishlist',
     orders:              'Orders',
     profile:             'Profile',
+    dailyOffers:         'Daily Offers',
+    liveTracking:        'Live Tracking',
+    suggestedVideos:     'Suggested Videos',
+    featuredVideoBadge:  'Suggested',
+    expiresIn:           'Expires in',
 
     // Categories
     allCategories:       'All Categories',
@@ -105,6 +110,11 @@ export const translations = {
     wishlist:            'విష్‌లిస్ట్',
     orders:              'ఆర్డర్లు',
     profile:             'ప్రొఫైల్',
+    dailyOffers:         'డైలీ ఆఫర్లు',
+    liveTracking:        'లైవ్ ట్రాకింగ్',
+    suggestedVideos:     'సూచించిన వీడియోలు',
+    featuredVideoBadge:  'సూచన',
+    expiresIn:           'గడువు',
 
     // Categories
     allCategories:       'అన్ని కేటగిరీలు',
