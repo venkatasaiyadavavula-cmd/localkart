@@ -21,6 +21,7 @@ import { ProductReviews } from '@/components/reviews/product-reviews';
 import { ReviewForm } from '@/components/reviews/review-form';
 import { useProduct } from '@/hooks/use-product';
 import { useCartStore } from '@/store/cart-store';
+import { useBuyNowWithWelcome } from '@/hooks/use-buy-now-with-welcome';
 import { formatPrice, formatDistance, cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -31,6 +32,7 @@ export default function ProductDetailPage() {
 
   const { data: product, isLoading } = useProduct(slug);
   const { addItem, isLoading: cartLoading } = useCartStore();
+  const { startBuyNow, buyNowWelcomeDialog, isBuyNowLoading } = useBuyNowWithWelcome();
 
   const [quantity,       setQuantity]      = useState(1);
   const [selectedImage,  setSelectedImage] = useState(0);
@@ -76,10 +78,9 @@ export default function ProductDetailPage() {
     } catch { toast.error('Failed to add to cart'); }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!product) return;
-    try { await addItem(product.id, quantity); router.push('/checkout'); }
-    catch { toast.error('Failed to proceed'); }
+    startBuyNow(product.id, quantity);
   };
 
   const handleShare = async () => {
@@ -106,6 +107,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {buyNowWelcomeDialog}
 
       {/* Mobile header */}
       <div className="lg:hidden sticky top-0 z-30 bg-white border-b flex items-center justify-between px-4 py-3">
@@ -265,7 +267,7 @@ export default function ProductDetailPage() {
                 }
               </Button>
               <Button size="lg" className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold"
-                onClick={handleBuyNow} disabled={cartLoading || product.stock === 0}>
+                onClick={handleBuyNow} disabled={isBuyNowLoading || cartLoading || product.stock === 0}>
                 Buy Now
               </Button>
             </div>
@@ -342,7 +344,7 @@ export default function ProductDetailPage() {
           {addedToCart ? '✓ Added!' : 'Add to Cart'}
         </Button>
         <Button className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold"
-          onClick={handleBuyNow} disabled={cartLoading || product.stock === 0}>
+          onClick={handleBuyNow} disabled={isBuyNowLoading || cartLoading || product.stock === 0}>
           Buy Now
         </Button>
       </div>
