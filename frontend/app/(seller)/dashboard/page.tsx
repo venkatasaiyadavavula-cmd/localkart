@@ -5,23 +5,40 @@ import Link from 'next/link';
 import {
   TrendingUp, Package, ShoppingBag, DollarSign,
   ArrowUp, ArrowDown, Clock, ChevronRight, Plus,
-  Zap, Bell, BarChart3, AlertCircle, CheckCircle,
+  Zap, Bell, BarChart3, AlertCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerDashboard } from '@/hooks/use-seller-dashboard';
+import { useShop } from '@/hooks/use-shop';
 import { SalesChart } from '@/components/seller/sales-chart';
 import { RecentOrders } from '@/components/seller/recent-orders';
 import { TopProducts } from '@/components/seller/top-products';
+import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { formatPrice, formatNumber } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import type { ManualOverride } from '@/types/shop-hours';
 
 export default function SellerDashboardPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
   const { data, isLoading } = useSellerDashboard(period);
+  const { data: shop, toggleShop, isToggling } = useShop();
 
   const pendingOrders = data?.pendingOrders || 0;
   const lowStockProducts = data?.lowStockProducts || 0;
+  const isCurrentlyOpen = shop?.isCurrentlyOpen ?? data?.isCurrentlyOpen ?? false;
+  const statusMessage = shop?.statusMessage ?? data?.statusMessage ?? '';
+
+  const handleShopToggle = async (open: boolean) => {
+    const manualOverride: ManualOverride = open ? 'force_open' : 'force_closed';
+    try {
+      await toggleShop(manualOverride);
+      toast.success(open ? 'Shop is now open' : 'Shop is now closed');
+    } catch {
+      toast.error('Failed to update shop status');
+    }
+  };
 
   const stats = [
     {
@@ -60,14 +77,13 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
       <div className="bg-white border-b px-4 pt-4 pb-3 sticky top-0 z-20">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              👋 {data?.shopName || 'My Shop'}
+              👋 {data?.shopName || shop?.name || 'My Shop'}
             </h1>
-            <p className="text-xs text-gray-500">Here's your store overview</p>
+            <p className="text-xs text-gray-500">Here&apos;s your store overview</p>
           </div>
           <Link href="/dashboard/products/new">
             <button className="flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3 py-2 rounded-xl">
@@ -76,8 +92,7 @@ export default function SellerDashboardPage() {
           </Link>
         </div>
 
-        {/* Period selector */}
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as 'week' | 'month' | 'year')}>
           <TabsList className="w-full h-9 rounded-xl">
             <TabsTrigger value="week" className="flex-1 rounded-lg text-xs">This Week</TabsTrigger>
             <TabsTrigger value="month" className="flex-1 rounded-lg text-xs">This Month</TabsTrigger>
@@ -87,7 +102,43 @@ export default function SellerDashboardPage() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Alerts */}
+        <div
+          className={`rounded-2xl border p-4 shadow-sm ${
+            isCurrentlyOpen
+              ? 'bg-green-50 border-green-200'
+              : 'bg-red-50 border-red-200'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className={`h-4 w-4 ${isCurrentlyOpen ? 'text-green-600' : 'text-red-600'}`} />
+                <p className={`text-sm font-bold ${isCurrentlyOpen ? 'text-green-800' : 'text-red-800'}`}>
+                  {isCurrentlyOpen ? 'Shop is Open' : 'Shop is Closed'}
+                </p>
+                <ShopOpenBadge isOpen={isCurrentlyOpen} />
+              </div>
+              <p className={`text-xs ${isCurrentlyOpen ? 'text-green-700' : 'text-red-700'}`}>
+                {statusMessage || (isCurrentlyOpen ? 'Accepting orders now' : 'Tap to reopen your shop')}
+              </p>
+            </div>
+            <Switch
+              checked={isCurrentlyOpen}
+              onCheckedChange={handleShopToggle}
+              disabled={isToggling}
+              className="data-[state=checked]:bg-green-600"
+            />
+          </div>
+          {shop?.manualOverride && shop.manualOverride !== 'none' && (
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Manual override active —{' '}
+              <Link href="/dashboard/shop-settings" className="underline">
+                edit weekly schedule
+              </Link>
+            </p>
+          )}
+        </div>
+
         {(pendingOrders > 0 || lowStockProducts > 0) && (
           <div className="space-y-2">
             {pendingOrders > 0 && (
@@ -125,7 +176,6 @@ export default function SellerDashboardPage() {
           </div>
         )}
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (
@@ -151,7 +201,6 @@ export default function SellerDashboardPage() {
           }
         </div>
 
-        {/* Quick actions */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <p className="text-sm font-bold text-gray-900 px-4 pt-4 pb-2">Quick Actions</p>
           {[
@@ -175,7 +224,6 @@ export default function SellerDashboardPage() {
           ))}
         </div>
 
-        {/* Sales Chart */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-bold text-gray-900">Sales Overview</p>
@@ -187,7 +235,6 @@ export default function SellerDashboardPage() {
           }
         </div>
 
-        {/* Recent Orders */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <p className="text-sm font-bold text-gray-900">Recent Orders</p>
@@ -205,7 +252,6 @@ export default function SellerDashboardPage() {
           }
         </div>
 
-        {/* Top Products */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <p className="text-sm font-bold text-gray-900">Top Products</p>

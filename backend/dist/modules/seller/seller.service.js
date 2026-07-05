@@ -26,6 +26,7 @@ const user_entity_1 = require("../../core/entities/user.entity");
 const product_entity_1 = require("../../core/entities/product.entity");
 const order_entity_1 = require("../../core/entities/order.entity");
 const storage_config_1 = require("../../config/storage.config");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 let SellerService = SellerService_1 = class SellerService {
     shopRepository;
     userRepository;
@@ -47,7 +48,7 @@ let SellerService = SellerService_1 = class SellerService {
             throw new common_1.NotFoundException('Shop not found. Please create your shop first.');
         }
         delete shop.owner.password;
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async getShopBySlug(slug) {
         const shop = await this.shopRepository.findOne({
@@ -56,7 +57,7 @@ let SellerService = SellerService_1 = class SellerService {
         if (!shop) {
             throw new common_1.NotFoundException('Shop not found');
         }
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async getShopById(id) {
         const shop = await this.shopRepository.findOne({
@@ -65,7 +66,7 @@ let SellerService = SellerService_1 = class SellerService {
         if (!shop) {
             throw new common_1.NotFoundException('Shop not found');
         }
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async createShop(ownerId, shopProfileDto) {
         const existingShop = await this.shopRepository.findOne({
@@ -88,6 +89,9 @@ let SellerService = SellerService_1 = class SellerService {
             slug,
             ownerId,
             status: shop_entity_1.ShopStatus.PENDING,
+            operatingHours: (0, shop_hours_util_1.createDefaultOperatingHours)(),
+            manualOverride: shop_entity_1.ManualOverride.FORCE_CLOSED,
+            manualOverrideSetAt: new Date(),
             location: `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)`,
         });
         await this.shopRepository.save(shop);
@@ -95,7 +99,7 @@ let SellerService = SellerService_1 = class SellerService {
             user.role = 'seller';
             await this.userRepository.save(user);
         }
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async updateShop(ownerId, shopProfileDto) {
         const shop = await this.shopRepository.findOne({ where: { ownerId } });
@@ -111,7 +115,29 @@ let SellerService = SellerService_1 = class SellerService {
         Object.assign(shop, shopProfileDto);
         shop.status = shop_entity_1.ShopStatus.PENDING;
         await this.shopRepository.save(shop);
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
+    }
+    async updateOperatingHours(ownerId, hoursDto) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        shop.operatingHours = hoursDto;
+        shop.openingTime = hoursDto.monday.open;
+        shop.closingTime = hoursDto.monday.close;
+        await this.shopRepository.save(shop);
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
+    }
+    async setManualOverride(ownerId, toggleDto) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        shop.manualOverride = toggleDto.manualOverride;
+        shop.manualOverrideSetAt =
+            toggleDto.manualOverride === shop_entity_1.ManualOverride.NONE ? null : new Date();
+        await this.shopRepository.save(shop);
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async uploadShopLogo(ownerId, file) {
         const shop = await this.getShopByOwner(ownerId);
@@ -172,6 +198,9 @@ let SellerService = SellerService_1 = class SellerService {
         });
         return {
             shopName: shop.name,
+            isCurrentlyOpen: shop.isCurrentlyOpen,
+            statusMessage: shop.statusMessage,
+            manualOverride: shop.manualOverride,
             totalProducts,
             activeProducts,
             lowStockProducts,

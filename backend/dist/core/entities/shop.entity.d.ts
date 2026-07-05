@@ -8,6 +8,11 @@ export declare enum ShopStatus {
     REJECTED = "rejected",
     SUSPENDED = "suspended"
 }
+export declare enum ManualOverride {
+    NONE = "none",
+    FORCE_OPEN = "force_open",
+    FORCE_CLOSED = "force_closed"
+}
 export declare class Shop {
     id: string;
     name: string;
@@ -33,6 +38,13 @@ export declare class Shop {
     reviewCount: number;
     openingTime: string;
     closingTime: string;
+    operatingHours: Record<string, {
+        open: string;
+        close: string;
+        isOpen: boolean;
+    }>;
+    manualOverride: ManualOverride;
+    manualOverrideSetAt: Date | null;
     deliveryPincodes: string[];
     deliveryCharge: number;
     freeDeliveryAbove: number;

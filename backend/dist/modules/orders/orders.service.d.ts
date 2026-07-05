@@ -27,11 +27,10 @@ export declare class OrdersService {
     private readonly logger;
     constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, productRepository: Repository<Product>, shopRepository: Repository<Shop>, userRepository: Repository<User>, transactionRepository: Repository<Transaction>, cartService: CartService, dataSource: DataSource, stateMachine: OrderStateMachine, notificationsService: NotificationsService, trackingGateway: TrackingGateway);
     private formatOrderResponse;
-    private isShopOpen;
-    private getNextOpeningTime;
     createOrder(userId: string, createOrderDto: CreateOrderDto): Promise<{
-        isShopOpen: boolean;
-        shopClosedMessage: string;
+        isShopOpen: true;
+        shopClosedMessage: any;
+        shopStatusMessage: string;
         id: string;
         orderNumber: string;
         customerId: string;
@@ -65,8 +64,9 @@ export declare class OrdersService {
         deliveredAt: Date;
         cancelledAt: Date;
     } | {
-        isShopOpen: boolean;
-        shopClosedMessage: string;
+        isShopOpen: true;
+        shopClosedMessage: any;
+        shopStatusMessage: string;
         deliveryAddress: Record<string, any>;
         shippingAddress: Record<string, any>;
         id: string;

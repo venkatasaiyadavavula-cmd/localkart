@@ -1,26 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils';
+import type { ManualOverride, OperatingHours } from '@/types/shop-hours';
 
-export function useShop(slug?: string) {
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function useShop(slugOrId?: string) {
   const queryClient = useQueryClient();
-  const isSellerShop = !slug;
+  const isSellerShop = !slugOrId;
 
   const query = useQuery({
-    queryKey: isSellerShop ? ['seller', 'shop'] : ['shop', slug],
+    queryKey: isSellerShop ? ['seller', 'shop'] : isUuid(slugOrId!) ? ['shop', 'id', slugOrId] : ['shop', slugOrId],
     queryFn: async () => {
       if (isSellerShop) {
         const { data } = await apiClient.get('/seller/shop');
         return unwrapApiData(data);
       }
-      const isUuid = /^[0-9a-f-]{36}$/i.test(slug!);
-      const endpoint = isUuid ? `/seller/shop/id/${slug}` : `/seller/shop/slug/${slug}`;
+      const endpoint = isUuid(slugOrId!)
+        ? `/seller/shop/id/${slugOrId}`
+        : `/seller/shop/slug/${slugOrId}`;
       const { data } = await apiClient.get(endpoint);
       return unwrapApiData(data);
     },
     enabled: isSellerShop
       ? typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
-      : !!slug,
+      : !!slugOrId,
   });
 
   const updateMutation = useMutation({
@@ -39,9 +45,35 @@ export function useShop(slug?: string) {
     },
   });
 
+  const updateHoursMutation = useMutation({
+    mutationFn: async (hours: OperatingHours) => {
+      const { data } = await apiClient.put('/seller/shop/hours', hours);
+      return unwrapApiData(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'shop'] });
+      queryClient.invalidateQueries({ queryKey: ['seller', 'dashboard'] });
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async (manualOverride: ManualOverride) => {
+      const { data } = await apiClient.put('/seller/shop/toggle', { manualOverride });
+      return unwrapApiData(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'shop'] });
+      queryClient.invalidateQueries({ queryKey: ['seller', 'dashboard'] });
+    },
+  });
+
   return {
     data: query.data,
     isLoading: query.isLoading,
     updateShop: updateMutation.mutateAsync,
+    updateHours: updateHoursMutation.mutateAsync,
+    toggleShop: toggleMutation.mutateAsync,
+    isToggling: toggleMutation.isPending,
+    isSavingHours: updateHoursMutation.isPending,
   };
 }

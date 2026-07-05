@@ -8,12 +8,19 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import slugify from 'slugify';
-import { Shop, ShopStatus } from '../../core/entities/shop.entity';
+import { Shop, ShopStatus, ManualOverride } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { ShopProfileDto } from './dto/shop-profile.dto';
+import { UpdateShopHoursDto } from './dto/shop-hours.dto';
+import { ShopToggleDto } from './dto/shop-toggle.dto';
 import { getSignedUploadUrl, BUCKET_NAME } from '../../config/storage.config';
+import {
+  createDefaultOperatingHours,
+  enrichShopWithHoursStatus,
+} from '../../core/utils/shop-hours.util';
+import type { OperatingHours } from '../../core/types/shop-hours.types';
 
 @Injectable()
 export class SellerService {
@@ -41,7 +48,7 @@ export class SellerService {
     }
 
     delete shop.owner.password;
-    return shop;
+    return enrichShopWithHoursStatus(shop);
   }
 
   async getShopBySlug(slug: string) {
@@ -53,7 +60,7 @@ export class SellerService {
       throw new NotFoundException('Shop not found');
     }
 
-    return shop;
+    return enrichShopWithHoursStatus(shop);
   }
 
   async getShopById(id: string) {
@@ -65,7 +72,7 @@ export class SellerService {
       throw new NotFoundException('Shop not found');
     }
 
-    return shop;
+    return enrichShopWithHoursStatus(shop);
   }
 
   async createShop(ownerId: string, shopProfileDto: ShopProfileDto) {
@@ -93,6 +100,9 @@ export class SellerService {
       slug,
       ownerId,
       status: ShopStatus.PENDING,
+      operatingHours: createDefaultOperatingHours(),
+      manualOverride: ManualOverride.FORCE_CLOSED,
+      manualOverrideSetAt: new Date(),
       location: `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)` as any,
     });
 
@@ -104,7 +114,7 @@ export class SellerService {
       await this.userRepository.save(user);
     }
 
-    return shop;
+    return enrichShopWithHoursStatus(shop);
   }
 
   async updateShop(ownerId: string, shopProfileDto: ShopProfileDto) {
@@ -125,7 +135,36 @@ export class SellerService {
     shop.status = ShopStatus.PENDING; // Require re-approval after significant changes
 
     await this.shopRepository.save(shop);
-    return shop;
+    return enrichShopWithHoursStatus(shop);
+  }
+
+  async updateOperatingHours(ownerId: string, hoursDto: UpdateShopHoursDto) {
+    const shop = await this.shopRepository.findOne({ where: { ownerId } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    shop.operatingHours = hoursDto as unknown as OperatingHours;
+    // Keep legacy fields in sync with Monday schedule for backward compatibility
+    shop.openingTime = hoursDto.monday.open;
+    shop.closingTime = hoursDto.monday.close;
+
+    await this.shopRepository.save(shop);
+    return enrichShopWithHoursStatus(shop);
+  }
+
+  async setManualOverride(ownerId: string, toggleDto: ShopToggleDto) {
+    const shop = await this.shopRepository.findOne({ where: { ownerId } });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    shop.manualOverride = toggleDto.manualOverride;
+    shop.manualOverrideSetAt =
+      toggleDto.manualOverride === ManualOverride.NONE ? null : new Date();
+
+    await this.shopRepository.save(shop);
+    return enrichShopWithHoursStatus(shop);
   }
 
   async uploadShopLogo(ownerId: string, file: Express.Multer.File) {
@@ -203,6 +242,9 @@ export class SellerService {
 
     return {
       shopName: shop.name,
+      isCurrentlyOpen: shop.isCurrentlyOpen,
+      statusMessage: shop.statusMessage,
+      manualOverride: shop.manualOverride,
       totalProducts,
       activeProducts,
       lowStockProducts,

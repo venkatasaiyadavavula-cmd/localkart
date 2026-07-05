@@ -21,6 +21,12 @@ export enum ShopStatus {
   SUSPENDED = 'suspended',
 }
 
+export enum ManualOverride {
+  NONE = 'none',
+  FORCE_OPEN = 'force_open',
+  FORCE_CLOSED = 'force_closed',
+}
+
 @Entity('shops')
 export class Shop {
   @PrimaryGeneratedColumn('uuid')
@@ -100,6 +106,19 @@ export class Shop {
 
   @Column({ type: 'time', nullable: true })
   closingTime: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  operatingHours: Record<string, { open: string; close: string; isOpen: boolean }>;
+
+  @Column({
+    type: 'enum',
+    enum: ManualOverride,
+    default: ManualOverride.FORCE_CLOSED,
+  })
+  manualOverride: ManualOverride;
+
+  @Column({ type: 'timestamp', nullable: true })
+  manualOverrideSetAt: Date | null;
 
   @Column({ type: 'jsonb', nullable: true })
   deliveryPincodes: string[];

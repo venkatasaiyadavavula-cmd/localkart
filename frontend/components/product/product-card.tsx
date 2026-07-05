@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
+import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 
 interface ProductCardProps {
   product: {
@@ -24,7 +25,11 @@ interface ProductCardProps {
     reviewCount?: number;
     orderCount?: number;
     stock?: number;
-    shop?: { name: string; slug?: string };
+    shop?: {
+      name: string;
+      slug?: string;
+      isCurrentlyOpen?: boolean;
+    };
     shopId?: string;
     shopName?: string;
   };
@@ -43,9 +48,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   const href = getProductUrl(product);
 
+  const shopName = product.shop?.name || product.shopName;
+  const shopClosed = product.shop?.isCurrentlyOpen === false;
+
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (shopClosed) {
+      toast.error('Shop is currently closed');
+      return;
+    }
     setAddingToCart(true);
     try {
       await addItem(product.id, 1);
@@ -77,8 +89,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
       toast.error('Failed to update wishlist');
     }
   };
-
-  const shopName = product.shop?.name || product.shopName;
 
   return (
     <div className={cn('bg-white flex flex-col relative group', className)}>
@@ -115,20 +125,31 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </button>
 
           {/* Add to cart overlay — desktop */}
-          <button
-            onClick={handleAddToCart}
-            disabled={addingToCart}
-            className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs font-semibold py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200 hidden lg:flex items-center justify-center gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {addingToCart ? 'Adding...' : 'Add to Cart'}
-          </button>
+          {shopClosed ? (
+            <div className="absolute bottom-0 left-0 right-0 bg-gray-600 text-white text-xs font-semibold py-2 hidden lg:flex items-center justify-center">
+              Shop closed
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              disabled={addingToCart}
+              className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs font-semibold py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200 hidden lg:flex items-center justify-center gap-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {addingToCart ? 'Adding...' : 'Add to Cart'}
+            </button>
+          )}
         </div>
 
         {/* Product info */}
         <div className="p-2 flex flex-col flex-1">
           {shopName && (
-            <p className="text-[10px] text-gray-400 mb-0.5 truncate">{shopName}</p>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <p className="text-[10px] text-gray-400 truncate">{shopName}</p>
+              {product.shop?.isCurrentlyOpen !== undefined && (
+                <ShopOpenBadge isOpen={product.shop.isCurrentlyOpen} />
+              )}
+            </div>
           )}
 
           <p className="text-xs text-gray-800 line-clamp-2 leading-tight mb-1.5 font-medium flex-1">
@@ -159,14 +180,20 @@ export function ProductCard({ product, className }: ProductCardProps) {
       </Link>
 
       {/* Add to cart button — mobile */}
-      <button
-        onClick={handleAddToCart}
-        disabled={addingToCart}
-        className="lg:hidden mx-2 mb-2 bg-primary/10 text-primary text-xs font-semibold py-1.5 rounded-lg flex items-center justify-center gap-1 active:bg-primary/20"
-      >
-        <Plus className="h-3 w-3" />
-        {addingToCart ? 'Adding...' : 'Add'}
-      </button>
+      {shopClosed ? (
+        <p className="lg:hidden mx-2 mb-2 text-center text-xs text-gray-500 py-1.5">
+          Shop is currently closed
+        </p>
+      ) : (
+        <button
+          onClick={handleAddToCart}
+          disabled={addingToCart}
+          className="lg:hidden mx-2 mb-2 bg-primary/10 text-primary text-xs font-semibold py-1.5 rounded-lg flex items-center justify-center gap-1 active:bg-primary/20"
+        >
+          <Plus className="h-3 w-3" />
+          {addingToCart ? 'Adding...' : 'Add'}
+        </button>
+      )}
     </div>
   );
 }

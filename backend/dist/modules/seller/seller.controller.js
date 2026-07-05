@@ -23,6 +23,8 @@ const ad_campaign_service_1 = require("./ad-campaign.service");
 const daily_offer_service_1 = require("./daily-offer.service");
 const daily_offer_dto_1 = require("./dto/daily-offer.dto");
 const shop_profile_dto_1 = require("./dto/shop-profile.dto");
+const shop_hours_dto_1 = require("./dto/shop-hours.dto");
+const shop_toggle_dto_1 = require("./dto/shop-toggle.dto");
 const subscription_plan_dto_1 = require("./dto/subscription-plan.dto");
 const ad_campaign_dto_1 = require("./dto/ad-campaign.dto");
 const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
@@ -57,6 +59,12 @@ let SellerController = class SellerController {
     }
     async updateShop(user, shopProfileDto) {
         return this.sellerService.updateShop(user.id, shopProfileDto);
+    }
+    async updateShopHours(user, hoursDto) {
+        return this.sellerService.updateOperatingHours(user.id, hoursDto);
+    }
+    async toggleShop(user, toggleDto) {
+        return this.sellerService.setManualOverride(user.id, toggleDto);
     }
     async uploadShopLogo(user, file) {
         return this.sellerService.uploadShopLogo(user.id, file);
@@ -168,6 +176,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, shop_profile_dto_1.ShopProfileDto]),
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "updateShop", null);
+__decorate([
+    (0, common_1.Put)('shop/hours'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, shop_hours_dto_1.UpdateShopHoursDto]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "updateShopHours", null);
+__decorate([
+    (0, common_1.Put)('shop/toggle'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, shop_toggle_dto_1.ShopToggleDto]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "toggleShop", null);
 __decorate([
     (0, common_1.Post)('shop/logo'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),

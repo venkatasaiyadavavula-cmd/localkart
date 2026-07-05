@@ -24,6 +24,7 @@ const product_entity_1 = require("../../core/entities/product.entity");
 const category_entity_1 = require("../../core/entities/category.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
 const subscription_entity_1 = require("../../core/entities/subscription.entity");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 const PLAN_LIMITS = {
     [subscription_entity_1.SubscriptionPlan.STARTER]: 40,
     [subscription_entity_1.SubscriptionPlan.GROWTH]: 150,
@@ -72,7 +73,7 @@ let CatalogService = class CatalogService {
             take: limit,
         });
         return {
-            data: products,
+            data: (0, shop_hours_util_1.enrichProductsWithShopHours)(products),
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }
@@ -86,7 +87,7 @@ let CatalogService = class CatalogService {
         }
         product.viewCount += 1;
         await this.productRepository.save(product);
-        return product;
+        return (0, shop_hours_util_1.enrichProductWithShopHours)(product);
     }
     async getCategories() {
         const categories = await this.categoryRepository.find({

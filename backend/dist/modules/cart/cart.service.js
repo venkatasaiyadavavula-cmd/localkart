@@ -20,6 +20,7 @@ const ioredis_1 = require("ioredis");
 const ioredis_2 = require("@nestjs-modules/ioredis");
 const product_entity_1 = require("../../core/entities/product.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 let CartService = class CartService {
     redis;
     productRepository;
@@ -59,6 +60,9 @@ let CartService = class CartService {
         }
         if (product.shop.status !== shop_entity_1.ShopStatus.APPROVED) {
             throw new common_1.BadRequestException('Shop is not currently accepting orders');
+        }
+        if (!(0, shop_hours_util_1.isShopCurrentlyOpen)(product.shop)) {
+            throw new common_1.BadRequestException('Shop is currently closed');
         }
         const cartKey = this.getCartKey(userId);
         let items = [];
@@ -161,6 +165,9 @@ let CartService = class CartService {
             }
             if (product.shop.status !== shop_entity_1.ShopStatus.APPROVED) {
                 throw new common_1.BadRequestException(`Shop for ${item.name} is not accepting orders`);
+            }
+            if (!(0, shop_hours_util_1.isShopCurrentlyOpen)(product.shop)) {
+                throw new common_1.BadRequestException('Shop is currently closed');
             }
         }
         return { cart, products };

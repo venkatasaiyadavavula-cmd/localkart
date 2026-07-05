@@ -21,6 +21,7 @@ import { TrackingGateway } from './tracking.gateway';
 import { CartService } from '../cart/cart.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
+import { isShopCurrentlyOpen, getShopHoursStatus } from '../../core/utils/shop-hours.util';
 
 @Injectable()
 export class OrdersService {
@@ -56,44 +57,6 @@ export class OrdersService {
     };
   }
 
-  /**
-   * షాపు ప్రస్తుతం తెరిచి ఉందో లేదో చెక్ చేస్తుంది
-   */
-  private isShopOpen(shop: Shop): boolean {
-    if (!shop.openingTime || !shop.closingTime) {
-      return true; // టైమింగ్స్ సెట్ చేయకపోతే 24/7 ఓపెన్ అని అనుకుంటాం
-    }
-
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-
-    const [openHour, openMinute] = shop.openingTime.split(':').map(Number);
-    const [closeHour, closeMinute] = shop.closingTime.split(':').map(Number);
-
-    const openTime = openHour * 60 + openMinute;
-    const closeTime = closeHour * 60 + closeMinute;
-
-    return currentTime >= openTime && currentTime <= closeTime;
-  }
-
-  /**
-   * తదుపరి షాపు తెరిచే సమయాన్ని లెక్కిస్తుంది
-   */
-  private getNextOpeningTime(shop: Shop): string {
-    if (!shop.openingTime) return 'tomorrow morning';
-    
-    const now = new Date();
-    const [openHour, openMinute] = shop.openingTime.split(':').map(Number);
-    const nextOpen = new Date(now);
-    
-    if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() >= openMinute)) {
-      nextOpen.setDate(nextOpen.getDate() + 1);
-    }
-    nextOpen.setHours(openHour, openMinute, 0, 0);
-    
-    return nextOpen.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  }
-
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
     const { paymentMethod = PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
 
@@ -114,8 +77,12 @@ export class OrdersService {
       throw new BadRequestException('Shop is not available');
     }
 
-    const isOpen = this.isShopOpen(shop);
-    const nextOpeningTime = this.getNextOpeningTime(shop);
+    const isOpen = isShopCurrentlyOpen(shop);
+    const hoursStatus = getShopHoursStatus(shop);
+
+    if (!isOpen) {
+      throw new BadRequestException('Shop is currently closed');
+    }
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -240,7 +207,8 @@ export class OrdersService {
       return {
         ...this.formatOrderResponse(fullOrder),
         isShopOpen: isOpen,
-        shopClosedMessage: isOpen ? null : `Shop is currently closed. Your order will be processed after ${nextOpeningTime}.`,
+        shopClosedMessage: null,
+        shopStatusMessage: hoursStatus.statusMessage,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();

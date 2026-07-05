@@ -14,6 +14,7 @@ import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../../core/e
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
+import { enrichProductsWithShopHours, enrichProductWithShopHours } from '../../core/utils/shop-hours.util';
 
 const PLAN_LIMITS: Record<SubscriptionPlan, number> = {
   [SubscriptionPlan.STARTER]:  40,
@@ -80,7 +81,7 @@ export class CatalogService {
     });
 
     return {
-      data: products,
+      data: enrichProductsWithShopHours(products),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -96,7 +97,7 @@ export class CatalogService {
     // Increment view count
     product.viewCount += 1;
     await this.productRepository.save(product);
-    return product;
+    return enrichProductWithShopHours(product);
   }
 
   async getCategories() {

@@ -5,6 +5,8 @@ import { AdCampaignService } from './ad-campaign.service';
 import { DailyOfferService } from './daily-offer.service';
 import { CreateDailyOfferDto } from './dto/daily-offer.dto';
 import { ShopProfileDto } from './dto/shop-profile.dto';
+import { UpdateShopHoursDto } from './dto/shop-hours.dto';
+import { ShopToggleDto } from './dto/shop-toggle.dto';
 import { SubscribeDto } from './dto/subscription-plan.dto';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
 export declare class SellerController {
@@ -14,11 +16,13 @@ export declare class SellerController {
     private readonly adCampaignService;
     private readonly dailyOfferService;
     constructor(sellerService: SellerService, subscriptionService: SubscriptionService, earningsService: EarningsService, adCampaignService: AdCampaignService, dailyOfferService: DailyOfferService);
-    getShopBySlug(slug: string): Promise<import("../../core/entities/shop.entity").Shop>;
-    getShopById(id: string): Promise<import("../../core/entities/shop.entity").Shop>;
-    getMyShop(user: any): Promise<import("../../core/entities/shop.entity").Shop>;
-    createShop(user: any, shopProfileDto: ShopProfileDto): Promise<import("../../core/entities/shop.entity").Shop>;
-    updateShop(user: any, shopProfileDto: ShopProfileDto): Promise<import("../../core/entities/shop.entity").Shop>;
+    getShopBySlug(slug: string): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
+    getShopById(id: string): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
+    getMyShop(user: any): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
+    createShop(user: any, shopProfileDto: ShopProfileDto): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
+    updateShop(user: any, shopProfileDto: ShopProfileDto): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
+    updateShopHours(user: any, hoursDto: UpdateShopHoursDto): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
+    toggleShop(user: any, toggleDto: ShopToggleDto): Promise<import("../../core/entities/shop.entity").Shop & import("../../core/types/shop-hours.types").ShopHoursStatus>;
     uploadShopLogo(user: any, file: Express.Multer.File): Promise<{
         uploadUrl: string;
         key: string;
@@ -36,6 +40,9 @@ export declare class SellerController {
             orders: number;
         }[];
         shopName: string;
+        isCurrentlyOpen: boolean;
+        statusMessage: string;
+        manualOverride: import("../../core/entities/shop.entity").ManualOverride;
         totalProducts: number;
         activeProducts: number;
         lowStockProducts: number;

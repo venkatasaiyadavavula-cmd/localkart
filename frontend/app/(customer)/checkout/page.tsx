@@ -181,6 +181,8 @@ export default function CheckoutPage() {
     return null;
   }
 
+  const shopClosed = shopDetails?.isCurrentlyOpen === false;
+
   return (
     <div className="container py-6 md:py-8">
       <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -193,8 +195,8 @@ export default function CheckoutPage() {
       {shopDetails && (
         <div className="mb-6">
           <ShopStatusBanner
-            openingTime={shopDetails.openingTime}
-            closingTime={shopDetails.closingTime}
+            isCurrentlyOpen={shopDetails.isCurrentlyOpen}
+            statusMessage={shopDetails.statusMessage}
           />
         </div>
       )}
@@ -431,13 +433,15 @@ export default function CheckoutPage() {
                 type="submit"
                 className="mt-6 w-full"
                 size="lg"
-                disabled={isSubmitting}
+                disabled={isSubmitting || shopClosed}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
+                ) : shopClosed ? (
+                  'Shop is Currently Closed'
                 ) : (
                   'Place COD Order'
                 )}
