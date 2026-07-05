@@ -9,12 +9,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateAdCampaignDto = exports.CreateAdCampaignDto = void 0;
+exports.UpdateAdCampaignDto = exports.CreateAdCampaignDto = exports.AdPackageType = void 0;
 const class_validator_1 = require("class-validator");
 const sponsored_product_entity_1 = require("../../../core/entities/sponsored-product.entity");
+var AdPackageType;
+(function (AdPackageType) {
+    AdPackageType["DAY"] = "day";
+    AdPackageType["WEEK"] = "week";
+    AdPackageType["MONTH"] = "month";
+})(AdPackageType || (exports.AdPackageType = AdPackageType = {}));
 class CreateAdCampaignDto {
     productId;
     adType = sponsored_product_entity_1.AdType.SPONSORED;
+    package;
     startDate;
     endDate;
     targeting;
@@ -31,11 +38,18 @@ __decorate([
     __metadata("design:type", String)
 ], CreateAdCampaignDto.prototype, "adType", void 0);
 __decorate([
+    (0, class_validator_1.IsEnum)(AdPackageType),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateAdCampaignDto.prototype, "package", void 0);
+__decorate([
     (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateAdCampaignDto.prototype, "startDate", void 0);
 __decorate([
     (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateAdCampaignDto.prototype, "endDate", void 0);
 __decorate([

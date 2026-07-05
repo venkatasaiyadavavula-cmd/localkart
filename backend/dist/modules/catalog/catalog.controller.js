@@ -20,6 +20,7 @@ const typeorm_2 = require("typeorm");
 const catalog_service_1 = require("./catalog.service");
 const search_service_1 = require("./search.service");
 const bulk_upload_service_1 = require("./bulk-upload.service");
+const featured_video_service_1 = require("../seller/featured-video.service");
 const create_product_dto_1 = require("./dto/create-product.dto");
 const update_product_dto_1 = require("./dto/update-product.dto");
 const search_query_dto_1 = require("./dto/search-query.dto");
@@ -38,12 +39,14 @@ let CatalogController = class CatalogController {
     bulkUploadService;
     productRepository;
     offerRepository;
-    constructor(catalogService, searchService, bulkUploadService, productRepository, offerRepository) {
+    featuredVideoService;
+    constructor(catalogService, searchService, bulkUploadService, productRepository, offerRepository, featuredVideoService) {
         this.catalogService = catalogService;
         this.searchService = searchService;
         this.bulkUploadService = bulkUploadService;
         this.productRepository = productRepository;
         this.offerRepository = offerRepository;
+        this.featuredVideoService = featuredVideoService;
     }
     async getProducts(query) {
         return this.catalogService.getProducts(query);
@@ -97,6 +100,10 @@ let CatalogController = class CatalogController {
             product.daily_offers = offer ? [offer] : [];
         }
         return { data: products };
+    }
+    async getFeaturedVideos(limit) {
+        const videos = await this.featuredVideoService.getActiveFeaturedVideos(limit ? parseInt(limit, 10) : 12);
+        return { data: videos };
     }
     async createProduct(user, createProductDto) {
         return this.catalogService.createProduct(user.id, createProductDto);
@@ -211,6 +218,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getTodayOffers", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('featured-videos'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getFeaturedVideos", null);
+__decorate([
     (0, common_1.Post)('seller/products'),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -309,6 +324,7 @@ exports.CatalogController = CatalogController = __decorate([
         search_service_1.SearchService,
         bulk_upload_service_1.BulkUploadService,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        featured_video_service_1.FeaturedVideoService])
 ], CatalogController);
 //# sourceMappingURL=catalog.controller.js.map

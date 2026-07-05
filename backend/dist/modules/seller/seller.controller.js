@@ -21,6 +21,8 @@ const subscription_service_1 = require("./subscription.service");
 const earnings_service_1 = require("./earnings.service");
 const ad_campaign_service_1 = require("./ad-campaign.service");
 const daily_offer_service_1 = require("./daily-offer.service");
+const featured_video_service_1 = require("./featured-video.service");
+const promote_featured_video_dto_1 = require("./dto/promote-featured-video.dto");
 const daily_offer_dto_1 = require("./dto/daily-offer.dto");
 const shop_profile_dto_1 = require("./dto/shop-profile.dto");
 const shop_hours_dto_1 = require("./dto/shop-hours.dto");
@@ -38,12 +40,14 @@ let SellerController = class SellerController {
     earningsService;
     adCampaignService;
     dailyOfferService;
-    constructor(sellerService, subscriptionService, earningsService, adCampaignService, dailyOfferService) {
+    featuredVideoService;
+    constructor(sellerService, subscriptionService, earningsService, adCampaignService, dailyOfferService, featuredVideoService) {
         this.sellerService = sellerService;
         this.subscriptionService = subscriptionService;
         this.earningsService = earningsService;
         this.adCampaignService = adCampaignService;
         this.dailyOfferService = dailyOfferService;
+        this.featuredVideoService = featuredVideoService;
     }
     async getShopBySlug(slug) {
         return this.sellerService.getShopBySlug(slug);
@@ -124,6 +128,12 @@ let SellerController = class SellerController {
     }
     async getAdStats(user, id) {
         return this.adCampaignService.getCampaignStats(user.id, id);
+    }
+    async getFeaturedVideos(user) {
+        return this.featuredVideoService.getSellerFeaturedVideos(user.id);
+    }
+    async promoteFeaturedVideo(user, dto) {
+        return this.featuredVideoService.promoteVideo(user.id, dto.productId);
     }
     async getDailyOffers(user) {
         return this.dailyOfferService.getActiveOffers(user.id);
@@ -342,6 +352,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "getAdStats", null);
 __decorate([
+    (0, common_1.Get)('featured-videos'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "getFeaturedVideos", null);
+__decorate([
+    (0, common_1.Post)('featured-videos'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, promote_featured_video_dto_1.PromoteFeaturedVideoDto]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "promoteFeaturedVideo", null);
+__decorate([
     (0, common_1.Get)('daily-offers'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
@@ -372,6 +397,7 @@ exports.SellerController = SellerController = __decorate([
         subscription_service_1.SubscriptionService,
         earnings_service_1.EarningsService,
         ad_campaign_service_1.AdCampaignService,
-        daily_offer_service_1.DailyOfferService])
+        daily_offer_service_1.DailyOfferService,
+        featured_video_service_1.FeaturedVideoService])
 ], SellerController);
 //# sourceMappingURL=seller.controller.js.map

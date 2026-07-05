@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, Zap, Play, Navigation, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import { buildLoginUrl } from '@/lib/auth-routes';
 
 export function MobileNav() {
   const pathname = usePathname();

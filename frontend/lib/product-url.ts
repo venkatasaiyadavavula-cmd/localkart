@@ -1,9 +1,18 @@
+/**
+ * Build canonical product detail URLs: /browse/[category]/product/[slug]
+ */
 export function getProductUrl(product: {
   slug?: string | null;
   categoryType?: string | null;
+  productId?: string | null;
+  id?: string | null;
 }): string {
-  if (product.slug && product.categoryType) {
-    return `/browse/${product.categoryType}/product/${product.slug}`;
+  const slug = product.slug;
+  const category = product.categoryType;
+
+  if (slug && category) {
+    return `/browse/${category}/product/${slug}`;
   }
+
   return '/browse';
 }

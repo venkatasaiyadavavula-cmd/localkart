@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
 import { BulkUploadService } from './bulk-upload.service';
+import { FeaturedVideoService } from '../seller/featured-video.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
@@ -15,7 +16,8 @@ export declare class CatalogController {
     private readonly bulkUploadService;
     private productRepository;
     private offerRepository;
-    constructor(catalogService: CatalogService, searchService: SearchService, bulkUploadService: BulkUploadService, productRepository: Repository<Product>, offerRepository: Repository<DailyOffer>);
+    private readonly featuredVideoService;
+    constructor(catalogService: CatalogService, searchService: SearchService, bulkUploadService: BulkUploadService, productRepository: Repository<Product>, offerRepository: Repository<DailyOffer>, featuredVideoService: FeaturedVideoService);
     getProducts(query: SearchQueryDto): Promise<{
         data: Product[];
         meta: {
@@ -42,6 +44,9 @@ export declare class CatalogController {
     }>;
     getTodayOffers(lat?: string, lng?: string): Promise<{
         data: Product[];
+    }>;
+    getFeaturedVideos(limit?: string): Promise<{
+        data: import("../../core/entities/featured-video.entity").FeaturedVideo[];
     }>;
     createProduct(user: any, createProductDto: CreateProductDto): Promise<Product>;
     updateProduct(user: any, id: string, updateProductDto: UpdateProductDto): Promise<Product>;

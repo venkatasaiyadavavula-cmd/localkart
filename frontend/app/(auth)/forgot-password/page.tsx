@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, KeyRound, Loader2, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { buildLoginUrl } from '@/lib/auth-routes';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,7 +144,7 @@ export default function ForgotPasswordPage() {
           </div>
         )}
 
-        <Link href="/login" className="flex items-center justify-center gap-1 text-sm text-primary font-semibold">
+        <Link href={buildLoginUrl({ intent: 'customer' })} className="flex items-center justify-center gap-1 text-sm text-primary font-semibold">
           <ChevronLeft className="h-4 w-4" /> Back to Login
         </Link>
       </div>

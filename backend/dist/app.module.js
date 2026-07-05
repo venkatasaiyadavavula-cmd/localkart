@@ -38,6 +38,7 @@ const wishlist_entity_1 = require("./core/entities/wishlist.entity");
 const saved_address_entity_1 = require("./core/entities/saved-address.entity");
 const staff_member_entity_1 = require("./core/entities/staff-member.entity");
 const commission_bill_entity_1 = require("./core/entities/commission-bill.entity");
+const featured_video_entity_1 = require("./core/entities/featured-video.entity");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const location_module_1 = require("./modules/location/location.module");
@@ -75,6 +76,7 @@ exports.AppModule = AppModule = __decorate([
                         user_entity_1.User, shop_entity_1.Shop, product_entity_1.Product, category_entity_1.Category, order_entity_1.Order, order_item_entity_1.OrderItem,
                         subscription_entity_1.Subscription, transaction_entity_1.Transaction, return_request_entity_1.ReturnRequest, sponsored_product_entity_1.SponsoredProduct,
                         daily_offer_entity_1.DailyOffer, review_entity_1.Review, wishlist_entity_1.Wishlist, saved_address_entity_1.SavedAddress, staff_member_entity_1.StaffMember, commission_bill_entity_1.CommissionBill,
+                        featured_video_entity_1.FeaturedVideo,
                     ],
                     synchronize: false,
                     logging: false,

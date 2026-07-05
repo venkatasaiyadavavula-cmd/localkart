@@ -22,6 +22,8 @@ const weekly_earnings_scheduler_1 = require("./weekly-earnings.scheduler");
 const staff_service_1 = require("./staff.service");
 const staff_controller_1 = require("./staff.controller");
 const daily_offer_service_1 = require("./daily-offer.service");
+const featured_video_service_1 = require("./featured-video.service");
+const featured_video_entity_1 = require("../../core/entities/featured-video.entity");
 const daily_offer_entity_1 = require("../../core/entities/daily-offer.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
 const user_entity_1 = require("../../core/entities/user.entity");
@@ -47,7 +49,7 @@ exports.SellerModule = SellerModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([
                 shop_entity_1.Shop, user_entity_1.User, product_entity_1.Product, order_entity_1.Order,
                 subscription_entity_1.Subscription, sponsored_product_entity_1.SponsoredProduct, transaction_entity_1.Transaction,
-                commission_bill_entity_1.CommissionBill, staff_member_entity_1.StaffMember, daily_offer_entity_1.DailyOffer,
+                commission_bill_entity_1.CommissionBill, staff_member_entity_1.StaffMember, daily_offer_entity_1.DailyOffer, featured_video_entity_1.FeaturedVideo,
             ]),
             bull_1.BullModule.registerQueue({ name: 'media' }),
             notifications_module_1.NotificationsModule,
@@ -66,12 +68,12 @@ exports.SellerModule = SellerModule = __decorate([
         providers: [
             seller_service_1.SellerService, subscription_service_1.SubscriptionService, earnings_service_1.EarningsService,
             ad_campaign_service_1.AdCampaignService, weekly_earnings_scheduler_1.WeeklyEarningsScheduler, staff_service_1.StaffService,
-            daily_offer_service_1.DailyOfferService, staff_work_service_1.StaffWorkService, permissions_guard_1.PermissionsGuard,
+            daily_offer_service_1.DailyOfferService, staff_work_service_1.StaffWorkService, permissions_guard_1.PermissionsGuard, featured_video_service_1.FeaturedVideoService,
         ],
         exports: [
             seller_service_1.SellerService, subscription_service_1.SubscriptionService, earnings_service_1.EarningsService,
             ad_campaign_service_1.AdCampaignService, weekly_earnings_scheduler_1.WeeklyEarningsScheduler, staff_service_1.StaffService,
-            daily_offer_service_1.DailyOfferService,
+            daily_offer_service_1.DailyOfferService, featured_video_service_1.FeaturedVideoService,
         ],
     })
 ], SellerModule);

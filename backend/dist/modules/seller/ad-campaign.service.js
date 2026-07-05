@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const sponsored_product_entity_1 = require("../../core/entities/sponsored-product.entity");
 const product_entity_1 = require("../../core/entities/product.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
+const ad_packages_1 = require("./ad-packages");
 let AdCampaignService = class AdCampaignService {
     adRepository;
     productRepository;
@@ -56,15 +57,28 @@ let AdCampaignService = class AdCampaignService {
         if (existing) {
             throw new common_1.BadRequestException('Product already has an active ad campaign');
         }
-        const startDate = new Date(dto.startDate);
-        const endDate = new Date(dto.endDate);
-        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const costPerDay = dto.adType === sponsored_product_entity_1.AdType.SPONSORED ? 100 : 10;
-        const totalCost = days * costPerDay;
+        const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
+        let endDate;
+        let totalCost;
+        let costPerDay;
+        if (dto.package && ad_packages_1.AD_PACKAGES[dto.package]) {
+            const pkg = ad_packages_1.AD_PACKAGES[dto.package];
+            endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + pkg.days);
+            totalCost = pkg.price;
+            costPerDay = parseFloat((pkg.price / pkg.days).toFixed(2));
+        }
+        else {
+            endDate = new Date(dto.endDate);
+            const days = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+            costPerDay = 50;
+            totalCost = days * costPerDay;
+        }
+        const adType = dto.adType || sponsored_product_entity_1.AdType.SPONSORED;
         const campaign = this.adRepository.create({
             productId: dto.productId,
             shopId: shop.id,
-            adType: dto.adType || sponsored_product_entity_1.AdType.SPONSORED,
+            adType,
             status: sponsored_product_entity_1.AdStatus.PENDING,
             costPerDay,
             startDate,

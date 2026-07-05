@@ -49,7 +49,7 @@ apiClient.interceptors.response.use(
         // Refresh failed - logout
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        window.location.href = '/login?intent=customer';
         toast.error('Session expired. Please login again.');
       }
     }

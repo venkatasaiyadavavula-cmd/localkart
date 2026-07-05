@@ -303,7 +303,10 @@ export default function HomePage() {
               </p>
               <p className="text-xs text-white/50 font-semibold mt-2">{t('homeReachCustomers')}</p>
               <Link href={buildLoginUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH })}>
-                <button className="mt-4 inline-flex items-center gap-2 bg-white font-extrabold text-xs px-5 py-2.5 rounded-xl" style={{ color: '#3D5AF1' }}>
+                <button
+                  className="mt-4 inline-flex items-center gap-2 bg-white font-extrabold text-xs px-5 py-2.5 rounded-xl active:scale-[0.97] transition-all"
+                  style={{ color: '#3D5AF1', boxShadow: '0 4px 20px rgba(255,255,255,0.20)' }}
+                >
                   {t('homeStartSellingFree')} <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </Link>
