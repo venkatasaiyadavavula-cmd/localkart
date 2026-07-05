@@ -61,4 +61,12 @@ export const ordersApi = {
     const response = await apiClient.put(`/orders/seller/${orderId}/status`, { status, notes });
     return unwrapApiData(response.data);
   },
+
+  async updateDeliveryLocation(
+    orderId: string,
+    data: { latitude: number; longitude: number; staffName?: string; staffPhone?: string },
+  ) {
+    const response = await apiClient.put(`/orders/seller/${orderId}/location`, data);
+    return unwrapApiData(response.data);
+  },
 };

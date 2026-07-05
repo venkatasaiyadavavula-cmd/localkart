@@ -169,7 +169,7 @@ export default function CheckoutPage() {
 
       await clearCart();
       toast.success('Order placed successfully!');
-      router.push(`/orders/${order.id}`);
+      router.push(`/orders/track?id=${order.id}`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to place order');
     } finally {

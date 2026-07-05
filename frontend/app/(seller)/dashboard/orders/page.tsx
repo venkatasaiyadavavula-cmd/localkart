@@ -14,6 +14,7 @@ import { useSellerOrders } from '@/hooks/use-seller-orders';
 import { formatPrice } from '@/lib/utils';
 import { formatDeliveryAddress } from '@/lib/utils/api';
 import { OrderStatus, statusColors, statusLabels } from '@/types/order';
+import { DeliveryLocationPanel } from '@/components/seller/delivery-location-panel';
 import { cn } from '@/lib/utils';
 
 const statusFlow: Record<string, { next: OrderStatus; label: string; color: string; icon: any }> = {
@@ -216,6 +217,16 @@ export default function SellerOrdersPage() {
                         </span>
                       ) : nextAction.label}
                     </Button>
+                  </div>
+                )}
+
+                {order.status === 'out_for_delivery' && (
+                  <div className="px-4 pb-4">
+                    <DeliveryLocationPanel
+                      orderId={order.id}
+                      staffName={order.deliveryStaffName}
+                      staffPhone={order.deliveryStaffPhone}
+                    />
                   </div>
                 )}
 
