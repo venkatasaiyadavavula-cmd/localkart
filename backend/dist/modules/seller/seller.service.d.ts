@@ -12,6 +12,8 @@ export declare class SellerService {
     private readonly logger;
     constructor(shopRepository: Repository<Shop>, userRepository: Repository<User>, productRepository: Repository<Product>, orderRepository: Repository<Order>);
     getShopByOwner(ownerId: string): Promise<Shop>;
+    getShopBySlug(slug: string): Promise<Shop>;
+    getShopById(id: string): Promise<Shop>;
     createShop(ownerId: string, shopProfileDto: ShopProfileDto): Promise<Shop>;
     updateShop(ownerId: string, shopProfileDto: ShopProfileDto): Promise<Shop>;
     uploadShopLogo(ownerId: string, file: Express.Multer.File): Promise<{
@@ -25,19 +27,33 @@ export declare class SellerService {
         bannerUrl: string;
     }>;
     getDashboardStats(ownerId: string): Promise<{
+        shopName: string;
         totalProducts: number;
+        activeProducts: number;
+        lowStockProducts: number;
         totalOrders: number;
         pendingOrders: number;
-        totalRevenue: any;
-        todayOrders: number;
+        productsSold: number;
+        totalRevenue: number;
+        revenueChange: number;
+        ordersChange: number;
+        productsSoldChange: number;
+        activeProductsChange: number;
         recentOrders: {
             id: string;
             orderNumber: string;
             status: OrderStatus;
             totalAmount: number;
-            customerName: string;
+            customer: {
+                name: string;
+            };
             createdAt: Date;
         }[];
+        topProducts: Product[];
     }>;
-    getSalesChart(ownerId: string, period: string): Promise<any[]>;
+    getSalesChart(ownerId: string, period: string): Promise<{
+        date: any;
+        sales: number;
+        orders: number;
+    }[]>;
 }

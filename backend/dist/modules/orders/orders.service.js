@@ -24,6 +24,7 @@ const shop_entity_1 = require("../../core/entities/shop.entity");
 const user_entity_1 = require("../../core/entities/user.entity");
 const transaction_entity_1 = require("../../core/entities/transaction.entity");
 const order_state_machine_1 = require("./workflows/order-state-machine");
+const tracking_gateway_1 = require("./tracking.gateway");
 const cart_service_1 = require("../cart/cart.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const helpers_1 = require("../../core/utils/helpers");
@@ -38,8 +39,9 @@ let OrdersService = OrdersService_1 = class OrdersService {
     dataSource;
     stateMachine;
     notificationsService;
+    trackingGateway;
     logger = new common_1.Logger(OrdersService_1.name);
-    constructor(orderRepository, orderItemRepository, productRepository, shopRepository, userRepository, transactionRepository, cartService, dataSource, stateMachine, notificationsService) {
+    constructor(orderRepository, orderItemRepository, productRepository, shopRepository, userRepository, transactionRepository, cartService, dataSource, stateMachine, notificationsService, trackingGateway) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
@@ -50,6 +52,17 @@ let OrdersService = OrdersService_1 = class OrdersService {
         this.dataSource = dataSource;
         this.stateMachine = stateMachine;
         this.notificationsService = notificationsService;
+        this.trackingGateway = trackingGateway;
+    }
+    formatOrderResponse(order) {
+        if (!order)
+            return order;
+        const { deliveryAddress, ...rest } = order;
+        return {
+            ...rest,
+            deliveryAddress,
+            shippingAddress: deliveryAddress,
+        };
     }
     isShopOpen(shop) {
         if (!shop.openingTime || !shop.closingTime) {
@@ -77,6 +90,9 @@ let OrdersService = OrdersService_1 = class OrdersService {
     }
     async createOrder(userId, createOrderDto) {
         const { paymentMethod = order_entity_1.PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
+        if (paymentMethod === order_entity_1.PaymentMethod.RAZORPAY && process.env.PAYMENTS_ENABLED !== 'true') {
+            throw new common_1.BadRequestException('Online payment is not available. Please use Cash on Delivery.');
+        }
         const { cart, products } = await this.cartService.validateCartForCheckout(userId);
         if (cart.items.length === 0) {
             throw new common_1.BadRequestException('Cart is empty');
@@ -104,25 +120,24 @@ let OrdersService = OrdersService_1 = class OrdersService {
         await queryRunner.connect();
         await queryRunner.startTransaction();
         try {
-            const order = this.orderRepository.create({});
-            order.status = "confirmed";
-            Object.assign(order, {
+            const order = this.orderRepository.create({
                 orderNumber,
                 customerId: userId,
                 shopId,
-                subtotal,
+                totalAmount: subtotal,
                 deliveryCharge,
-                totalAmount,
-                commissionRate,
+                finalAmount: totalAmount,
+                commissionPercent: commissionRate,
                 commissionAmount,
                 paymentMethod,
-                paymentStatus: paymentMethod === order_entity_1.PaymentMethod.COD ? order_entity_1.PaymentStatus.PENDING : order_entity_1.PaymentStatus.PENDING,
+                paymentStatus: order_entity_1.PaymentStatus.PENDING,
                 status: order_entity_1.OrderStatus.PENDING_OTP,
-                shippingAddress,
+                deliveryAddress: shippingAddress,
                 deliveryNotes,
                 deliveryOtp: (0, helpers_1.generateOtp)(),
             });
             const savedOrder = await queryRunner.manager.save(order);
+            const isCod = paymentMethod === order_entity_1.PaymentMethod.COD;
             for (const item of cart.items) {
                 const product = products.find((p) => p.id === item.productId);
                 if (!product)
@@ -139,19 +154,34 @@ let OrdersService = OrdersService_1 = class OrdersService {
                     commissionAmount: (item.price * item.quantity * this.getProductCommissionRate(product)) / 100,
                 });
                 await queryRunner.manager.save(orderItem);
-                product.stock -= item.quantity;
-                product.orderCount += 1;
-                await queryRunner.manager.save(product);
+                if (isCod) {
+                    product.stock -= item.quantity;
+                    product.orderCount += 1;
+                    await queryRunner.manager.save(product);
+                }
             }
-            shop.totalOrders += 1;
-            await queryRunner.manager.save(shop);
-            await this.cartService.clearCart(userId);
+            if (isCod) {
+                shop.totalOrders += 1;
+                await queryRunner.manager.save(shop);
+                await this.cartService.clearCart(userId);
+            }
             this.logger.log(`Order OTP for ${orderNumber}: ${savedOrder.deliveryOtp}`);
+            this.notificationsService
+                .sendDeliveryOtp(user.phone, savedOrder.deliveryOtp)
+                .catch((e) => this.logger.error('Delivery OTP SMS failed: ' + e.message));
             await queryRunner.commitTransaction();
             const fullOrder = await this.orderRepository.findOne({
                 where: { id: savedOrder.id },
                 relations: ['items', 'shop', 'customer'],
             });
+            if (fullOrder.customer?.email) {
+                this.notificationsService
+                    .sendOrderConfirmationEmail(fullOrder.customer.email, {
+                    orderNumber: fullOrder.orderNumber,
+                    totalAmount: fullOrder.finalAmount,
+                })
+                    .catch((e) => this.logger.error('Order confirmation email failed: ' + e.message));
+            }
             delete fullOrder.deliveryOtp;
             delete fullOrder.customer.password;
             if (fullOrder.customer?.phone) {
@@ -163,7 +193,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
                 this.notificationsService.sendNewOrderWhatsApp(fullOrder.shop.contactPhone, fullOrder.shop.name, fullOrder.orderNumber, itemsSummary, fullOrder.totalAmount).catch((e) => this.logger.error('WhatsApp seller failed: ' + e.message));
             }
             return {
-                ...fullOrder,
+                ...this.formatOrderResponse(fullOrder),
                 isShopOpen: isOpen,
                 shopClosedMessage: isOpen ? null : `Shop is currently closed. Your order will be processed after ${nextOpeningTime}.`,
             };
@@ -249,7 +279,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
     async getOrderById(id, userId, role) {
         const order = await this.orderRepository.findOne({
             where: { id },
-            relations: ['items', 'shop', 'customer'],
+            relations: ['items', 'items.product', 'shop', 'customer'],
         });
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
@@ -262,7 +292,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
         }
         delete order.deliveryOtp;
         delete order.customer.password;
-        return order;
+        return this.formatOrderResponse(order);
     }
     async cancelOrder(orderId, userId, reason) {
         const order = await this.orderRepository.findOne({
@@ -332,6 +362,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
         }
         const order = await this.orderRepository.findOne({
             where: { id: orderId, shopId: shop.id },
+            relations: ['shop'],
         });
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
@@ -341,14 +372,31 @@ let OrdersService = OrdersService_1 = class OrdersService {
             throw new common_1.BadRequestException(`Cannot transition from ${order.status} to ${status}`);
         }
         order.status = status;
-        if (status === order_entity_1.OrderStatus.OUT_FOR_DELIVERY && order.paymentMethod === order_entity_1.PaymentMethod.COD) {
-            order.deliveryOtp = (0, helpers_1.generateOtp)();
+        if (status === order_entity_1.OrderStatus.OUT_FOR_DELIVERY) {
+            order.deliveryOtp = order.deliveryOtp || (0, helpers_1.generateOtp)();
+            if (!order.deliveryLatitude && order.shop?.latitude) {
+                order.deliveryLatitude = Number(order.shop.latitude);
+                order.deliveryLongitude = Number(order.shop.longitude);
+                order.locationUpdatedAt = new Date();
+            }
+            if (!order.deliveryStaffName) {
+                order.deliveryStaffName = 'Delivery Partner';
+            }
             this.logger.log(`Delivery OTP for order ${order.orderNumber}: ${order.deliveryOtp}`);
         }
         if (notes) {
             order.deliveryNotes = notes;
         }
         await this.orderRepository.save(order);
+        this.trackingGateway.emitStatusUpdate(orderId, { status });
+        if (order.deliveryLatitude && order.deliveryLongitude) {
+            this.trackingGateway.emitLocationUpdate(orderId, {
+                latitude: Number(order.deliveryLatitude),
+                longitude: Number(order.deliveryLongitude),
+                updatedAt: new Date().toISOString(),
+                staffName: order.deliveryStaffName ?? undefined,
+            });
+        }
         const fullOrder = await this.orderRepository.findOne({
             where: { id: orderId },
             relations: ['customer'],
@@ -357,6 +405,37 @@ let OrdersService = OrdersService_1 = class OrdersService {
             this.notificationsService.sendOrderStatusWhatsApp(fullOrder.customer.phone, fullOrder.customer.name, order.orderNumber, status).catch((e) => this.logger.error('WhatsApp status update failed: ' + e.message));
         }
         return order;
+    }
+    async updateDeliveryLocation(orderId, sellerId, dto) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId: sellerId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        const order = await this.orderRepository.findOne({
+            where: { id: orderId, shopId: shop.id },
+        });
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        if (order.status !== order_entity_1.OrderStatus.OUT_FOR_DELIVERY) {
+            throw new common_1.BadRequestException('Location updates allowed only during delivery');
+        }
+        order.deliveryLatitude = dto.latitude;
+        order.deliveryLongitude = dto.longitude;
+        order.locationUpdatedAt = new Date();
+        if (dto.staffName)
+            order.deliveryStaffName = dto.staffName;
+        if (dto.staffPhone)
+            order.deliveryStaffPhone = dto.staffPhone;
+        await this.orderRepository.save(order);
+        const payload = {
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            updatedAt: new Date().toISOString(),
+            staffName: order.deliveryStaffName ?? undefined,
+        };
+        this.trackingGateway.emitLocationUpdate(orderId, payload);
+        return { message: 'Location updated', ...payload };
     }
     async adminUpdateOrderStatus(id, dto) {
         const order = await this.orderRepository.findOne({ where: { id } });
@@ -408,15 +487,41 @@ let OrdersService = OrdersService_1 = class OrdersService {
         };
     }
     async confirmPaidOrder(internalOrderId, razorpayPaymentId) {
-        const order = await this.orderRepository.findOne({ where: { id: internalOrderId } });
+        const order = await this.orderRepository.findOne({
+            where: { id: internalOrderId },
+            relations: ['items', 'shop'],
+        });
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
         }
-        order.paymentStatus = order_entity_1.PaymentStatus.PAID;
-        order.status = order_entity_1.OrderStatus.CONFIRMED;
-        order.confirmedAt = new Date();
-        await this.orderRepository.save(order);
-        return order;
+        if (order.paymentStatus === order_entity_1.PaymentStatus.PAID) {
+            return order;
+        }
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            for (const item of order.items) {
+                await queryRunner.manager.decrement(product_entity_1.Product, { id: item.productId }, 'stock', item.quantity);
+                await queryRunner.manager.increment(product_entity_1.Product, { id: item.productId }, 'orderCount', item.quantity);
+            }
+            await queryRunner.manager.increment(shop_entity_1.Shop, { id: order.shopId }, 'totalOrders', 1);
+            order.paymentStatus = order_entity_1.PaymentStatus.PAID;
+            order.status = order_entity_1.OrderStatus.CONFIRMED;
+            order.confirmedAt = new Date();
+            order.razorpayPaymentId = razorpayPaymentId;
+            await queryRunner.manager.save(order);
+            await queryRunner.commitTransaction();
+            await this.cartService.clearCart(order.customerId);
+            return order;
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
     }
     async updateRazorpayOrderId(internalOrderId, razorpayOrderId) {
         await this.orderRepository.update({ id: internalOrderId }, { paymentStatus: order_entity_1.PaymentStatus.PENDING });
@@ -450,6 +555,7 @@ exports.OrdersService = OrdersService = OrdersService_1 = __decorate([
         cart_service_1.CartService,
         typeorm_2.DataSource,
         order_state_machine_1.OrderStateMachine,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        tracking_gateway_1.TrackingGateway])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

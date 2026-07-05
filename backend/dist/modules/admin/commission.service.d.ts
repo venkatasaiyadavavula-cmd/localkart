@@ -12,12 +12,14 @@ export declare class CommissionService {
     private commissionRates;
     constructor(orderRepository: Repository<Order>, transactionRepository: Repository<Transaction>, shopRepository: Repository<Shop>, categoryRepository: Repository<Category>);
     getCommissionSummary(period?: string): Promise<{
-        totalCommission: any;
-        totalRevenue: any;
-        orderCount: any;
-        pendingSettlements: any;
+        totalCommission: number;
+        totalRevenue: number;
+        orderCount: number;
+        pendingSettlements: number;
         currentRates: Record<ProductCategoryType, number>;
+        shopEarnings: any[];
     }>;
+    getShopEarningsList(): Promise<any[]>;
     getCommissionTransactions(page: number, limit: number): Promise<{
         data: Transaction[];
         meta: {

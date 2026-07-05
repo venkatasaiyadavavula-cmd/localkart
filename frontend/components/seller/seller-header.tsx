@@ -1,6 +1,7 @@
 'use client';
 
-import { Bell, User, LogOut, Store } from 'lucide-react';
+import Link from 'next/link';
+import { User, LogOut, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { SellerMobileNav } from '@/components/seller/seller-mobile-nav';
 
 export function SellerHeader() {
   const { user, logout } = useAuth();
@@ -25,17 +26,12 @@ export function SellerHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur-xl px-4 md:px-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <SellerMobileNav />
         <h2 className="text-lg font-semibold">Seller Dashboard</h2>
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative" asChild>
-          <Link href="/dashboard/orders" title="Orders">
-            <Bell className="h-5 w-5" />
-          </Link>
-        </Button>
-
         <Button variant="ghost" size="sm" asChild>
           <Link href="/" target="_blank">
             <Store className="mr-2 h-4 w-4" />

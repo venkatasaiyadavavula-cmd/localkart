@@ -21,15 +21,18 @@ const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../core/decorators/current-user.decorator");
 const roles_decorator_1 = require("../../core/decorators/roles.decorator");
 const user_entity_1 = require("../../core/entities/user.entity");
+const payments_config_1 = require("./payments.config");
 let PaymentsController = class PaymentsController {
     paymentsService;
     constructor(paymentsService) {
         this.paymentsService = paymentsService;
     }
     async createRazorpayOrder(user, createPaymentDto) {
+        (0, payments_config_1.assertPaymentsEnabled)();
         return this.paymentsService.createRazorpayOrder(user.id, createPaymentDto);
     }
     async verifyPayment(user, verifyPaymentDto) {
+        (0, payments_config_1.assertPaymentsEnabled)();
         const isValid = await this.paymentsService.verifyPayment(user.id, verifyPaymentDto);
         if (!isValid) {
             throw new common_1.BadRequestException('Payment verification failed');
@@ -37,6 +40,7 @@ let PaymentsController = class PaymentsController {
         return { success: true, message: 'Payment verified successfully' };
     }
     async initiateCodOrder(user, createPaymentDto) {
+        (0, payments_config_1.assertPaymentsEnabled)();
         return this.paymentsService.initiateCodOrder(user.id, createPaymentDto);
     }
 };

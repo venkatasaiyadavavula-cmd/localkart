@@ -9,4 +9,5 @@ export declare class WhatsappService {
     sendNewOrderToSeller(sellerPhone: string, shopName: string, orderNumber: string, itemsSummary: string, totalAmount: number): Promise<boolean>;
     sendCommissionReminder(sellerPhone: string, shopName: string, billDate: string, commissionAmount: number, fineAmount: number, daysOverdue: number): Promise<boolean>;
     sendWeeklyEarningsSummary(sellerPhone: string, shopName: string, weekLabel: string, orderCount: number, grossEarnings: number, commission: number, netEarnings: number): Promise<boolean>;
+    sendOtpMessage(phone: string, otp: string): Promise<boolean>;
 }

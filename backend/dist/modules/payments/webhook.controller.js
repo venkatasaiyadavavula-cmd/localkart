@@ -50,12 +50,16 @@ const common_1 = require("@nestjs/common");
 const crypto = __importStar(require("crypto"));
 const payments_service_1 = require("./payments.service");
 const public_decorator_1 = require("../../core/decorators/public.decorator");
+const payments_config_1 = require("./payments.config");
 let WebhookController = class WebhookController {
     paymentsService;
     constructor(paymentsService) {
         this.paymentsService = paymentsService;
     }
     async handleRazorpayWebhook(signature, req, res) {
+        if (!(0, payments_config_1.isPaymentsEnabled)()) {
+            return res.status(503).json({ error: 'Payment gateway not available' });
+        }
         const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
         if (!webhookSecret) {
             return res.status(500).json({ error: 'Webhook secret not configured' });

@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
             <div className="space-y-2.5 bg-blue-50/50 rounded-xl p-4 border border-blue-100">
               {[
                 { icon: Truck,    title: 'Same Day Delivery', sub: 'Order before 4 PM for today delivery', color: 'text-blue-500' },
-                { icon: Shield,   title: 'Secure Payment',    sub: 'COD & all online payments accepted',   color: 'text-green-500' },
+                { icon: Shield,   title: 'Cash on Delivery',    sub: 'Pay when your order arrives',   color: 'text-green-500' },
                 { icon: RotateCcw, title: '24h Easy Returns',  sub: 'Return within 24 hours of delivery',   color: 'text-orange-500' },
                 { icon: Clock,    title: 'Local Shop',        sub: 'Fresh products from your neighborhood', color: 'text-purple-500' },
               ].map(({ icon: Icon, title, sub, color }) => (

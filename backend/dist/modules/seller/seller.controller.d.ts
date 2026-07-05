@@ -2,6 +2,8 @@ import { SellerService } from './seller.service';
 import { SubscriptionService } from './subscription.service';
 import { EarningsService } from './earnings.service';
 import { AdCampaignService } from './ad-campaign.service';
+import { DailyOfferService } from './daily-offer.service';
+import { CreateDailyOfferDto } from './dto/daily-offer.dto';
 import { ShopProfileDto } from './dto/shop-profile.dto';
 import { SubscribeDto } from './dto/subscription-plan.dto';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
@@ -10,7 +12,10 @@ export declare class SellerController {
     private readonly subscriptionService;
     private readonly earningsService;
     private readonly adCampaignService;
-    constructor(sellerService: SellerService, subscriptionService: SubscriptionService, earningsService: EarningsService, adCampaignService: AdCampaignService);
+    private readonly dailyOfferService;
+    constructor(sellerService: SellerService, subscriptionService: SubscriptionService, earningsService: EarningsService, adCampaignService: AdCampaignService, dailyOfferService: DailyOfferService);
+    getShopBySlug(slug: string): Promise<import("../../core/entities/shop.entity").Shop>;
+    getShopById(id: string): Promise<import("../../core/entities/shop.entity").Shop>;
     getMyShop(user: any): Promise<import("../../core/entities/shop.entity").Shop>;
     createShop(user: any, shopProfileDto: ShopProfileDto): Promise<import("../../core/entities/shop.entity").Shop>;
     updateShop(user: any, shopProfileDto: ShopProfileDto): Promise<import("../../core/entities/shop.entity").Shop>;
@@ -24,22 +29,41 @@ export declare class SellerController {
         key: string;
         bannerUrl: string;
     }>;
-    getDashboard(user: any): Promise<{
+    getDashboard(user: any, period?: string): Promise<{
+        salesChart: {
+            date: any;
+            sales: number;
+            orders: number;
+        }[];
+        shopName: string;
         totalProducts: number;
+        activeProducts: number;
+        lowStockProducts: number;
         totalOrders: number;
         pendingOrders: number;
-        totalRevenue: any;
-        todayOrders: number;
+        productsSold: number;
+        totalRevenue: number;
+        revenueChange: number;
+        ordersChange: number;
+        productsSoldChange: number;
+        activeProductsChange: number;
         recentOrders: {
             id: string;
             orderNumber: string;
             status: import("../../core/entities/order.entity").OrderStatus;
             totalAmount: number;
-            customerName: string;
+            customer: {
+                name: string;
+            };
             createdAt: Date;
         }[];
+        topProducts: import("../../core/entities/product.entity").Product[];
     }>;
-    getSalesChart(user: any, period?: string): Promise<any[]>;
+    getSalesChart(user: any, period?: string): Promise<{
+        date: any;
+        sales: number;
+        orders: number;
+    }[]>;
     getCurrentSubscription(user: any): Promise<{
         plan: import("../../core/entities/subscription.entity").SubscriptionPlan;
         productLimit: number;
@@ -75,6 +99,23 @@ export declare class SellerController {
         message: string;
     }>;
     getSubscriptionHistory(user: any): Promise<import("../../core/entities/subscription.entity").Subscription[]>;
+    getWeeklyEarnings(user: any): Promise<{
+        weeks: {
+            weekLabel: string;
+            orderCount: number;
+            gross: number;
+            commission: number;
+            net: number;
+        }[];
+        currentWeek: {
+            weekLabel: string;
+            orderCount: number;
+            gross: number;
+            commission: number;
+            net: number;
+        };
+        growth: number;
+    }>;
     getEarnings(user: any, period?: string): Promise<{
         totalEarnings: any;
         totalCommission: any;
@@ -104,5 +145,10 @@ export declare class SellerController {
         spent: number;
         status: import("../../core/entities/sponsored-product.entity").AdStatus;
         remainingDays: number;
+    }>;
+    getDailyOffers(user: any): Promise<import("../../core/entities/daily-offer.entity").DailyOffer[]>;
+    createDailyOffer(user: any, dto: CreateDailyOfferDto): Promise<import("../../core/entities/daily-offer.entity").DailyOffer>;
+    deleteDailyOffer(user: any, id: string): Promise<{
+        message: string;
     }>;
 }

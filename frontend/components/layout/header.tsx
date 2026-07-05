@@ -14,6 +14,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCartStore } from '@/store/cart-store';
 import { useTranslation } from '@/hooks/use-translation';
 import { LanguageToggle } from './language-toggle';
+import { useLocationStore } from '@/lib/store/location-store';
+import { getLocationDisplayLabel } from '@/lib/geocode';
+import { buildLoginUrl, buildRegisterUrl, SELLER_ONBOARDING_PATH } from '@/lib/auth-routes';
 
 const CATEGORIES = [
   { label: 'Groceries',   labelTe: 'కిరాణా',       slug: 'groceries',      emoji: '🛒', color: '#059669', bg: '#ECFDF5', hover: '#D1FAE5' },
@@ -98,6 +101,8 @@ export function Header() {
   const { user, logout } = useAuth();
   const { totalItems }   = useCartStore();
   const { t, language }  = useTranslation();
+  const { location: savedLocation } = useLocationStore();
+  const locationLabel = getLocationDisplayLabel(savedLocation, t('setLocation'));
 
   const [searchQuery,    setSearchQuery]    = useState('');
   const [searchFocused,  setSearchFocused]  = useState(false);
@@ -171,7 +176,7 @@ export function Header() {
             </div>
             <span className="text-xs font-medium" style={{ color: 'rgba(199,210,254,0.75)' }}>
               {t('deliveringTo')}&nbsp;
-              <span className="text-white font-bold">Kadapa, Andhra Pradesh</span>
+              <span className="text-white font-bold">{locationLabel}</span>
             </span>
           </div>
 
@@ -192,7 +197,7 @@ export function Header() {
           <div className="flex items-center gap-3">
             <LanguageToggle className="!bg-transparent !border-white/10 !text-white/70 hover:!border-white/30" />
             <Link
-              href="/seller-onboarding"
+              href={buildLoginUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH })}
               className="flex items-center gap-1 text-xs font-bold transition-all duration-200 group"
               style={{ color: 'rgba(165,180,252,0.70)' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
@@ -548,7 +553,7 @@ export function Header() {
               </div>
             ) : (
               <div className="flex items-center gap-2 ml-1">
-                <Link href="/login">
+                <Link href={buildLoginUrl({ intent: 'customer' })}>
                   <button
                     className="text-sm font-bold px-4 py-2 rounded-xl border transition-all duration-200"
                     style={{ color: '#3D5AF1', borderColor: 'rgba(61,90,241,0.25)', background: 'white' }}
@@ -558,7 +563,7 @@ export function Header() {
                     {t('login')}
                   </button>
                 </Link>
-                <Link href="/register">
+                <Link href={buildRegisterUrl({ intent: 'customer' })}>
                   <button
                     className="text-sm font-extrabold text-white px-5 py-2 rounded-xl transition-all duration-200 active:scale-[0.97]"
                     style={{

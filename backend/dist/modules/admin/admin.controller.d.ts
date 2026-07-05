@@ -53,11 +53,12 @@ export declare class AdminController {
     approveProduct(id: string): Promise<import("../../core/entities/product.entity").Product>;
     rejectProduct(id: string, reason: string): Promise<import("../../core/entities/product.entity").Product>;
     getCommissionSummary(period?: string): Promise<{
-        totalCommission: any;
-        totalRevenue: any;
-        orderCount: any;
-        pendingSettlements: any;
+        totalCommission: number;
+        totalRevenue: number;
+        orderCount: number;
+        pendingSettlements: number;
         currentRates: Record<import("../../core/entities/product.entity").ProductCategoryType, number>;
+        shopEarnings: any[];
     }>;
     getCommissionTransactions(page?: string, limit?: string): Promise<{
         data: import("../../core/entities/transaction.entity").Transaction[];

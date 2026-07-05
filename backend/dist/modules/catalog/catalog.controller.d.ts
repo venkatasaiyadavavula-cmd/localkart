@@ -1,17 +1,21 @@
+import { Response } from 'express';
 import { Repository } from 'typeorm';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
+import { BulkUploadService } from './bulk-upload.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
+import { VisualSearchDto } from './dto/visual-search.dto';
 import { Product } from '../../core/entities/product.entity';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
 export declare class CatalogController {
     private readonly catalogService;
     private readonly searchService;
+    private readonly bulkUploadService;
     private productRepository;
     private offerRepository;
-    constructor(catalogService: CatalogService, searchService: SearchService, productRepository: Repository<Product>, offerRepository: Repository<DailyOffer>);
+    constructor(catalogService: CatalogService, searchService: SearchService, bulkUploadService: BulkUploadService, productRepository: Repository<Product>, offerRepository: Repository<DailyOffer>);
     getProducts(query: SearchQueryDto): Promise<{
         data: Product[];
         meta: {
@@ -22,9 +26,11 @@ export declare class CatalogController {
         };
     }>;
     getProductBySlug(slug: string): Promise<Product>;
+    getSponsored(lat?: string, lng?: string): Promise<Product[]>;
     getCategories(): Promise<import("../../core/entities/category.entity").Category[]>;
     getCategoryBySlug(slug: string): Promise<import("../../core/entities/category.entity").Category>;
     search(q: string, lat?: string, lng?: string): Promise<any[]>;
+    visualSearch(dto: VisualSearchDto): Promise<Product[]>;
     getShopProducts(shopId: string, query: SearchQueryDto): Promise<{
         data: Product[];
         meta: {
@@ -49,6 +55,15 @@ export declare class CatalogController {
             totalPages: number;
         };
     }>;
+    getSellerProductById(user: any, id: string): Promise<Product>;
+    getSellerProductLimit(user: any): Promise<{
+        plan: import("../../core/entities/subscription.entity").SubscriptionPlan;
+        limit: number;
+        used: number;
+        remaining: number;
+    }>;
+    downloadBulkTemplate(res: Response): Promise<void>;
+    bulkUpload(user: any, file: Express.Multer.File): Promise<import("./bulk-upload.service").BulkUploadResult>;
     approveProduct(id: string): Promise<Product>;
     rejectProduct(id: string, reason: string): Promise<Product>;
 }

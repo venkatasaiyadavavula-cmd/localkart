@@ -10,7 +10,9 @@ export declare class SearchQueryDto {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     query?: string;
+    search?: string;
     latitude?: number;
     longitude?: number;
     hasVideo?: boolean;
+    sponsored?: boolean;
 }

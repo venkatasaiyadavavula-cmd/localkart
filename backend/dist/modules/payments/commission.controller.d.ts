@@ -1,7 +1,11 @@
+import { Repository } from 'typeorm';
 import { CommissionService } from './commission.service';
+import { Shop } from '../../core/entities/shop.entity';
 export declare class CommissionController {
     private readonly commissionService;
-    constructor(commissionService: CommissionService);
+    private readonly shopRepository;
+    constructor(commissionService: CommissionService, shopRepository: Repository<Shop>);
+    private resolveShopId;
     getMyBills(req: any, page?: string, limit?: string): Promise<{
         bills: import("../../core/entities/commission-bill.entity").CommissionBill[];
         total: number;

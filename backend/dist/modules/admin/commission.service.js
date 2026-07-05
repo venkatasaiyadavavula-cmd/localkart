@@ -61,12 +61,44 @@ let CommissionService = class CommissionService {
             .select('SUM(order.totalAmount - order.commissionAmount)', 'pending')
             .getRawOne();
         return {
-            totalCommission: summary?.totalCommission || 0,
-            totalRevenue: summary?.totalRevenue || 0,
-            orderCount: summary?.orderCount || 0,
-            pendingSettlements: pendingSettlements?.pending || 0,
+            totalCommission: Number(summary?.totalCommission || 0),
+            totalRevenue: Number(summary?.totalRevenue || 0),
+            orderCount: Number(summary?.orderCount || 0),
+            pendingSettlements: Number(pendingSettlements?.pending || 0),
             currentRates: this.commissionRates,
+            shopEarnings: await this.getShopEarningsList(),
         };
+    }
+    async getShopEarningsList() {
+        const shops = await this.shopRepository.find({
+            where: { status: shop_entity_1.ShopStatus.APPROVED },
+            order: { name: 'ASC' },
+        });
+        const results = [];
+        for (const shop of shops) {
+            const pendingRow = await this.orderRepository
+                .createQueryBuilder('order')
+                .leftJoin('order.transactions', 't', 't.type = :type', { type: transaction_entity_1.TransactionType.SETTLEMENT })
+                .where('order.shopId = :shopId', { shopId: shop.id })
+                .andWhere('order.status = :status', { status: order_entity_1.OrderStatus.DELIVERED })
+                .andWhere('t.id IS NULL')
+                .select('COALESCE(SUM(order.totalAmount - order.commissionAmount), 0)', 'pending')
+                .getRawOne();
+            const lastSettlement = await this.transactionRepository
+                .createQueryBuilder('t')
+                .where('t.type = :type', { type: transaction_entity_1.TransactionType.SETTLEMENT })
+                .andWhere("t.metadata->>'shopId' = :shopId", { shopId: shop.id })
+                .orderBy('t.createdAt', 'DESC')
+                .getOne();
+            results.push({
+                id: shop.id,
+                name: shop.name,
+                totalEarnings: Number(shop.totalEarnings || 0),
+                pendingSettlement: Number(pendingRow?.pending || 0),
+                lastSettlement: lastSettlement?.createdAt ?? null,
+            });
+        }
+        return results;
     }
     async getCommissionTransactions(page, limit) {
         const skip = (page - 1) * limit;

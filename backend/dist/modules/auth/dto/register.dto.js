@@ -33,6 +33,7 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterDto.prototype, "phone", void 0);
 __decorate([
+    (0, class_validator_1.ValidateIf)((o) => o.email !== '' && o.email != null),
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)

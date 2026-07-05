@@ -1,6 +1,7 @@
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -41,10 +42,13 @@ export declare class AuthController {
         accessToken: string;
         refreshToken: string;
     }>;
+    resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{
+        message: string;
+    }>;
     logout(req: any): Promise<{
         message: string;
     }>;
-    refreshToken(req: any): Promise<{
+    refreshToken(refreshToken: string): Promise<{
         accessToken: string;
         refreshToken: string;
     }>;

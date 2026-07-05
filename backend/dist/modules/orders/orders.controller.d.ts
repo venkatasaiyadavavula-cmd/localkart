@@ -1,6 +1,7 @@
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { UpdateDeliveryLocationDto } from './dto/update-delivery-location.dto';
 export declare class OrdersController {
     private readonly ordersService;
     constructor(ordersService: OrdersService);
@@ -39,6 +40,42 @@ export declare class OrdersController {
         confirmedAt: Date;
         deliveredAt: Date;
         cancelledAt: Date;
+    } | {
+        isShopOpen: boolean;
+        shopClosedMessage: string;
+        deliveryAddress: Record<string, any>;
+        shippingAddress: Record<string, any>;
+        id: string;
+        orderNumber: string;
+        customerId: string;
+        customer: import("../../core/entities/user.entity").User;
+        shopId: string;
+        shop: import("../../core/entities/shop.entity").Shop;
+        items: import("../../core/entities/order-item.entity").OrderItem[];
+        totalAmount: number;
+        deliveryCharge: number;
+        discount: number;
+        finalAmount: number;
+        commissionAmount: number;
+        commissionPercent: number;
+        paymentMethod: import("../../core/entities/order.entity").PaymentMethod;
+        paymentStatus: import("../../core/entities/order.entity").PaymentStatus;
+        status: import("../../core/entities/order.entity").OrderStatus;
+        deliveryOtp: string;
+        deliveryNotes: string;
+        cancellationReason: string;
+        razorpayOrderId: string;
+        razorpayPaymentId: string;
+        deliveryLatitude: number | null;
+        deliveryLongitude: number | null;
+        locationUpdatedAt: Date | null;
+        deliveryStaffName: string | null;
+        deliveryStaffPhone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        confirmedAt: Date;
+        deliveredAt: Date;
+        cancelledAt: Date;
     }>;
     getMyOrders(user: any, page?: string, limit?: string, status?: string): Promise<{
         data: import("../../core/entities/order.entity").Order[];
@@ -49,15 +86,6 @@ export declare class OrdersController {
             totalPages: number;
         };
     }>;
-    getOrderById(user: any, id: string): Promise<import("../../core/entities/order.entity").Order>;
-    cancelOrder(user: any, id: string, reason?: string): Promise<{
-        message: string;
-        order: import("../../core/entities/order.entity").Order;
-    }>;
-    verifyDeliveryOtp(user: any, id: string, otp: string): Promise<{
-        message: string;
-        order: import("../../core/entities/order.entity").Order;
-    }>;
     getSellerOrders(user: any, page?: string, limit?: string, status?: string): Promise<{
         data: import("../../core/entities/order.entity").Order[];
         meta: {
@@ -67,7 +95,6 @@ export declare class OrdersController {
             totalPages: number;
         };
     }>;
-    updateOrderStatus(user: any, id: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<import("../../core/entities/order.entity").Order>;
     getAllOrders(page?: string, limit?: string, status?: string, shopId?: string): Promise<{
         data: import("../../core/entities/order.entity").Order[];
         meta: {
@@ -77,7 +104,6 @@ export declare class OrdersController {
             totalPages: number;
         };
     }>;
-    adminUpdateOrderStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<import("../../core/entities/order.entity").Order>;
     trackOrder(orderNumber: string): Promise<{
         orderNumber: string;
         status: import("../../core/entities/order.entity").OrderStatus;
@@ -87,5 +113,57 @@ export declare class OrdersController {
             name: string;
             phone: string;
         };
+    }>;
+    updateDeliveryLocation(user: any, id: string, dto: UpdateDeliveryLocationDto): Promise<{
+        latitude: number;
+        longitude: number;
+        updatedAt: string;
+        staffName: string;
+        message: string;
+    }>;
+    updateOrderStatus(user: any, id: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<import("../../core/entities/order.entity").Order>;
+    adminUpdateOrderStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<import("../../core/entities/order.entity").Order>;
+    getOrderById(user: any, id: string): Promise<import("../../core/entities/order.entity").Order | {
+        deliveryAddress: Record<string, any>;
+        shippingAddress: Record<string, any>;
+        id: string;
+        orderNumber: string;
+        customerId: string;
+        customer: import("../../core/entities/user.entity").User;
+        shopId: string;
+        shop: import("../../core/entities/shop.entity").Shop;
+        items: import("../../core/entities/order-item.entity").OrderItem[];
+        totalAmount: number;
+        deliveryCharge: number;
+        discount: number;
+        finalAmount: number;
+        commissionAmount: number;
+        commissionPercent: number;
+        paymentMethod: import("../../core/entities/order.entity").PaymentMethod;
+        paymentStatus: import("../../core/entities/order.entity").PaymentStatus;
+        status: import("../../core/entities/order.entity").OrderStatus;
+        deliveryOtp: string;
+        deliveryNotes: string;
+        cancellationReason: string;
+        razorpayOrderId: string;
+        razorpayPaymentId: string;
+        deliveryLatitude: number | null;
+        deliveryLongitude: number | null;
+        locationUpdatedAt: Date | null;
+        deliveryStaffName: string | null;
+        deliveryStaffPhone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        confirmedAt: Date;
+        deliveredAt: Date;
+        cancelledAt: Date;
+    }>;
+    cancelOrder(user: any, id: string, reason?: string): Promise<{
+        message: string;
+        order: import("../../core/entities/order.entity").Order;
+    }>;
+    verifyDeliveryOtp(user: any, id: string, otp: string): Promise<{
+        message: string;
+        order: import("../../core/entities/order.entity").Order;
     }>;
 }

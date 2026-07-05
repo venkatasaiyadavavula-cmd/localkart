@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const register_dto_1 = require("./dto/register.dto");
 const otp_dto_1 = require("./dto/otp.dto");
+const reset_password_dto_1 = require("./dto/reset-password.dto");
 const local_auth_guard_1 = require("./guards/local-auth.guard");
 const public_decorator_1 = require("../../core/decorators/public.decorator");
 let AuthController = class AuthController {
@@ -36,11 +37,14 @@ let AuthController = class AuthController {
     async verifyOtp(verifyOtpDto) {
         return this.authService.verifyOtp(verifyOtpDto);
     }
+    async resetPassword(resetPasswordDto) {
+        return this.authService.resetPassword(resetPasswordDto);
+    }
     async logout(req) {
         return { message: 'Logged out successfully' };
     }
-    async refreshToken(req) {
-        return this.authService.refreshToken(req.user);
+    async refreshToken(refreshToken) {
+        return this.authService.refreshToken(refreshToken);
     }
 };
 exports.AuthController = AuthController;
@@ -81,6 +85,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyOtp", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
+__decorate([
     (0, common_1.Post)('logout'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Request)()),
@@ -89,11 +102,12 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "logout", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('refresh'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Request)()),
+    __param(0, (0, common_1.Body)('refreshToken')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refreshToken", null);
 exports.AuthController = AuthController = __decorate([

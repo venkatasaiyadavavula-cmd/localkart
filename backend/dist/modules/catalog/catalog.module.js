@@ -12,6 +12,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const catalog_controller_1 = require("./catalog.controller");
 const catalog_service_1 = require("./catalog.service");
 const search_service_1 = require("./search.service");
+const bulk_upload_service_1 = require("./bulk-upload.service");
 const product_entity_1 = require("../../core/entities/product.entity");
 const category_entity_1 = require("../../core/entities/category.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
@@ -24,7 +25,7 @@ exports.CatalogModule = CatalogModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([product_entity_1.Product, category_entity_1.Category, shop_entity_1.Shop, daily_offer_entity_1.DailyOffer, subscription_entity_1.Subscription])],
         controllers: [catalog_controller_1.CatalogController],
-        providers: [catalog_service_1.CatalogService, search_service_1.SearchService],
+        providers: [catalog_service_1.CatalogService, search_service_1.SearchService, bulk_upload_service_1.BulkUploadService],
         exports: [catalog_service_1.CatalogService],
     })
 ], CatalogModule);

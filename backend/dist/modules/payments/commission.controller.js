@@ -14,25 +14,43 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommissionController = void 0;
 const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
 const commission_service_1 = require("./commission.service");
 const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../core/guards/roles.guard");
 const roles_decorator_1 = require("../../core/decorators/roles.decorator");
 const user_entity_1 = require("../../core/entities/user.entity");
+const shop_entity_1 = require("../../core/entities/shop.entity");
+const payments_config_1 = require("./payments.config");
 let CommissionController = class CommissionController {
     commissionService;
-    constructor(commissionService) {
+    shopRepository;
+    constructor(commissionService, shopRepository) {
         this.commissionService = commissionService;
+        this.shopRepository = shopRepository;
+    }
+    async resolveShopId(user) {
+        if (user.shopId)
+            return user.shopId;
+        const shop = await this.shopRepository.findOne({ where: { ownerId: user.id } });
+        if (!shop)
+            throw new common_1.NotFoundException('Shop not found');
+        return shop.id;
     }
     async getMyBills(req, page = '1', limit = '30') {
-        const shopId = req.user.shopId;
+        const shopId = await this.resolveShopId(req.user);
         return this.commissionService.getShopBills(shopId, +page, +limit);
     }
     async initiatePayment(req, billId) {
-        return this.commissionService.createCommissionPaymentOrder(req.user.shopId, billId);
+        (0, payments_config_1.assertPaymentsEnabled)();
+        const shopId = await this.resolveShopId(req.user);
+        return this.commissionService.createCommissionPaymentOrder(shopId, billId);
     }
     async verifyPayment(req, billId, body) {
-        return this.commissionService.verifyCommissionPayment(req.user.shopId, billId, body.razorpayPaymentId, body.razorpayOrderId, body.razorpaySignature);
+        (0, payments_config_1.assertPaymentsEnabled)();
+        const shopId = await this.resolveShopId(req.user);
+        return this.commissionService.verifyCommissionPayment(shopId, billId, body.razorpayPaymentId, body.razorpayOrderId, body.razorpaySignature);
     }
     async getOverdue() {
         return this.commissionService.getOverdueShops();
@@ -94,6 +112,8 @@ __decorate([
 exports.CommissionController = CommissionController = __decorate([
     (0, common_1.Controller)('commission'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:paramtypes", [commission_service_1.CommissionService])
+    __param(1, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
+    __metadata("design:paramtypes", [commission_service_1.CommissionService,
+        typeorm_2.Repository])
 ], CommissionController);
 //# sourceMappingURL=commission.controller.js.map

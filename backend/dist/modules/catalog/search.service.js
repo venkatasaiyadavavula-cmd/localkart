@@ -69,6 +69,23 @@ let SearchService = class SearchService {
         }
         return qb.take(10).getMany();
     }
+    async visualSearch(categoryType, limit = 12) {
+        const qb = this.productRepository
+            .createQueryBuilder('product')
+            .leftJoinAndSelect('product.shop', 'shop')
+            .where('product.status = :status', { status: product_entity_1.ProductStatus.APPROVED })
+            .andWhere('shop.status = :shopStatus', { shopStatus: 'approved' })
+            .andWhere('product.images IS NOT NULL')
+            .andWhere("product.images::text != '[]'");
+        if (categoryType) {
+            qb.andWhere('product.categoryType = :categoryType', { categoryType });
+        }
+        return qb
+            .orderBy('product.orderCount', 'DESC')
+            .addOrderBy('product.createdAt', 'DESC')
+            .take(limit)
+            .getMany();
+    }
 };
 exports.SearchService = SearchService;
 exports.SearchService = SearchService = __decorate([

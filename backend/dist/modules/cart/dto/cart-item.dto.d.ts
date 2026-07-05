@@ -8,9 +8,12 @@ export declare class UpdateCartItemDto {
 export interface CartItem {
     productId: string;
     shopId: string;
+    shopName?: string;
     name: string;
     price: number;
     quantity: number;
     image: string | null;
     maxQuantity: number;
+    slug?: string;
+    categoryType?: string;
 }

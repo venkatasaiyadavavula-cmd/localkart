@@ -5,4 +5,5 @@ export declare class SearchService {
     constructor(productRepository: Repository<Product>);
     searchProducts(query: string, userLat?: number, userLng?: number): Promise<any[]>;
     getSponsoredProducts(userLat?: number, userLng?: number): Promise<Product[]>;
+    visualSearch(categoryType?: string, limit?: number): Promise<Product[]>;
 }

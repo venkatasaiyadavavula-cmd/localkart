@@ -5,8 +5,8 @@ export declare class ShopProfileDto {
     city: string;
     state: string;
     pincode: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number;
+    longitude?: number;
     contactPhone: string;
     contactEmail?: string;
     openingTime?: string;

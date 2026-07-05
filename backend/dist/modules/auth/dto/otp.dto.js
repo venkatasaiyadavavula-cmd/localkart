@@ -18,8 +18,9 @@ class SendOtpDto {
 }
 exports.SendOtpDto = SendOtpDto;
 __decorate([
-    (0, class_validator_1.IsPhoneNumber)('IN'),
+    (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Matches)(/^\d{10}$/, { message: 'Phone must be 10 digits' }),
     __metadata("design:type", String)
 ], SendOtpDto.prototype, "phone", void 0);
 __decorate([
@@ -40,8 +41,9 @@ class VerifyOtpDto {
 }
 exports.VerifyOtpDto = VerifyOtpDto;
 __decorate([
-    (0, class_validator_1.IsPhoneNumber)('IN'),
+    (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Matches)(/^\d{10}$/, { message: 'Phone must be 10 digits' }),
     __metadata("design:type", String)
 ], VerifyOtpDto.prototype, "phone", void 0);
 __decorate([

@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 import { Product } from '../../core/entities/product.entity';
 import { Category } from '../../core/entities/category.entity';
 import { Shop } from '../../core/entities/shop.entity';
-import { Subscription } from '../../core/entities/subscription.entity';
+import { Subscription, SubscriptionPlan } from '../../core/entities/subscription.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
@@ -44,6 +44,13 @@ export declare class CatalogService {
             limit: number;
             totalPages: number;
         };
+    }>;
+    getSellerProductById(userId: string, productId: string): Promise<Product>;
+    getSellerProductLimit(userId: string): Promise<{
+        plan: SubscriptionPlan;
+        limit: number;
+        used: number;
+        remaining: number;
     }>;
     approveProduct(productId: string): Promise<Product>;
     rejectProduct(productId: string, reason: string): Promise<Product>;

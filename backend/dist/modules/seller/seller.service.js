@@ -49,6 +49,24 @@ let SellerService = SellerService_1 = class SellerService {
         delete shop.owner.password;
         return shop;
     }
+    async getShopBySlug(slug) {
+        const shop = await this.shopRepository.findOne({
+            where: { slug, status: shop_entity_1.ShopStatus.APPROVED },
+        });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        return shop;
+    }
+    async getShopById(id) {
+        const shop = await this.shopRepository.findOne({
+            where: { id, status: shop_entity_1.ShopStatus.APPROVED },
+        });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        return shop;
+    }
     async createShop(ownerId, shopProfileDto) {
         const existingShop = await this.shopRepository.findOne({
             where: { ownerId },
@@ -116,43 +134,64 @@ let SellerService = SellerService_1 = class SellerService {
         const totalProducts = await this.productRepository.count({
             where: { shopId: shop.id },
         });
+        const activeProducts = await this.productRepository.count({
+            where: { shopId: shop.id, status: product_entity_1.ProductStatus.APPROVED },
+        });
+        const lowStockProducts = await this.productRepository.count({
+            where: { shopId: shop.id, stock: (0, typeorm_2.Between)(1, 4) },
+        });
         const totalOrders = await this.orderRepository.count({
             where: { shopId: shop.id },
         });
         const pendingOrders = await this.orderRepository.count({
             where: { shopId: shop.id, status: order_entity_1.OrderStatus.CONFIRMED },
         });
+        const productsSold = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.items', 'item')
+            .select('COALESCE(SUM(item.quantity), 0)', 'total')
+            .where('order.shopId = :shopId', { shopId: shop.id })
+            .andWhere('order.status = :status', { status: order_entity_1.OrderStatus.DELIVERED })
+            .getRawOne();
         const totalRevenue = await this.orderRepository
             .createQueryBuilder('order')
             .select('SUM(order.totalAmount)', 'total')
             .where('order.shopId = :shopId', { shopId: shop.id })
             .andWhere('order.status = :status', { status: order_entity_1.OrderStatus.DELIVERED })
             .getRawOne();
-        const todayOrders = await this.orderRepository
-            .createQueryBuilder('order')
-            .where('order.shopId = :shopId', { shopId: shop.id })
-            .andWhere('DATE(order.createdAt) = CURRENT_DATE')
-            .getCount();
         const recentOrders = await this.orderRepository.find({
             where: { shopId: shop.id },
             relations: ['customer'],
             order: { createdAt: 'DESC' },
             take: 5,
         });
+        const topProducts = await this.productRepository.find({
+            where: { shopId: shop.id, status: product_entity_1.ProductStatus.APPROVED },
+            order: { orderCount: 'DESC' },
+            take: 5,
+        });
         return {
+            shopName: shop.name,
             totalProducts,
+            activeProducts,
+            lowStockProducts,
             totalOrders,
             pendingOrders,
-            totalRevenue: totalRevenue?.total || 0,
-            todayOrders,
-            recentOrders: recentOrders.map(o => ({
+            productsSold: Number(productsSold?.total || 0),
+            totalRevenue: Number(totalRevenue?.total || 0),
+            revenueChange: 0,
+            ordersChange: 0,
+            productsSoldChange: 0,
+            activeProductsChange: 0,
+            recentOrders: recentOrders.map((o) => ({
                 id: o.id,
                 orderNumber: o.orderNumber,
                 status: o.status,
                 totalAmount: o.totalAmount,
-                customerName: o.customer.name,
+                customer: { name: o.customer?.name },
                 createdAt: o.createdAt,
             })),
+            topProducts,
         };
     }
     async getSalesChart(ownerId, period) {
@@ -187,7 +226,11 @@ let SellerService = SellerService_1 = class SellerService {
             .groupBy('date')
             .orderBy('date', 'ASC')
             .getRawMany();
-        return sales;
+        return sales.map((row) => ({
+            date: row.date,
+            sales: Number(row.sales || 0),
+            orders: Number(row.orders || 0),
+        }));
     }
 };
 exports.SellerService = SellerService;

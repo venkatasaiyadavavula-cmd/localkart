@@ -24,9 +24,11 @@ class SearchQueryDto {
     sortBy = 'createdAt';
     sortOrder = 'DESC';
     query;
+    search;
     latitude;
     longitude;
     hasVideo;
+    sponsored;
 }
 exports.SearchQueryDto = SearchQueryDto;
 __decorate([
@@ -91,6 +93,11 @@ __decorate([
 ], SearchQueryDto.prototype, "query", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SearchQueryDto.prototype, "search", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
     (0, class_validator_1.IsNumber)(),
     (0, class_transformer_1.Type)(() => Number),
@@ -108,4 +115,9 @@ __decorate([
     (0, class_transformer_1.Transform)(({ value }) => (value === '' ? undefined : value)),
     __metadata("design:type", Boolean)
 ], SearchQueryDto.prototype, "hasVideo", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    __metadata("design:type", Boolean)
+], SearchQueryDto.prototype, "sponsored", void 0);
 //# sourceMappingURL=search-query.dto.js.map

@@ -54,15 +54,18 @@ const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
 const user_entity_1 = require("../../core/entities/user.entity");
 const whatsapp_service_1 = require("../notifications/whatsapp.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 let AuthService = AuthService_1 = class AuthService {
     userRepository;
     jwtService;
     whatsappService;
+    notificationsService;
     logger = new common_1.Logger(AuthService_1.name);
-    constructor(userRepository, jwtService, whatsappService) {
+    constructor(userRepository, jwtService, whatsappService, notificationsService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.whatsappService = whatsappService;
+        this.notificationsService = notificationsService;
     }
     normalizePhone(phone) {
         if (phone.startsWith('+91'))
@@ -86,10 +89,15 @@ let AuthService = AuthService_1 = class AuthService {
             phone: normalizedPhone,
             email: email || null,
             password: hashedPassword,
-            role: role || user_entity_1.UserRole.CUSTOMER,
+            role: user_entity_1.UserRole.CUSTOMER,
             isPhoneVerified: true,
         });
         await this.userRepository.save(user);
+        if (user.email) {
+            this.notificationsService
+                .sendWelcomeEmail(user.email, user.name)
+                .catch((e) => this.logger.error('Welcome email failed: ' + e.message));
+        }
         return {
             message: 'Registration successful',
             user: {
@@ -142,16 +150,7 @@ let AuthService = AuthService_1 = class AuthService {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         this.logger.log(`OTP for ${normalizedPhone}: ${otp}`);
         await this.userRepository.query(`UPDATE users SET "lastOtp" = $1, "lastOtpSentAt" = $2 WHERE phone = $3`, [otp, new Date(), normalizedPhone]);
-        const message = [
-            `🔐 *LocalKart OTP Verification*`,
-            ``,
-            `Your OTP is: *${otp}*`,
-            `Valid for 5 minutes. Do NOT share with anyone.`,
-            ``,
-            `🇮🇳 *తెలుగు:* మీ OTP: *${otp}* — ఎవరికీ చెప్పకండి.`,
-            `🇮🇳 *हिंदी:* आपका OTP: *${otp}* — किसी को न बताएं।`,
-        ].join('\n');
-        await this.whatsappService['send'](normalizedPhone, message).catch((e) => this.logger.error('WhatsApp OTP failed: ' + e.message));
+        await this.whatsappService.sendOtpMessage(normalizedPhone, otp).catch((e) => this.logger.error('WhatsApp OTP failed: ' + e.message));
         return { message: 'OTP sent successfully' };
     }
     async verifyOtp(verifyOtpDto) {
@@ -189,6 +188,26 @@ let AuthService = AuthService_1 = class AuthService {
             },
         };
     }
+    async resetPassword(dto) {
+        const { phone, otp, newPassword } = dto;
+        const normalizedPhone = this.normalizePhone(phone);
+        const users = await this.userRepository.query(`SELECT * FROM users WHERE phone = $1`, [normalizedPhone]);
+        if (!users?.length) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        const user = users[0];
+        const otpExpiryTime = 5 * 60 * 1000;
+        if (!user.lastOtpSentAt ||
+            Date.now() - new Date(user.lastOtpSentAt).getTime() > otpExpiryTime) {
+            throw new common_1.BadRequestException('OTP expired. Please request a new one.');
+        }
+        if (String(user.lastOtp).trim() !== String(otp).trim()) {
+            throw new common_1.BadRequestException('Invalid OTP');
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await this.userRepository.query(`UPDATE users SET password = $1, "lastOtp" = null, "lastOtpSentAt" = null WHERE phone = $2`, [hashedPassword, normalizedPhone]);
+        return { message: 'Password reset successfully. You can now login with your new password.' };
+    }
     async logout(userId) {
         return { message: 'Logged out successfully' };
     }
@@ -217,6 +236,7 @@ exports.AuthService = AuthService = AuthService_1 = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         jwt_1.JwtService,
-        whatsapp_service_1.WhatsappService])
+        whatsapp_service_1.WhatsappService,
+        notifications_service_1.NotificationsService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

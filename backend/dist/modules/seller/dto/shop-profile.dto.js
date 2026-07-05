@@ -66,12 +66,12 @@ __decorate([
 ], ShopProfileDto.prototype, "pincode", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], ShopProfileDto.prototype, "latitude", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], ShopProfileDto.prototype, "longitude", void 0);
 __decorate([

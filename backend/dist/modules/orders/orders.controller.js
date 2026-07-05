@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
 const update_order_status_dto_1 = require("./dto/update-order-status.dto");
+const update_delivery_location_dto_1 = require("./dto/update-delivery-location.dto");
 const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../core/guards/roles.guard");
 const roles_decorator_1 = require("../../core/decorators/roles.decorator");
@@ -34,6 +35,24 @@ let OrdersController = class OrdersController {
     async getMyOrders(user, page, limit, status) {
         return this.ordersService.getUserOrders(user.id, parseInt(page || '1'), parseInt(limit || '20'), status);
     }
+    async getSellerOrders(user, page, limit, status) {
+        return this.ordersService.getSellerOrders(user.id, parseInt(page || '1'), parseInt(limit || '20'), status);
+    }
+    async getAllOrders(page, limit, status, shopId) {
+        return this.ordersService.getAllOrders(parseInt(page || '1'), parseInt(limit || '20'), status, shopId);
+    }
+    async trackOrder(orderNumber) {
+        return this.ordersService.trackOrderByNumber(orderNumber);
+    }
+    async updateDeliveryLocation(user, id, dto) {
+        return this.ordersService.updateDeliveryLocation(id, user.id, dto);
+    }
+    async updateOrderStatus(user, id, updateOrderStatusDto) {
+        return this.ordersService.updateOrderStatusBySeller(id, user.id, updateOrderStatusDto);
+    }
+    async adminUpdateOrderStatus(id, updateOrderStatusDto) {
+        return this.ordersService.adminUpdateOrderStatus(id, updateOrderStatusDto);
+    }
     async getOrderById(user, id) {
         return this.ordersService.getOrderById(id, user.id, user.role);
     }
@@ -42,21 +61,6 @@ let OrdersController = class OrdersController {
     }
     async verifyDeliveryOtp(user, id, otp) {
         return this.ordersService.verifyDeliveryOtp(id, otp, user);
-    }
-    async getSellerOrders(user, page, limit, status) {
-        return this.ordersService.getSellerOrders(user.id, parseInt(page || '1'), parseInt(limit || '20'), status);
-    }
-    async updateOrderStatus(user, id, updateOrderStatusDto) {
-        return this.ordersService.updateOrderStatusBySeller(id, user.id, updateOrderStatusDto);
-    }
-    async getAllOrders(page, limit, status, shopId) {
-        return this.ordersService.getAllOrders(parseInt(page || '1'), parseInt(limit || '20'), status, shopId);
-    }
-    async adminUpdateOrderStatus(id, updateOrderStatusDto) {
-        return this.ordersService.adminUpdateOrderStatus(id, updateOrderStatusDto);
-    }
-    async trackOrder(orderNumber) {
-        return this.ordersService.trackOrderByNumber(orderNumber);
     }
 };
 exports.OrdersController = OrdersController;
@@ -79,6 +83,65 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "getMyOrders", null);
+__decorate([
+    (0, common_1.Get)('seller/all'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getSellerOrders", null);
+__decorate([
+    (0, common_1.Get)('admin/all'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('shopId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getAllOrders", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('track/:orderNumber'),
+    __param(0, (0, common_1.Param)('orderNumber')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "trackOrder", null);
+__decorate([
+    (0, common_1.Put)('seller/:id/location'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, update_delivery_location_dto_1.UpdateDeliveryLocationDto]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "updateDeliveryLocation", null);
+__decorate([
+    (0, common_1.Put)('seller/:id/status'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, update_order_status_dto_1.UpdateOrderStatusDto]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "updateOrderStatus", null);
+__decorate([
+    (0, common_1.Put)('admin/:id/status'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_order_status_dto_1.UpdateOrderStatusDto]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "adminUpdateOrderStatus", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -107,55 +170,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "verifyDeliveryOtp", null);
-__decorate([
-    (0, common_1.Get)('seller/all'),
-    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Query)('page')),
-    __param(2, (0, common_1.Query)('limit')),
-    __param(3, (0, common_1.Query)('status')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String, String]),
-    __metadata("design:returntype", Promise)
-], OrdersController.prototype, "getSellerOrders", null);
-__decorate([
-    (0, common_1.Put)('seller/:id/status'),
-    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Param)('id')),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, update_order_status_dto_1.UpdateOrderStatusDto]),
-    __metadata("design:returntype", Promise)
-], OrdersController.prototype, "updateOrderStatus", null);
-__decorate([
-    (0, common_1.Get)('admin/all'),
-    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('status')),
-    __param(3, (0, common_1.Query)('shopId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String]),
-    __metadata("design:returntype", Promise)
-], OrdersController.prototype, "getAllOrders", null);
-__decorate([
-    (0, common_1.Put)('admin/:id/status'),
-    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_order_status_dto_1.UpdateOrderStatusDto]),
-    __metadata("design:returntype", Promise)
-], OrdersController.prototype, "adminUpdateOrderStatus", null);
-__decorate([
-    (0, public_decorator_1.Public)(),
-    (0, common_1.Get)('track/:orderNumber'),
-    __param(0, (0, common_1.Param)('orderNumber')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], OrdersController.prototype, "trackOrder", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

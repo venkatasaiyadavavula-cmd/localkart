@@ -3,13 +3,16 @@ import { JwtService } from '@nestjs/jwt';
 import { User, UserRole } from '../../core/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { WhatsappService } from '../notifications/whatsapp.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class AuthService {
     private readonly userRepository;
     private readonly jwtService;
     private readonly whatsappService;
+    private readonly notificationsService;
     private readonly logger;
-    constructor(userRepository: Repository<User>, jwtService: JwtService, whatsappService: WhatsappService);
+    constructor(userRepository: Repository<User>, jwtService: JwtService, whatsappService: WhatsappService, notificationsService: NotificationsService);
     private normalizePhone;
     register(registerDto: RegisterDto): Promise<{
         message: string;
@@ -48,6 +51,9 @@ export declare class AuthService {
         };
         accessToken: string;
         refreshToken: string;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
+        message: string;
     }>;
     logout(userId: string): Promise<{
         message: string;

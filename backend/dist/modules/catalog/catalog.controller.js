@@ -14,13 +14,16 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const catalog_service_1 = require("./catalog.service");
 const search_service_1 = require("./search.service");
+const bulk_upload_service_1 = require("./bulk-upload.service");
 const create_product_dto_1 = require("./dto/create-product.dto");
 const update_product_dto_1 = require("./dto/update-product.dto");
 const search_query_dto_1 = require("./dto/search-query.dto");
+const visual_search_dto_1 = require("./dto/visual-search.dto");
 const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../core/guards/roles.guard");
 const roles_decorator_1 = require("../../core/decorators/roles.decorator");
@@ -32,11 +35,13 @@ const daily_offer_entity_1 = require("../../core/entities/daily-offer.entity");
 let CatalogController = class CatalogController {
     catalogService;
     searchService;
+    bulkUploadService;
     productRepository;
     offerRepository;
-    constructor(catalogService, searchService, productRepository, offerRepository) {
+    constructor(catalogService, searchService, bulkUploadService, productRepository, offerRepository) {
         this.catalogService = catalogService;
         this.searchService = searchService;
+        this.bulkUploadService = bulkUploadService;
         this.productRepository = productRepository;
         this.offerRepository = offerRepository;
     }
@@ -46,6 +51,9 @@ let CatalogController = class CatalogController {
     async getProductBySlug(slug) {
         return this.catalogService.getProductBySlug(slug);
     }
+    async getSponsored(lat, lng) {
+        return this.searchService.getSponsoredProducts(lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
+    }
     async getCategories() {
         return this.catalogService.getCategories();
     }
@@ -54,6 +62,9 @@ let CatalogController = class CatalogController {
     }
     async search(q, lat, lng) {
         return this.searchService.searchProducts(q, lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
+    }
+    async visualSearch(dto) {
+        return this.searchService.visualSearch(dto.categoryType, dto.limit);
     }
     async getShopProducts(shopId, query) {
         return this.catalogService.getShopProducts(shopId, query);
@@ -98,6 +109,21 @@ let CatalogController = class CatalogController {
     async getSellerProducts(user, query) {
         return this.catalogService.getSellerProducts(user.id, query);
     }
+    async getSellerProductById(user, id) {
+        return this.catalogService.getSellerProductById(user.id, id);
+    }
+    async getSellerProductLimit(user) {
+        return this.catalogService.getSellerProductLimit(user.id);
+    }
+    async downloadBulkTemplate(res) {
+        const buffer = this.bulkUploadService.generateTemplate();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=localkart-products-template.xlsx');
+        res.send(buffer);
+    }
+    async bulkUpload(user, file) {
+        return this.bulkUploadService.processUpload(user.id, file);
+    }
     async approveProduct(id) {
         return this.catalogService.approveProduct(id);
     }
@@ -124,6 +150,15 @@ __decorate([
 ], CatalogController.prototype, "getProductBySlug", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('sponsored'),
+    __param(0, (0, common_1.Query)('lat')),
+    __param(1, (0, common_1.Query)('lng')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getSponsored", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('categories'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -147,6 +182,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "search", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('visual-search'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [visual_search_dto_1.VisualSearchDto]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "visualSearch", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('shop/:shopId/products'),
@@ -204,6 +248,41 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getSellerProducts", null);
 __decorate([
+    (0, common_1.Get)('seller/products/:id'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getSellerProductById", null);
+__decorate([
+    (0, common_1.Get)('seller/product-limit'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getSellerProductLimit", null);
+__decorate([
+    (0, common_1.Get)('seller/bulk-upload/template'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "downloadBulkTemplate", null);
+__decorate([
+    (0, common_1.Post)('seller/bulk-upload'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "bulkUpload", null);
+__decorate([
     (0, common_1.Put)('admin/products/:id/approve'),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
     __param(0, (0, common_1.Param)('id')),
@@ -223,10 +302,11 @@ __decorate([
 exports.CatalogController = CatalogController = __decorate([
     (0, common_1.Controller)('catalog'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    __param(2, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
-    __param(3, (0, typeorm_1.InjectRepository)(daily_offer_entity_1.DailyOffer)),
+    __param(3, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(4, (0, typeorm_1.InjectRepository)(daily_offer_entity_1.DailyOffer)),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService,
         search_service_1.SearchService,
+        bulk_upload_service_1.BulkUploadService,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], CatalogController);
