@@ -1,5 +1,7 @@
 // types/product.ts
 
+import type { ManualOverride, OperatingHours } from './shop-hours';
+
 export const PRODUCT_CATEGORY_VALUES = [
   'groceries',
   'fashion',
@@ -87,6 +89,11 @@ export interface Shop {
   reviewCount: number;
   openingTime?: string;
   closingTime?: string;
+  operatingHours?: OperatingHours;
+  manualOverride?: ManualOverride;
+  manualOverrideSetAt?: string | null;
+  isCurrentlyOpen?: boolean;
+  statusMessage?: string;
   deliveryCharge: number;
   freeDeliveryAbove: number;
   distance?: number;

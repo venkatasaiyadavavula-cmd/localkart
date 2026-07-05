@@ -49,6 +49,13 @@ export declare class CatalogController {
             totalPages: number;
         };
     }>;
+    getSellerProductById(user: any, id: string): Promise<Product>;
+    getSellerProductLimit(user: any): Promise<{
+        plan: import("../../core/entities/subscription.entity").SubscriptionPlan;
+        limit: number;
+        used: number;
+        remaining: number;
+    }>;
     approveProduct(id: string): Promise<Product>;
     rejectProduct(id: string, reason: string): Promise<Product>;
 }

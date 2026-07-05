@@ -20,7 +20,11 @@ const seller_service_1 = require("./seller.service");
 const subscription_service_1 = require("./subscription.service");
 const earnings_service_1 = require("./earnings.service");
 const ad_campaign_service_1 = require("./ad-campaign.service");
+const daily_offer_service_1 = require("./daily-offer.service");
+const daily_offer_dto_1 = require("./dto/daily-offer.dto");
 const shop_profile_dto_1 = require("./dto/shop-profile.dto");
+const shop_hours_dto_1 = require("./dto/shop-hours.dto");
+const shop_toggle_dto_1 = require("./dto/shop-toggle.dto");
 const subscription_plan_dto_1 = require("./dto/subscription-plan.dto");
 const ad_campaign_dto_1 = require("./dto/ad-campaign.dto");
 const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
@@ -33,11 +37,19 @@ let SellerController = class SellerController {
     subscriptionService;
     earningsService;
     adCampaignService;
-    constructor(sellerService, subscriptionService, earningsService, adCampaignService) {
+    dailyOfferService;
+    constructor(sellerService, subscriptionService, earningsService, adCampaignService, dailyOfferService) {
         this.sellerService = sellerService;
         this.subscriptionService = subscriptionService;
         this.earningsService = earningsService;
         this.adCampaignService = adCampaignService;
+        this.dailyOfferService = dailyOfferService;
+    }
+    async getShopBySlug(slug) {
+        return this.sellerService.getShopBySlug(slug);
+    }
+    async getShopById(id) {
+        return this.sellerService.getShopById(id);
     }
     async getMyShop(user) {
         return this.sellerService.getShopByOwner(user.id);
@@ -48,14 +60,22 @@ let SellerController = class SellerController {
     async updateShop(user, shopProfileDto) {
         return this.sellerService.updateShop(user.id, shopProfileDto);
     }
+    async updateShopHours(user, hoursDto) {
+        return this.sellerService.updateOperatingHours(user.id, hoursDto);
+    }
+    async toggleShop(user, toggleDto) {
+        return this.sellerService.setManualOverride(user.id, toggleDto);
+    }
     async uploadShopLogo(user, file) {
         return this.sellerService.uploadShopLogo(user.id, file);
     }
     async uploadShopBanner(user, file) {
         return this.sellerService.uploadShopBanner(user.id, file);
     }
-    async getDashboard(user) {
-        return this.sellerService.getDashboardStats(user.id);
+    async getDashboard(user, period = 'week') {
+        const stats = await this.sellerService.getDashboardStats(user.id);
+        const salesChart = await this.sellerService.getSalesChart(user.id, period);
+        return { ...stats, salesChart };
     }
     async getSalesChart(user, period = 'week') {
         return this.sellerService.getSalesChart(user.id, period);
@@ -74,6 +94,9 @@ let SellerController = class SellerController {
     }
     async getSubscriptionHistory(user) {
         return this.subscriptionService.getSubscriptionHistory(user.id);
+    }
+    async getWeeklyEarnings(user) {
+        return this.earningsService.getWeeklyEarnings(user.id);
     }
     async getEarnings(user, period) {
         return this.earningsService.getEarningsSummary(user.id, period);
@@ -102,8 +125,33 @@ let SellerController = class SellerController {
     async getAdStats(user, id) {
         return this.adCampaignService.getCampaignStats(user.id, id);
     }
+    async getDailyOffers(user) {
+        return this.dailyOfferService.getActiveOffers(user.id);
+    }
+    async createDailyOffer(user, dto) {
+        return this.dailyOfferService.createOffer(user.id, dto.productId, dto.offerPrice);
+    }
+    async deleteDailyOffer(user, id) {
+        return this.dailyOfferService.deleteOffer(user.id, id);
+    }
 };
 exports.SellerController = SellerController;
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('shop/slug/:slug'),
+    __param(0, (0, common_1.Param)('slug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "getShopBySlug", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('shop/id/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "getShopById", null);
 __decorate([
     (0, common_1.Get)('shop'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -128,6 +176,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "updateShop", null);
 __decorate([
+    (0, common_1.Put)('shop/hours'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, shop_hours_dto_1.UpdateShopHoursDto]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "updateShopHours", null);
+__decorate([
+    (0, common_1.Put)('shop/toggle'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, shop_toggle_dto_1.ShopToggleDto]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "toggleShop", null);
+__decorate([
     (0, common_1.Post)('shop/logo'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -148,8 +212,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)('dashboard'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('period')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "getDashboard", null);
 __decorate([
@@ -196,6 +261,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "getSubscriptionHistory", null);
+__decorate([
+    (0, common_1.Get)('earnings/weekly'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "getWeeklyEarnings", null);
 __decorate([
     (0, common_1.Get)('earnings'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -268,6 +340,29 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], SellerController.prototype, "getAdStats", null);
+__decorate([
+    (0, common_1.Get)('daily-offers'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "getDailyOffers", null);
+__decorate([
+    (0, common_1.Post)('daily-offers'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, daily_offer_dto_1.CreateDailyOfferDto]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "createDailyOffer", null);
+__decorate([
+    (0, common_1.Delete)('daily-offers/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SellerController.prototype, "deleteDailyOffer", null);
 exports.SellerController = SellerController = __decorate([
     (0, common_1.Controller)('seller'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
@@ -275,6 +370,7 @@ exports.SellerController = SellerController = __decorate([
     __metadata("design:paramtypes", [seller_service_1.SellerService,
         subscription_service_1.SubscriptionService,
         earnings_service_1.EarningsService,
-        ad_campaign_service_1.AdCampaignService])
+        ad_campaign_service_1.AdCampaignService,
+        daily_offer_service_1.DailyOfferService])
 ], SellerController);
 //# sourceMappingURL=seller.controller.js.map

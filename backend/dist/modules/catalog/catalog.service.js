@@ -24,6 +24,7 @@ const product_entity_1 = require("../../core/entities/product.entity");
 const category_entity_1 = require("../../core/entities/category.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
 const subscription_entity_1 = require("../../core/entities/subscription.entity");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 const PLAN_LIMITS = {
     [subscription_entity_1.SubscriptionPlan.STARTER]: 40,
     [subscription_entity_1.SubscriptionPlan.GROWTH]: 150,
@@ -66,7 +67,7 @@ let CatalogService = class CatalogService {
             take: limit,
         });
         return {
-            data: products,
+            data: (0, shop_hours_util_1.enrichProductsWithShopHours)(products),
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }
@@ -80,7 +81,7 @@ let CatalogService = class CatalogService {
         }
         product.viewCount += 1;
         await this.productRepository.save(product);
-        return product;
+        return (0, shop_hours_util_1.enrichProductWithShopHours)(product);
     }
     async getCategories() {
         const categories = await this.categoryRepository.find({
@@ -187,7 +188,56 @@ let CatalogService = class CatalogService {
         if (!shop) {
             throw new common_1.NotFoundException('Shop not found');
         }
-        return this.getProducts({ ...query, shopId: shop.id });
+        const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'DESC', } = query;
+        const skip = (page - 1) * limit;
+        const where = { shopId: shop.id };
+        if (query.search) {
+            where.name = (0, typeorm_2.ILike)(`%${query.search}%`);
+        }
+        const [products, total] = await this.productRepository.findAndCount({
+            where,
+            relations: ['shop', 'category'],
+            order: { [sortBy]: sortOrder },
+            skip,
+            take: limit,
+        });
+        return {
+            data: products,
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        };
+    }
+    async getSellerProductById(userId, productId) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId: userId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        const product = await this.productRepository.findOne({
+            where: { id: productId, shopId: shop.id },
+            relations: ['shop', 'category'],
+        });
+        if (!product) {
+            throw new common_1.NotFoundException('Product not found');
+        }
+        return product;
+    }
+    async getSellerProductLimit(userId) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId: userId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        const used = await this.productRepository.count({ where: { shopId: shop.id } });
+        const subscription = await this.subscriptionRepository.findOne({
+            where: { shopId: shop.id, status: subscription_entity_1.SubscriptionStatus.ACTIVE },
+            order: { endDate: 'DESC' },
+        });
+        const plan = subscription?.plan ?? subscription_entity_1.SubscriptionPlan.STARTER;
+        const limit = PLAN_LIMITS[plan];
+        return {
+            plan,
+            limit,
+            used,
+            remaining: Math.max(0, limit - used),
+        };
     }
     async approveProduct(productId) {
         const product = await this.productRepository.findOne({

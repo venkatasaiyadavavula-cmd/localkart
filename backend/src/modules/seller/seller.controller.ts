@@ -22,6 +22,8 @@ import { AdCampaignService } from './ad-campaign.service';
 import { DailyOfferService } from './daily-offer.service';
 import { CreateDailyOfferDto } from './dto/daily-offer.dto';
 import { ShopProfileDto } from './dto/shop-profile.dto';
+import { UpdateShopHoursDto } from './dto/shop-hours.dto';
+import { ShopToggleDto } from './dto/shop-toggle.dto';
 import { SubscribeDto } from './dto/subscription-plan.dto';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
@@ -49,6 +51,12 @@ export class SellerController {
     return this.sellerService.getShopBySlug(slug);
   }
 
+  @Public()
+  @Get('shop/id/:id')
+  async getShopById(@Param('id') id: string) {
+    return this.sellerService.getShopById(id);
+  }
+
   @Get('shop')
   async getMyShop(@CurrentUser() user: any) {
     return this.sellerService.getShopByOwner(user.id);
@@ -62,6 +70,16 @@ export class SellerController {
   @Put('shop')
   async updateShop(@CurrentUser() user: any, @Body() shopProfileDto: ShopProfileDto) {
     return this.sellerService.updateShop(user.id, shopProfileDto);
+  }
+
+  @Put('shop/hours')
+  async updateShopHours(@CurrentUser() user: any, @Body() hoursDto: UpdateShopHoursDto) {
+    return this.sellerService.updateOperatingHours(user.id, hoursDto);
+  }
+
+  @Put('shop/toggle')
+  async toggleShop(@CurrentUser() user: any, @Body() toggleDto: ShopToggleDto) {
+    return this.sellerService.setManualOverride(user.id, toggleDto);
   }
 
   @Post('shop/logo')

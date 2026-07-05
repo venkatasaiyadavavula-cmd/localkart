@@ -98,6 +98,12 @@ let CatalogController = class CatalogController {
     async getSellerProducts(user, query) {
         return this.catalogService.getSellerProducts(user.id, query);
     }
+    async getSellerProductById(user, id) {
+        return this.catalogService.getSellerProductById(user.id, id);
+    }
+    async getSellerProductLimit(user) {
+        return this.catalogService.getSellerProductLimit(user.id);
+    }
     async approveProduct(id) {
         return this.catalogService.approveProduct(id);
     }
@@ -203,6 +209,23 @@ __decorate([
     __metadata("design:paramtypes", [Object, search_query_dto_1.SearchQueryDto]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getSellerProducts", null);
+__decorate([
+    (0, common_1.Get)('seller/products/:id'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getSellerProductById", null);
+__decorate([
+    (0, common_1.Get)('seller/product-limit'),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getSellerProductLimit", null);
 __decorate([
     (0, common_1.Put)('admin/products/:id/approve'),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),

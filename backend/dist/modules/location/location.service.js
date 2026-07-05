@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const shop_entity_1 = require("../../core/entities/shop.entity");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 let LocationService = class LocationService {
     shopRepository;
     constructor(shopRepository) {
@@ -70,7 +71,7 @@ let LocationService = class LocationService {
             .getRawAndEntities();
         const total = await queryBuilder.getCount();
         console.log('RAW DISTANCES:', raw);
-        const shopsWithDistance = entities.map((shop, index) => ({
+        const shopsWithDistance = entities.map((shop, index) => (0, shop_hours_util_1.enrichShopWithHoursStatus)({
             ...shop,
             distance: raw[index]?.distance
                 ? Math.round(Number(raw[index].distance))
@@ -110,7 +111,7 @@ let LocationService = class LocationService {
         queryBuilder.orderBy('distance', 'ASC');
         queryBuilder.setParameters({ longitude, latitude, radius });
         const shops = await queryBuilder.limit(20).getMany();
-        return shops.map((shop) => ({
+        return shops.map((shop) => (0, shop_hours_util_1.enrichShopWithHoursStatus)({
             ...shop,
             distance: shop.distance ? Math.round(shop.distance) : null,
         }));

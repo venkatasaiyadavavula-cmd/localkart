@@ -27,6 +27,7 @@ const order_state_machine_1 = require("./workflows/order-state-machine");
 const cart_service_1 = require("../cart/cart.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const helpers_1 = require("../../core/utils/helpers");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 let OrdersService = OrdersService_1 = class OrdersService {
     orderRepository;
     orderItemRepository;
@@ -51,30 +52,6 @@ let OrdersService = OrdersService_1 = class OrdersService {
         this.stateMachine = stateMachine;
         this.notificationsService = notificationsService;
     }
-    isShopOpen(shop) {
-        if (!shop.openingTime || !shop.closingTime) {
-            return true;
-        }
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-        const [openHour, openMinute] = shop.openingTime.split(':').map(Number);
-        const [closeHour, closeMinute] = shop.closingTime.split(':').map(Number);
-        const openTime = openHour * 60 + openMinute;
-        const closeTime = closeHour * 60 + closeMinute;
-        return currentTime >= openTime && currentTime <= closeTime;
-    }
-    getNextOpeningTime(shop) {
-        if (!shop.openingTime)
-            return 'tomorrow morning';
-        const now = new Date();
-        const [openHour, openMinute] = shop.openingTime.split(':').map(Number);
-        const nextOpen = new Date(now);
-        if (now.getHours() > openHour || (now.getHours() === openHour && now.getMinutes() >= openMinute)) {
-            nextOpen.setDate(nextOpen.getDate() + 1);
-        }
-        nextOpen.setHours(openHour, openMinute, 0, 0);
-        return nextOpen.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    }
     async createOrder(userId, createOrderDto) {
         const { paymentMethod = order_entity_1.PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
         const { cart, products } = await this.cartService.validateCartForCheckout(userId);
@@ -88,8 +65,11 @@ let OrdersService = OrdersService_1 = class OrdersService {
         if (!shop) {
             throw new common_1.BadRequestException('Shop is not available');
         }
-        const isOpen = this.isShopOpen(shop);
-        const nextOpeningTime = this.getNextOpeningTime(shop);
+        const isOpen = (0, shop_hours_util_1.isShopCurrentlyOpen)(shop);
+        const hoursStatus = (0, shop_hours_util_1.getShopHoursStatus)(shop);
+        if (!isOpen) {
+            throw new common_1.BadRequestException('Shop is currently closed');
+        }
         const user = await this.userRepository.findOne({ where: { id: userId } });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
@@ -165,7 +145,8 @@ let OrdersService = OrdersService_1 = class OrdersService {
             return {
                 ...fullOrder,
                 isShopOpen: isOpen,
-                shopClosedMessage: isOpen ? null : `Shop is currently closed. Your order will be processed after ${nextOpeningTime}.`,
+                shopClosedMessage: null,
+                shopStatusMessage: hoursStatus.statusMessage,
             };
         }
         catch (error) {

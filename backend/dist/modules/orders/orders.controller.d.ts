@@ -5,8 +5,9 @@ export declare class OrdersController {
     private readonly ordersService;
     constructor(ordersService: OrdersService);
     createOrder(user: any, createOrderDto: CreateOrderDto): Promise<{
-        isShopOpen: boolean;
-        shopClosedMessage: string;
+        isShopOpen: true;
+        shopClosedMessage: any;
+        shopStatusMessage: string;
         id: string;
         orderNumber: string;
         customerId: string;

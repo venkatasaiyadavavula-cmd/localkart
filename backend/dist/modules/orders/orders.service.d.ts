@@ -23,11 +23,10 @@ export declare class OrdersService {
     private readonly notificationsService;
     private readonly logger;
     constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, productRepository: Repository<Product>, shopRepository: Repository<Shop>, userRepository: Repository<User>, transactionRepository: Repository<Transaction>, cartService: CartService, dataSource: DataSource, stateMachine: OrderStateMachine, notificationsService: NotificationsService);
-    private isShopOpen;
-    private getNextOpeningTime;
     createOrder(userId: string, createOrderDto: CreateOrderDto): Promise<{
-        isShopOpen: boolean;
-        shopClosedMessage: string;
+        isShopOpen: true;
+        shopClosedMessage: any;
+        shopStatusMessage: string;
         id: string;
         orderNumber: string;
         customerId: string;

@@ -22,6 +22,8 @@ import { useCartStore } from '@/store/cart-store';
 import { formatPrice, formatDistance } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
+import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -42,6 +44,10 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     if (!product) return;
+    if (product.shop?.isCurrentlyOpen === false) {
+      toast.error('Shop is currently closed');
+      return;
+    }
     try {
       await addItem(product.id, quantity);
       setAddedToCart(true);
@@ -54,6 +60,10 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = async () => {
     if (!product) return;
+    if (product.shop?.isCurrentlyOpen === false) {
+      toast.error('Shop is currently closed');
+      return;
+    }
     try {
       await addItem(product.id, quantity);
       router.push('/checkout');
@@ -109,6 +119,9 @@ export default function ProductDetailPage() {
 
   const savings = product.mrp && product.mrp > product.price
     ? product.mrp - product.price : 0;
+
+  const shopClosed = product.shop?.isCurrentlyOpen === false;
+  const canOrder = !shopClosed && product.stock > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -193,6 +206,9 @@ export default function ProductDetailPage() {
             <Link href={`/shop/${product.shop?.slug}`} className="inline-flex items-center gap-2 text-xs text-primary font-semibold bg-primary/10 px-3 py-1.5 rounded-full mb-3 hover:bg-primary/20 transition-colors">
               <Store className="h-3.5 w-3.5" />
               {product.shop?.name}
+              {product.shop?.isCurrentlyOpen !== undefined && (
+                <ShopOpenBadge isOpen={product.shop.isCurrentlyOpen} />
+              )}
               {product.shop?.distance && (
                 <span className="flex items-center gap-0.5 text-gray-500">
                   <MapPin className="h-3 w-3" /> {formatDistance(product.shop.distance)}
@@ -231,6 +247,15 @@ export default function ProductDetailPage() {
               )}
             </div>
 
+            {shopClosed && (
+              <div className="mb-4">
+                <ShopStatusBanner
+                  isCurrentlyOpen={false}
+                  statusMessage={product.shop?.statusMessage || 'This shop is not accepting orders right now.'}
+                />
+              </div>
+            )}
+
             <div className="mb-5">
               <p className="text-xs font-semibold text-gray-600 mb-2">Quantity</p>
               <div className="flex items-center gap-3">
@@ -248,11 +273,17 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="flex gap-3 mb-5">
-              <Button size="lg" variant="outline" className="flex-1 border-primary text-primary hover:bg-primary/5 font-bold" onClick={handleAddToCart} disabled={cartLoading || product.stock === 0}>
-                {addedToCart ? <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Added!</span> : <span className="flex items-center gap-2"><ShoppingBag className="h-4 w-4" /> Add to Cart</span>}
+              <Button size="lg" variant="outline" className="flex-1 border-primary text-primary hover:bg-primary/5 font-bold" onClick={handleAddToCart} disabled={cartLoading || !canOrder}>
+                {shopClosed ? (
+                  <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> Shop Closed</span>
+                ) : addedToCart ? (
+                  <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Added!</span>
+                ) : (
+                  <span className="flex items-center gap-2"><ShoppingBag className="h-4 w-4" /> Add to Cart</span>
+                )}
               </Button>
-              <Button size="lg" className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={cartLoading || product.stock === 0}>
-                Buy Now
+              <Button size="lg" className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={cartLoading || !canOrder}>
+                {shopClosed ? 'Shop Closed' : 'Buy Now'}
               </Button>
             </div>
 
@@ -315,11 +346,11 @@ export default function ProductDetailPage() {
 
       {/* Mobile sticky bottom bar */}
       <div className="lg:hidden fixed bottom-16 left-0 right-0 z-30 bg-white border-t px-4 py-3 flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <Button variant="outline" className="flex-1 border-primary text-primary font-bold" onClick={handleAddToCart} disabled={cartLoading || product.stock === 0}>
-          {addedToCart ? '✓ Added!' : 'Add to Cart'}
+        <Button variant="outline" className="flex-1 border-primary text-primary font-bold" onClick={handleAddToCart} disabled={cartLoading || !canOrder}>
+          {shopClosed ? 'Shop Closed' : addedToCart ? '✓ Added!' : 'Add to Cart'}
         </Button>
-        <Button className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={cartLoading || product.stock === 0}>
-          Buy Now
+        <Button className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold" onClick={handleBuyNow} disabled={cartLoading || !canOrder}>
+          {shopClosed ? 'Closed' : 'Buy Now'}
         </Button>
       </div>
 

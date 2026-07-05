@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Shop = exports.ShopStatus = void 0;
+exports.Shop = exports.ManualOverride = exports.ShopStatus = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("./user.entity");
 const product_entity_1 = require("./product.entity");
@@ -22,6 +22,12 @@ var ShopStatus;
     ShopStatus["REJECTED"] = "rejected";
     ShopStatus["SUSPENDED"] = "suspended";
 })(ShopStatus || (exports.ShopStatus = ShopStatus = {}));
+var ManualOverride;
+(function (ManualOverride) {
+    ManualOverride["NONE"] = "none";
+    ManualOverride["FORCE_OPEN"] = "force_open";
+    ManualOverride["FORCE_CLOSED"] = "force_closed";
+})(ManualOverride || (exports.ManualOverride = ManualOverride = {}));
 let Shop = class Shop {
     id;
     name;
@@ -47,6 +53,9 @@ let Shop = class Shop {
     reviewCount;
     openingTime;
     closingTime;
+    operatingHours;
+    manualOverride;
+    manualOverrideSetAt;
     deliveryPincodes;
     deliveryCharge;
     freeDeliveryAbove;
@@ -164,6 +173,22 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'time', nullable: true }),
     __metadata("design:type", String)
 ], Shop.prototype, "closingTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Object)
+], Shop.prototype, "operatingHours", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: ManualOverride,
+        default: ManualOverride.FORCE_CLOSED,
+    }),
+    __metadata("design:type", String)
+], Shop.prototype, "manualOverride", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], Shop.prototype, "manualOverrideSetAt", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
     __metadata("design:type", Array)

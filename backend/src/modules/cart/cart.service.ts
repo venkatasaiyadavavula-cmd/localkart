@@ -6,6 +6,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { AddToCartDto, UpdateCartItemDto, CartItem } from './dto/cart-item.dto';
+import { isShopCurrentlyOpen } from '../../core/utils/shop-hours.util';
 
 @Injectable()
 export class CartService {
@@ -56,6 +57,10 @@ export class CartService {
     // Validate shop is approved
     if (product.shop.status !== ShopStatus.APPROVED) {
       throw new BadRequestException('Shop is not currently accepting orders');
+    }
+
+    if (!isShopCurrentlyOpen(product.shop)) {
+      throw new BadRequestException('Shop is currently closed');
     }
 
     const cartKey = this.getCartKey(userId);
@@ -173,6 +178,9 @@ export class CartService {
       }
       if (product.shop.status !== ShopStatus.APPROVED) {
         throw new BadRequestException(`Shop for ${item.name} is not accepting orders`);
+      }
+      if (!isShopCurrentlyOpen(product.shop)) {
+        throw new BadRequestException('Shop is currently closed');
       }
     }
 

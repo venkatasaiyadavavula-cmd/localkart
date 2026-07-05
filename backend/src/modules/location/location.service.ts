@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { NearbyShopsDto } from './dto/nearby-shops.dto';
+import { enrichShopWithHoursStatus } from '../../core/utils/shop-hours.util';
 
 @Injectable()
 export class LocationService {
@@ -96,12 +97,13 @@ export class LocationService {
   console.log('RAW DISTANCES:', raw);
 
   const shopsWithDistance = entities.map(
-    (shop: any, index) => ({
-      ...shop,
-      distance: raw[index]?.distance
-        ? Math.round(Number(raw[index].distance))
-        : null,
-    }),
+    (shop: any, index) =>
+      enrichShopWithHoursStatus({
+        ...shop,
+        distance: raw[index]?.distance
+          ? Math.round(Number(raw[index].distance))
+          : null,
+      }),
   );
 
   return {
@@ -159,10 +161,12 @@ export class LocationService {
 
     const shops = await queryBuilder.limit(20).getMany();
 
-    return shops.map((shop: any) => ({
-      ...shop,
-      distance: shop.distance ? Math.round(shop.distance) : null,
-    }));
+    return shops.map((shop: any) =>
+      enrichShopWithHoursStatus({
+        ...shop,
+        distance: shop.distance ? Math.round(shop.distance) : null,
+      }),
+    );
   }
 
   /**

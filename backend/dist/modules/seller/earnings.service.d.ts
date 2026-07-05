@@ -23,5 +23,22 @@ export declare class EarningsService {
             totalPages: number;
         };
     }>;
+    getWeeklyEarnings(ownerId: string): Promise<{
+        weeks: {
+            weekLabel: string;
+            orderCount: number;
+            gross: number;
+            commission: number;
+            net: number;
+        }[];
+        currentWeek: {
+            weekLabel: string;
+            orderCount: number;
+            gross: number;
+            commission: number;
+            net: number;
+        };
+        growth: number;
+    }>;
     getPayouts(ownerId: string): Promise<Transaction[]>;
 }

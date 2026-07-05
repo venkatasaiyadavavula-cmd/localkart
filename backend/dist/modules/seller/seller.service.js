@@ -26,6 +26,7 @@ const user_entity_1 = require("../../core/entities/user.entity");
 const product_entity_1 = require("../../core/entities/product.entity");
 const order_entity_1 = require("../../core/entities/order.entity");
 const storage_config_1 = require("../../config/storage.config");
+const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 let SellerService = SellerService_1 = class SellerService {
     shopRepository;
     userRepository;
@@ -47,7 +48,25 @@ let SellerService = SellerService_1 = class SellerService {
             throw new common_1.NotFoundException('Shop not found. Please create your shop first.');
         }
         delete shop.owner.password;
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
+    }
+    async getShopBySlug(slug) {
+        const shop = await this.shopRepository.findOne({
+            where: { slug, status: shop_entity_1.ShopStatus.APPROVED },
+        });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
+    }
+    async getShopById(id) {
+        const shop = await this.shopRepository.findOne({
+            where: { id, status: shop_entity_1.ShopStatus.APPROVED },
+        });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async createShop(ownerId, shopProfileDto) {
         const existingShop = await this.shopRepository.findOne({
@@ -70,6 +89,9 @@ let SellerService = SellerService_1 = class SellerService {
             slug,
             ownerId,
             status: shop_entity_1.ShopStatus.PENDING,
+            operatingHours: (0, shop_hours_util_1.createDefaultOperatingHours)(),
+            manualOverride: shop_entity_1.ManualOverride.FORCE_CLOSED,
+            manualOverrideSetAt: new Date(),
             location: `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)`,
         });
         await this.shopRepository.save(shop);
@@ -77,7 +99,7 @@ let SellerService = SellerService_1 = class SellerService {
             user.role = 'seller';
             await this.userRepository.save(user);
         }
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async updateShop(ownerId, shopProfileDto) {
         const shop = await this.shopRepository.findOne({ where: { ownerId } });
@@ -93,7 +115,29 @@ let SellerService = SellerService_1 = class SellerService {
         Object.assign(shop, shopProfileDto);
         shop.status = shop_entity_1.ShopStatus.PENDING;
         await this.shopRepository.save(shop);
-        return shop;
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
+    }
+    async updateOperatingHours(ownerId, hoursDto) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        shop.operatingHours = hoursDto;
+        shop.openingTime = hoursDto.monday.open;
+        shop.closingTime = hoursDto.monday.close;
+        await this.shopRepository.save(shop);
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
+    }
+    async setManualOverride(ownerId, toggleDto) {
+        const shop = await this.shopRepository.findOne({ where: { ownerId } });
+        if (!shop) {
+            throw new common_1.NotFoundException('Shop not found');
+        }
+        shop.manualOverride = toggleDto.manualOverride;
+        shop.manualOverrideSetAt =
+            toggleDto.manualOverride === shop_entity_1.ManualOverride.NONE ? null : new Date();
+        await this.shopRepository.save(shop);
+        return (0, shop_hours_util_1.enrichShopWithHoursStatus)(shop);
     }
     async uploadShopLogo(ownerId, file) {
         const shop = await this.getShopByOwner(ownerId);
@@ -116,43 +160,67 @@ let SellerService = SellerService_1 = class SellerService {
         const totalProducts = await this.productRepository.count({
             where: { shopId: shop.id },
         });
+        const activeProducts = await this.productRepository.count({
+            where: { shopId: shop.id, status: product_entity_1.ProductStatus.APPROVED },
+        });
+        const lowStockProducts = await this.productRepository.count({
+            where: { shopId: shop.id, stock: (0, typeorm_2.Between)(1, 4) },
+        });
         const totalOrders = await this.orderRepository.count({
             where: { shopId: shop.id },
         });
         const pendingOrders = await this.orderRepository.count({
             where: { shopId: shop.id, status: order_entity_1.OrderStatus.CONFIRMED },
         });
+        const productsSold = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.items', 'item')
+            .select('COALESCE(SUM(item.quantity), 0)', 'total')
+            .where('order.shopId = :shopId', { shopId: shop.id })
+            .andWhere('order.status = :status', { status: order_entity_1.OrderStatus.DELIVERED })
+            .getRawOne();
         const totalRevenue = await this.orderRepository
             .createQueryBuilder('order')
             .select('SUM(order.totalAmount)', 'total')
             .where('order.shopId = :shopId', { shopId: shop.id })
             .andWhere('order.status = :status', { status: order_entity_1.OrderStatus.DELIVERED })
             .getRawOne();
-        const todayOrders = await this.orderRepository
-            .createQueryBuilder('order')
-            .where('order.shopId = :shopId', { shopId: shop.id })
-            .andWhere('DATE(order.createdAt) = CURRENT_DATE')
-            .getCount();
         const recentOrders = await this.orderRepository.find({
             where: { shopId: shop.id },
             relations: ['customer'],
             order: { createdAt: 'DESC' },
             take: 5,
         });
+        const topProducts = await this.productRepository.find({
+            where: { shopId: shop.id, status: product_entity_1.ProductStatus.APPROVED },
+            order: { orderCount: 'DESC' },
+            take: 5,
+        });
         return {
+            shopName: shop.name,
+            isCurrentlyOpen: shop.isCurrentlyOpen,
+            statusMessage: shop.statusMessage,
+            manualOverride: shop.manualOverride,
             totalProducts,
+            activeProducts,
+            lowStockProducts,
             totalOrders,
             pendingOrders,
-            totalRevenue: totalRevenue?.total || 0,
-            todayOrders,
-            recentOrders: recentOrders.map(o => ({
+            productsSold: Number(productsSold?.total || 0),
+            totalRevenue: Number(totalRevenue?.total || 0),
+            revenueChange: 0,
+            ordersChange: 0,
+            productsSoldChange: 0,
+            activeProductsChange: 0,
+            recentOrders: recentOrders.map((o) => ({
                 id: o.id,
                 orderNumber: o.orderNumber,
                 status: o.status,
                 totalAmount: o.totalAmount,
-                customerName: o.customer.name,
+                customer: { name: o.customer?.name },
                 createdAt: o.createdAt,
             })),
+            topProducts,
         };
     }
     async getSalesChart(ownerId, period) {
@@ -187,7 +255,11 @@ let SellerService = SellerService_1 = class SellerService {
             .groupBy('date')
             .orderBy('date', 'ASC')
             .getRawMany();
-        return sales;
+        return sales.map((row) => ({
+            date: row.date,
+            sales: Number(row.sales || 0),
+            orders: Number(row.orders || 0),
+        }));
     }
 };
 exports.SellerService = SellerService;

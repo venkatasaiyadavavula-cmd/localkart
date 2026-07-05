@@ -110,8 +110,8 @@ export default function CartPage() {
       {shopDetails && (
         <div className="mt-4">
           <ShopStatusBanner
-            openingTime={shopDetails.openingTime}
-            closingTime={shopDetails.closingTime}
+            isCurrentlyOpen={shopDetails.isCurrentlyOpen}
+            statusMessage={shopDetails.statusMessage}
           />
         </div>
       )}

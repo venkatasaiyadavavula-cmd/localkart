@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
+import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { useShop } from '@/hooks/use-shop';
 import { useProducts } from '@/hooks/use-products';
 import { formatDistance } from '@/lib/utils';
@@ -89,6 +90,7 @@ export default function ShopPage() {
                       <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">
                         {shop.name}
                       </h1>
+                      <ShopOpenBadge isOpen={!!shop.isCurrentlyOpen} size="md" />
                       <Badge variant="outline" className="capitalize">
                         {shop.status}
                       </Badge>
@@ -115,8 +117,8 @@ export default function ShopPage() {
                 {/* Shop Status Banner */}
                 <div className="mt-4">
                   <ShopStatusBanner
-                    openingTime={shop.openingTime}
-                    closingTime={shop.closingTime}
+                    isCurrentlyOpen={shop.isCurrentlyOpen}
+                    statusMessage={shop.statusMessage}
                   />
                 </div>
 
