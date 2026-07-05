@@ -21,6 +21,7 @@ import { Repository, MoreThan } from 'typeorm';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
 import { BulkUploadService } from './bulk-upload.service';
+import { FeaturedVideoService } from '../seller/featured-video.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
@@ -45,6 +46,7 @@ export class CatalogController {
     private productRepository: Repository<Product>,
     @InjectRepository(DailyOffer)
     private offerRepository: Repository<DailyOffer>,
+    private readonly featuredVideoService: FeaturedVideoService,
   ) {}
 
   // ==================== PUBLIC ENDPOINTS ====================
@@ -145,6 +147,15 @@ export class CatalogController {
     }
 
     return { data: products };
+  }
+
+  @Public()
+  @Get('featured-videos')
+  async getFeaturedVideos(@Query('limit') limit?: string) {
+    const videos = await this.featuredVideoService.getActiveFeaturedVideos(
+      limit ? parseInt(limit, 10) : 12,
+    );
+    return { data: videos };
   }
 
   // ==================== SELLER ENDPOINTS ====================

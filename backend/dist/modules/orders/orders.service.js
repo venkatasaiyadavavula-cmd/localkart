@@ -27,6 +27,7 @@ const order_state_machine_1 = require("./workflows/order-state-machine");
 const tracking_gateway_1 = require("./tracking.gateway");
 const cart_service_1 = require("../cart/cart.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const location_service_1 = require("../location/location.service");
 const helpers_1 = require("../../core/utils/helpers");
 const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
 let OrdersService = OrdersService_1 = class OrdersService {
@@ -41,8 +42,9 @@ let OrdersService = OrdersService_1 = class OrdersService {
     stateMachine;
     notificationsService;
     trackingGateway;
+    locationService;
     logger = new common_1.Logger(OrdersService_1.name);
-    constructor(orderRepository, orderItemRepository, productRepository, shopRepository, userRepository, transactionRepository, cartService, dataSource, stateMachine, notificationsService, trackingGateway) {
+    constructor(orderRepository, orderItemRepository, productRepository, shopRepository, userRepository, transactionRepository, cartService, dataSource, stateMachine, notificationsService, trackingGateway, locationService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
@@ -54,6 +56,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
         this.stateMachine = stateMachine;
         this.notificationsService = notificationsService;
         this.trackingGateway = trackingGateway;
+        this.locationService = locationService;
     }
     formatOrderResponse(order) {
         if (!order)
@@ -91,7 +94,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
             throw new common_1.NotFoundException('User not found');
         }
         const subtotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const deliveryCharge = subtotal >= shop.freeDeliveryAbove ? 0 : shop.deliveryCharge;
+        const deliveryCharge = this.locationService.resolveDeliveryCharge(shop, shippingAddress?.latitude, shippingAddress?.longitude, subtotal);
         const totalAmount = subtotal + deliveryCharge;
         const commissionRate = this.calculateCommissionRate(products);
         const commissionAmount = (subtotal * commissionRate) / 100;
@@ -539,6 +542,7 @@ exports.OrdersService = OrdersService = OrdersService_1 = __decorate([
         typeorm_2.DataSource,
         order_state_machine_1.OrderStateMachine,
         notifications_service_1.NotificationsService,
-        tracking_gateway_1.TrackingGateway])
+        tracking_gateway_1.TrackingGateway,
+        location_service_1.LocationService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

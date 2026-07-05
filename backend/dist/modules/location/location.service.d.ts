@@ -21,5 +21,7 @@ export declare class LocationService {
         serviceable: boolean;
         shopsCount: number;
         maxDistance?: number;
+        deliveryCharge?: number;
     }>;
+    resolveDeliveryCharge(shop: Pick<Shop, 'latitude' | 'longitude' | 'deliveryCharge' | 'freeDeliveryAbove'>, customerLat?: number, customerLng?: number, subtotal?: number): number;
 }

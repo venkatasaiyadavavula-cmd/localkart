@@ -5,7 +5,7 @@ import {
   Search, MapPin, ChevronRight,
   Zap, Banknote, RefreshCw, ArrowRight,
   TrendingUp, Store, Sparkles, Star,
-  Clock, Play,
+  Play,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocationStore } from '@/lib/store/location-store';
@@ -15,6 +15,7 @@ import { NearbyShopsSection } from '@/components/home/nearby-shops-section';
 import { CategoriesSection } from '@/components/home/categories-section';
 import { TrendingProductsSection } from '@/components/home/trending-products-section';
 import { TodayOffersSection } from '@/components/home/today-offers-section';
+import { VideoPreviewSection } from '@/components/home/video-preview-section';
 import { HowItWorksSection } from '@/components/home/how-it-works-section';
 import { FounderSection } from '@/components/home/founder-section';
 import { LocationDialog } from '@/components/location/location-dialog';
@@ -158,6 +159,7 @@ export default function HomePage() {
         </form>
       </header>
 
+
       <div className="overflow-hidden py-2 border-b border-white/60" style={{ background: 'linear-gradient(90deg,#EEF0FE,#F5F0FF,#EEF0FE)' }}>
         <div className="flex gap-8 animate-ticker whitespace-nowrap">
           {[...ticker, ...ticker].map((item, i) => (
@@ -247,6 +249,8 @@ export default function HomePage() {
           <NearbyShopsSection latitude={savedLocation.latitude} longitude={savedLocation.longitude} />
         </section>
       )}
+
+      <VideoPreviewSection />
 
       <div className="px-4 mt-3">
         <Link href="/videos">

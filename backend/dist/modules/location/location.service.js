@@ -18,6 +18,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const shop_entity_1 = require("../../core/entities/shop.entity");
 const shop_hours_util_1 = require("../../core/utils/shop-hours.util");
+const delivery_pricing_1 = require("./delivery-pricing");
 let LocationService = class LocationService {
     shopRepository;
     constructor(shopRepository) {
@@ -147,7 +148,7 @@ let LocationService = class LocationService {
             .where('id = :id', { id: shopId })
             .execute();
     }
-    async checkServiceability(lat, lng, radius = 20) {
+    async checkServiceability(lat, lng, radius = delivery_pricing_1.MAX_DELIVERY_RADIUS_KM) {
         if (!lat || !lng) {
             throw new common_1.BadRequestException('Latitude and longitude are required');
         }
@@ -167,12 +168,28 @@ let LocationService = class LocationService {
             .getRawOne();
         const shopsCount = parseInt(result.count, 10);
         const minDistanceMeters = result.minDistance ? parseFloat(result.minDistance) : null;
-        const maxDistanceKm = minDistanceMeters ? Math.round(minDistanceMeters / 1000) : undefined;
+        const maxDistanceKm = minDistanceMeters ? Math.round((minDistanceMeters / 1000) * 10) / 10 : undefined;
+        const deliveryCharge = maxDistanceKm !== undefined ? (0, delivery_pricing_1.calculateDeliveryCharge)(maxDistanceKm) : undefined;
         return {
-            serviceable: shopsCount > 0,
+            serviceable: shopsCount > 0 && (deliveryCharge === undefined || deliveryCharge >= 0),
             shopsCount,
             maxDistance: maxDistanceKm,
+            deliveryCharge: deliveryCharge !== undefined && deliveryCharge >= 0 ? deliveryCharge : undefined,
         };
+    }
+    resolveDeliveryCharge(shop, customerLat, customerLng, subtotal) {
+        if (subtotal !== undefined && shop.freeDeliveryAbove > 0 && subtotal >= shop.freeDeliveryAbove) {
+            return 0;
+        }
+        if (customerLat && customerLng && shop.latitude && shop.longitude) {
+            const distanceKm = (0, delivery_pricing_1.haversineDistanceKm)(shop.latitude, shop.longitude, customerLat, customerLng);
+            const charge = (0, delivery_pricing_1.calculateDeliveryCharge)(distanceKm);
+            if (charge < 0) {
+                throw new common_1.BadRequestException(`Delivery not available beyond ${delivery_pricing_1.MAX_DELIVERY_RADIUS_KM} km from the shop`);
+            }
+            return charge;
+        }
+        return shop.deliveryCharge ?? 0;
     }
 };
 exports.LocationService = LocationService;

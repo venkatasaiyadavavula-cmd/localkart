@@ -19,5 +19,6 @@ export declare class LocationController {
         serviceable: boolean;
         shopsCount: number;
         maxDistance?: number;
+        deliveryCharge?: number;
     }>;
 }

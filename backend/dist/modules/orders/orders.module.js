@@ -21,6 +21,7 @@ const user_entity_1 = require("../../core/entities/user.entity");
 const transaction_entity_1 = require("../../core/entities/transaction.entity");
 const cart_module_1 = require("../cart/cart.module");
 const notifications_module_1 = require("../notifications/notifications.module");
+const location_module_1 = require("../location/location.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -30,6 +31,7 @@ exports.OrdersModule = OrdersModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, product_entity_1.Product, shop_entity_1.Shop, user_entity_1.User, transaction_entity_1.Transaction]),
             cart_module_1.CartModule,
             notifications_module_1.NotificationsModule,
+            location_module_1.LocationModule,
         ],
         controllers: [orders_controller_1.OrdersController],
         providers: [orders_service_1.OrdersService, tracking_gateway_1.TrackingGateway, order_state_machine_1.OrderStateMachine],

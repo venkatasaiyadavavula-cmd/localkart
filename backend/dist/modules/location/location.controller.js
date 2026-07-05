@@ -18,6 +18,7 @@ const location_service_1 = require("./location.service");
 const nearby_shops_dto_1 = require("./dto/nearby-shops.dto");
 const jwt_auth_guard_1 = require("../../core/guards/jwt-auth.guard");
 const public_decorator_1 = require("../../core/decorators/public.decorator");
+const delivery_pricing_1 = require("./delivery-pricing");
 let LocationController = class LocationController {
     locationService;
     constructor(locationService) {
@@ -36,7 +37,7 @@ let LocationController = class LocationController {
         return this.locationService.getPincodesByCity(city);
     }
     async checkServiceability(lat, lng, radius) {
-        const radiusNum = radius ? parseInt(radius, 10) : 20;
+        const radiusNum = radius ? parseInt(radius, 10) : delivery_pricing_1.MAX_DELIVERY_RADIUS_KM;
         return this.locationService.checkServiceability(lat, lng, radiusNum);
     }
 };

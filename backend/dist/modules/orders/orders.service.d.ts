@@ -12,6 +12,7 @@ import { OrderStateMachine } from './workflows/order-state-machine';
 import { TrackingGateway } from './tracking.gateway';
 import { CartService } from '../cart/cart.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { LocationService } from '../location/location.service';
 export declare class OrdersService {
     private readonly orderRepository;
     private readonly orderItemRepository;
@@ -24,8 +25,9 @@ export declare class OrdersService {
     private readonly stateMachine;
     private readonly notificationsService;
     private readonly trackingGateway;
+    private readonly locationService;
     private readonly logger;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, productRepository: Repository<Product>, shopRepository: Repository<Shop>, userRepository: Repository<User>, transactionRepository: Repository<Transaction>, cartService: CartService, dataSource: DataSource, stateMachine: OrderStateMachine, notificationsService: NotificationsService, trackingGateway: TrackingGateway);
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, productRepository: Repository<Product>, shopRepository: Repository<Shop>, userRepository: Repository<User>, transactionRepository: Repository<Transaction>, cartService: CartService, dataSource: DataSource, stateMachine: OrderStateMachine, notificationsService: NotificationsService, trackingGateway: TrackingGateway, locationService: LocationService);
     private formatOrderResponse;
     createOrder(userId: string, createOrderDto: CreateOrderDto): Promise<{
         isShopOpen: true;

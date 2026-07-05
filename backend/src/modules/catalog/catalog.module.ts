@@ -9,9 +9,13 @@ import { Category } from '../../core/entities/category.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
 import { Subscription } from '../../core/entities/subscription.entity';
+import { SellerModule } from '../seller/seller.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription])],
+  imports: [
+    TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription]),
+    SellerModule,
+  ],
   controllers: [CatalogController],
   providers: [CatalogService, SearchService, BulkUploadService],
   exports: [CatalogService],

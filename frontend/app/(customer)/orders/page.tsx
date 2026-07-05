@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Package, ChevronRight, Search, Navigation, Radio } from 'lucide-react';
 import { format } from 'date-fns';
@@ -40,8 +41,14 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function OrdersPage() {
-  const [activeTab, setActiveTab] = useState('all');
+  const searchParams = useSearchParams();
+  const isLiveView = searchParams.get('live') === '1';
+  const [activeTab, setActiveTab] = useState(isLiveView ? 'confirmed' : 'all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (isLiveView) setActiveTab('confirmed');
+  }, [isLiveView]);
 
   const { data, isLoading } = useOrders({
     status: activeTab !== 'all' && activeTab !== 'active' ? activeTab : undefined,
@@ -63,8 +70,13 @@ export default function OrdersPage() {
   return (
     <div className="container py-6 md:py-8">
       <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-        My Orders
+        {isLiveView ? 'Live Order Tracking' : 'My Orders'}
       </h1>
+      {isLiveView && (
+        <p className="mt-1 text-sm text-muted-foreground">
+          Track your active deliveries in real time
+        </p>
+      )}
 
       {/* Search & Filter */}
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
