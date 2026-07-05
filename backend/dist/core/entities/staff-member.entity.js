@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const shop_entity_1 = require("./shop.entity");
 var StaffRole;
 (function (StaffRole) {
+    StaffRole["WORKER"] = "worker";
     StaffRole["PRODUCTS_MANAGER"] = "products_manager";
     StaffRole["DELIVERY_STAFF"] = "delivery_staff";
     StaffRole["STORE_MANAGER"] = "store_manager";

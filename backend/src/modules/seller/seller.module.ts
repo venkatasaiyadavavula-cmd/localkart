@@ -23,6 +23,11 @@ import { SponsoredProduct } from '../../core/entities/sponsored-product.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { CommissionBill } from '../../core/entities/commission-bill.entity';
 import { StaffMember } from '../../core/entities/staff-member.entity';
+import { CatalogModule } from '../catalog/catalog.module';
+import { OrdersModule } from '../orders/orders.module';
+import { StaffWorkController } from './staff-work.controller';
+import { StaffWorkService } from './staff-work.service';
+import { PermissionsGuard } from '../../core/guards/permissions.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -34,6 +39,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     ]),
     BullModule.registerQueue({ name: 'media' }),
     NotificationsModule,
+    CatalogModule,
+    OrdersModule,
     ScheduleModule.forRoot(),
     JwtModule.registerAsync({
       useFactory: (cfg: ConfigService) => ({
@@ -43,11 +50,11 @@ import { NotificationsModule } from '../notifications/notifications.module';
       inject: [ConfigService],
     }),
   ],
-  controllers: [SellerController, StaffController],
+  controllers: [SellerController, StaffController, StaffWorkController],
   providers: [
     SellerService, SubscriptionService, EarningsService,
     AdCampaignService, WeeklyEarningsScheduler, StaffService,
-    DailyOfferService,
+    DailyOfferService, StaffWorkService, PermissionsGuard,
   ],
   exports: [
     SellerService, SubscriptionService, EarningsService,

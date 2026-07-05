@@ -27,6 +27,8 @@ class AddStaffDto {
     phone;
     role;
     note;
+    staffId;
+    password;
 }
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -39,6 +41,7 @@ __decorate([
 ], AddStaffDto.prototype, "phone", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(staff_member_entity_1.StaffRole),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], AddStaffDto.prototype, "role", void 0);
 __decorate([
@@ -46,6 +49,21 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], AddStaffDto.prototype, "note", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MinLength)(4),
+    (0, class_validator_1.MaxLength)(30),
+    (0, class_validator_1.Matches)(/^[a-zA-Z0-9._+-]+$/, { message: 'Login ID: letters, numbers, _ . + - only' }),
+    __metadata("design:type", String)
+], AddStaffDto.prototype, "staffId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MinLength)(4),
+    (0, class_validator_1.MaxLength)(64),
+    __metadata("design:type", String)
+], AddStaffDto.prototype, "password", void 0);
 class UpdateStaffDto {
     role;
     note;
@@ -74,6 +92,15 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], StaffLoginDto.prototype, "password", void 0);
+class ResetPasswordDto {
+    password;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MinLength)(4),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "password", void 0);
 let StaffController = class StaffController {
     staffService;
     constructor(staffService) {
@@ -91,8 +118,8 @@ let StaffController = class StaffController {
     removeStaff(req, id) {
         return this.staffService.removeStaff(req.user.id, id);
     }
-    resetPassword(req, id) {
-        return this.staffService.resetPassword(req.user.id, id);
+    resetPassword(req, id, dto) {
+        return this.staffService.resetPassword(req.user.id, id, dto.password);
     }
     staffLogin(dto) {
         return this.staffService.staffLogin(dto.staffId, dto.password);
@@ -145,8 +172,9 @@ __decorate([
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.SELLER),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [Object, String, ResetPasswordDto]),
     __metadata("design:returntype", void 0)
 ], StaffController.prototype, "resetPassword", null);
 __decorate([

@@ -1,6 +1,6 @@
 import {
   Injectable, BadRequestException, ForbiddenException,
-  NotFoundException, ConflictException, Logger,
+  NotFoundException, ConflictException, Logger, UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,14 +8,9 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { StaffMember, StaffRole, StaffStatus } from '../../core/entities/staff-member.entity';
 import { Shop } from '../../core/entities/shop.entity';
+import { MAX_STAFF, ROLE_PERMISSIONS } from './staff-permissions';
 
-const MAX_STAFF = 10;
-
-const ROLE_PERMISSIONS: Record<StaffRole, string[]> = {
-  [StaffRole.STORE_MANAGER]:    ['products:read','products:write','orders:read','orders:write','inventory:write'],
-  [StaffRole.PRODUCTS_MANAGER]: ['products:read','products:write','inventory:write'],
-  [StaffRole.DELIVERY_STAFF]:   ['orders:read','orders:write'],
-};
+export { MAX_STAFF, ROLE_PERMISSIONS };
 
 @Injectable()
 export class StaffService {
@@ -29,7 +24,6 @@ export class StaffService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // ── List all staff for a shop ────────────────────────────
   async getStaff(ownerId: string) {
     const shop = await this.shopRepo.findOne({ where: { ownerId } });
     if (!shop) throw new ForbiddenException('Shop not found');
@@ -49,60 +43,79 @@ export class StaffService {
     }));
   }
 
-  // ── Add new staff member ─────────────────────────────────
   async addStaff(ownerId: string, dto: {
-    name: string; phone: string; role: StaffRole; note?: string;
+    name: string;
+    phone: string;
+    role?: StaffRole;
+    note?: string;
+    staffId?: string;
+    password?: string;
   }) {
     const shop = await this.shopRepo.findOne({ where: { ownerId } });
     if (!shop) throw new ForbiddenException('Shop not found');
 
     const count = await this.staffRepo.count({ where: { shopId: shop.id, status: StaffStatus.ACTIVE } });
-    if (count >= MAX_STAFF) throw new BadRequestException(`Maximum ${MAX_STAFF} staff members allowed`);
+    if (count >= MAX_STAFF) {
+      throw new BadRequestException(`Maximum ${MAX_STAFF} team members allowed per shop`);
+    }
 
-    const existing = await this.staffRepo.findOne({ where: { phone: dto.phone } });
-    if (existing) throw new ConflictException('Phone number already used');
+    const existingPhone = await this.staffRepo.findOne({ where: { phone: dto.phone } });
+    if (existingPhone) throw new ConflictException('Phone number already used');
 
-    // Generate staff ID: LK-SHOPCODE-XXXX
-    const shopCode = shop.name.substring(0, 3).toUpperCase();
-    const suffix   = Math.floor(1000 + Math.random() * 9000);
-    const staffId  = `LK-${shopCode}-${suffix}`;
+    const role = dto.role ?? StaffRole.WORKER;
 
-    // Generate temporary password: first3letters + phone last 4
-    const tempPassword = `${dto.name.substring(0, 3).toLowerCase()}${dto.phone.slice(-4)}`;
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    let staffId = dto.staffId?.trim().toLowerCase();
+    if (!staffId) {
+      const shopCode = shop.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X') || 'LK';
+      const suffix = Math.floor(1000 + Math.random() * 9000);
+      staffId = `lk-${shopCode.toLowerCase()}-${suffix}`;
+    } else {
+      if (!/^[a-z0-9._+-]{4,30}$/.test(staffId)) {
+        throw new BadRequestException('Login ID must be 4–30 characters (letters, numbers, _ . + -)');
+      }
+    }
+
+    const existingId = await this.staffRepo.findOne({ where: { staffId } });
+    if (existingId) throw new ConflictException('Login ID already taken. Choose another.');
+
+    const password = dto.password?.trim() || `${dto.name.substring(0, 3).toLowerCase()}${dto.phone.slice(-4)}`;
+    if (password.length < 4) {
+      throw new BadRequestException('Password must be at least 4 characters');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const staff = this.staffRepo.create({
-      shopId:   shop.id,
-      name:     dto.name,
-      phone:    dto.phone,
-      role:     dto.role,
+      shopId: shop.id,
+      name: dto.name,
+      phone: dto.phone,
+      role,
       staffId,
       passwordHash,
-      note:     dto.note,
-      status:   StaffStatus.ACTIVE,
+      note: dto.note,
+      status: StaffStatus.ACTIVE,
     });
 
     await this.staffRepo.save(staff);
 
-    this.logger.log(`Staff added: ${staffId} (${dto.role}) to shop ${shop.name}`);
+    this.logger.log(`Staff added: ${staffId} (${role}) to shop ${shop.name}`);
 
     return {
-      id:            staff.id,
-      name:          staff.name,
-      phone:         staff.phone,
-      staffId:       staff.staffId,
-      role:          staff.role,
-      permissions:   ROLE_PERMISSIONS[staff.role],
-      tempPassword,
-      message:       'Share these credentials with the staff member. They should change their password on first login.',
+      id: staff.id,
+      name: staff.name,
+      phone: staff.phone,
+      staffId: staff.staffId,
+      role: staff.role,
+      permissions: ROLE_PERMISSIONS[staff.role],
+      tempPassword: password,
+      message: 'Share these login credentials with your team member.',
     };
   }
 
-  // ── Update staff role / note ─────────────────────────────
   async updateStaff(ownerId: string, staffMemberId: string, dto: {
     role?: StaffRole; note?: string;
   }) {
-    const shop  = await this.shopRepo.findOne({ where: { ownerId } });
+    const shop = await this.shopRepo.findOne({ where: { ownerId } });
     if (!shop) throw new ForbiddenException('Shop not found');
 
     const staff = await this.staffRepo.findOne({ where: { id: staffMemberId, shopId: shop.id } });
@@ -113,15 +126,11 @@ export class StaffService {
 
     await this.staffRepo.save(staff);
 
-    return {
-      ...staff,
-      permissions: ROLE_PERMISSIONS[staff.role],
-    };
+    return { ...staff, permissions: ROLE_PERMISSIONS[staff.role] };
   }
 
-  // ── Deactivate staff (removes access immediately) ────────
   async removeStaff(ownerId: string, staffMemberId: string) {
-    const shop  = await this.shopRepo.findOne({ where: { ownerId } });
+    const shop = await this.shopRepo.findOne({ where: { ownerId } });
     if (!shop) throw new ForbiddenException('Shop not found');
 
     const staff = await this.staffRepo.findOne({ where: { id: staffMemberId, shopId: shop.id } });
@@ -131,32 +140,35 @@ export class StaffService {
     await this.staffRepo.save(staff);
 
     this.logger.log(`Staff deactivated: ${staff.staffId} from shop ${shop.name}`);
-    return { success: true, message: `${staff.name}'s access has been removed immediately.` };
+    return {
+      success: true,
+      message: `${staff.name} (@${staff.staffId}) has been removed. They can no longer log in to work.`,
+      removedStaffId: staff.staffId,
+      removedName: staff.name,
+    };
   }
 
-  // ── Reset staff password ─────────────────────────────────
-  async resetPassword(ownerId: string, staffMemberId: string) {
-    const shop  = await this.shopRepo.findOne({ where: { ownerId } });
+  async resetPassword(ownerId: string, staffMemberId: string, newPassword?: string) {
+    const shop = await this.shopRepo.findOne({ where: { ownerId } });
     if (!shop) throw new ForbiddenException('Shop not found');
 
     const staff = await this.staffRepo.findOne({ where: { id: staffMemberId, shopId: shop.id } });
     if (!staff) throw new NotFoundException('Staff member not found');
 
-    const newPassword  = `${staff.name.substring(0, 3).toLowerCase()}${Date.now().toString().slice(-4)}`;
-    staff.passwordHash = await bcrypt.hash(newPassword, 10);
+    const password = newPassword?.trim() || `${staff.name.substring(0, 3).toLowerCase()}${Date.now().toString().slice(-4)}`;
+    staff.passwordHash = await bcrypt.hash(password, 10);
     await this.staffRepo.save(staff);
 
-    return { success: true, staffId: staff.staffId, newPassword, message: 'Password reset. Share with staff member.' };
+    return { success: true, staffId: staff.staffId, newPassword: password, message: 'Password reset. Share with team member.' };
   }
 
-  // ── Staff login ──────────────────────────────────────────
   async staffLogin(staffId: string, password: string) {
     const staff = await this.staffRepo.findOne({
-      where: { staffId, status: StaffStatus.ACTIVE },
+      where: { staffId: staffId.trim().toLowerCase(), status: StaffStatus.ACTIVE },
       relations: ['shop'],
     });
 
-    if (!staff) throw new UnauthorizedException('Invalid Staff ID or account inactive');
+    if (!staff) throw new UnauthorizedException('Invalid Login ID or account inactive');
 
     const valid = await bcrypt.compare(password, staff.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid password');
@@ -164,29 +176,27 @@ export class StaffService {
     staff.lastLoginAt = new Date();
     await this.staffRepo.save(staff);
 
+    const permissions = ROLE_PERMISSIONS[staff.role];
+
     const token = this.jwtService.sign({
-      sub:         staff.id,
-      staffId:     staff.staffId,
-      shopId:      staff.shopId,
-      role:        'staff',
-      staffRole:   staff.role,
-      permissions: ROLE_PERMISSIONS[staff.role],
+      sub: staff.id,
+      staffId: staff.staffId,
+      shopId: staff.shopId,
+      role: 'staff',
+      staffRole: staff.role,
+      permissions,
     });
 
     return {
       token,
       staff: {
-        id:          staff.id,
-        name:        staff.name,
-        staffId:     staff.staffId,
-        role:        staff.role,
-        shopName:    staff.shop.name,
-        permissions: ROLE_PERMISSIONS[staff.role],
+        id: staff.id,
+        name: staff.name,
+        staffId: staff.staffId,
+        role: staff.role,
+        shopName: staff.shop.name,
+        permissions,
       },
     };
   }
-}
-
-class UnauthorizedException extends Error {
-  constructor(msg: string) { super(msg); this.name = 'UnauthorizedException'; }
 }

@@ -11,10 +11,12 @@ import {
 import { toast } from 'sonner';
 import { unwrapApiData, normalizeList } from '@/lib/utils';
 
+import { formatWorkerHandle } from '@/components/work/worker-identity';
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
-type StaffRole = 'store_manager' | 'products_manager' | 'delivery_staff';
+type StaffRole = 'worker' | 'store_manager' | 'products_manager' | 'delivery_staff';
 type StaffStatus = 'active' | 'inactive';
 
 interface StaffMember {
@@ -49,6 +51,15 @@ const ROLE_CONFIG: Record<StaffRole, {
   permissions: string;
   gradient:    string;
 }> = {
+  worker: {
+    label:       'Shop Worker',
+    icon:        Users,
+    color:       '#059669',
+    bg:          '#ECFDF5',
+    border:      'rgba(5,150,105,0.20)',
+    gradient:    'linear-gradient(135deg,#059669,#047857)',
+    permissions: 'Products + Stock + Deliveries',
+  },
   store_manager: {
     label:       'Store Manager',
     icon:        Crown,
@@ -104,7 +115,7 @@ function CredentialsModal({ creds, onClose }: { creds: NewCredentials; onClose: 
           <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20" style={{ background: 'rgba(255,255,255,0.4)', filter: 'blur(20px)' }} />
           <div className="flex items-center justify-between relative">
             <div>
-              <p className="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">New Staff Added</p>
+              <p className="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">Employee Added</p>
               <p className="text-xl font-black" style={{ fontFamily: 'var(--font-display)' }}>{creds.name}</p>
               <p className="text-sm text-white/70 font-semibold mt-0.5">{cfg.label}</p>
             </div>
@@ -119,7 +130,7 @@ function CredentialsModal({ creds, onClose }: { creds: NewCredentials; onClose: 
           <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest">Login Credentials</p>
 
           {[
-            { label: 'Staff ID',  value: creds.staffId,      icon: Shield },
+            { label: 'Login ID',  value: formatWorkerHandle(creds.staffId), icon: Shield },
             { label: 'Password',  value: creds.tempPassword, icon: RefreshCw },
           ].map(({ label, value, icon: Icon }) => (
             <div
@@ -180,23 +191,31 @@ function CredentialsModal({ creds, onClose }: { creds: NewCredentials; onClose: 
 }
 
 function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: (c: NewCredentials) => void }) {
-  const [form, setForm] = useState({ name: '', phone: '', role: 'delivery_staff' as StaffRole, note: '' });
+  const [form, setForm] = useState({
+    name: '', phone: '', role: 'worker' as StaffRole, note: '', staffId: '', password: '',
+  });
   const qc = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const digits = form.phone.replace(/\D/g, '').slice(-10);
-      const phone = digits.length === 10 ? `+91${digits}` : form.phone;
-      const { data } = await axios.post(`${API}/seller/staff`, { ...form, phone }, { headers: auth() });
+      const payload: Record<string, string> = {
+        name: form.name,
+        phone: form.phone.startsWith('+') ? form.phone : `+91${form.phone.replace(/\D/g, '').slice(-10)}`,
+        role: form.role,
+      };
+      if (form.note) payload.note = form.note;
+      if (form.staffId.trim()) payload.staffId = form.staffId.trim().toLowerCase();
+      if (form.password.trim()) payload.password = form.password;
+      const { data } = await axios.post(`${API}/seller/staff`, payload, { headers: auth() });
       return data;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['staff'] });
       onAdded(unwrapApiData<NewCredentials>(data) as NewCredentials);
       onClose();
-      setForm({ name: '', phone: '', role: 'delivery_staff', note: '' });
+      setForm({ name: '', phone: '', role: 'worker', note: '', staffId: '', password: '' });
     },
-    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed to add staff'),
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed to add employee'),
   });
 
   if (!open) return null;
@@ -207,8 +226,8 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>Add Staff Member</h2>
-            <p className="text-xs text-gray-400 mt-0.5">They get a separate login — no access to your account</p>
+            <h2 className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>Add Employee</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Set custom Login ID & password · max 5 members</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
             <X className="h-4 w-4 text-gray-500" />
@@ -239,31 +258,39 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
             />
           </div>
 
-          {/* Role selection */}
+          {/* Custom Login ID */}
           <div>
-            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-2 block">Role & Access *</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(ROLE_CONFIG) as [StaffRole, typeof ROLE_CONFIG[StaffRole]][]).map(([role, cfg]) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => setForm(p => ({ ...p, role }))}
-                  className="flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-200 text-center"
-                  style={{
-                    borderColor: form.role === role ? cfg.color : '#E5E9F2',
-                    background:  form.role === role ? cfg.bg    : 'white',
-                  }}
-                >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: form.role === role ? cfg.bg : '#F3F4F6' }}>
-                    <cfg.icon className="h-4.5 w-4.5" style={{ color: form.role === role ? cfg.color : '#9CA3AF' }} />
-                  </div>
-                  <span className="text-[11px] font-extrabold leading-tight" style={{ color: form.role === role ? cfg.color : '#6B7280' }}>
-                    {cfg.label}
-                  </span>
-                  <span className="text-[9px] text-gray-400 leading-tight">{cfg.permissions}</span>
-                </button>
-              ))}
+            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-1.5 block">Login ID *</label>
+            <input
+              value={form.staffId}
+              onChange={e => setForm(p => ({ ...p, staffId: e.target.value }))}
+              placeholder="e.g. test_9542"
+              className="input-base font-mono text-sm"
+              required
+            />
+            <p className="mt-1 text-[10px] text-gray-400">Worker uses this to sign in at Work as Employee</p>
+          </div>
+
+          {/* Custom Password */}
+          <div>
+            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-1.5 block">Password *</label>
+            <input
+              value={form.password}
+              onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+              placeholder="e.g. test@123123"
+              type="text"
+              className="input-base font-mono text-sm"
+              required
+            />
+          </div>
+
+          {/* Role - default worker */}
+          <div className="rounded-2xl p-3 border" style={{ background: ROLE_CONFIG.worker.bg, borderColor: ROLE_CONFIG.worker.border }}>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" style={{ color: ROLE_CONFIG.worker.color }} />
+              <p className="text-sm font-extrabold" style={{ color: ROLE_CONFIG.worker.color }}>Shop Worker Access</p>
             </div>
+            <p className="text-[11px] text-gray-500 mt-1">Products add · Stock update · Delivery manage only</p>
           </div>
 
           {/* Note */}
@@ -279,11 +306,11 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
           <button
             onClick={() => mutation.mutate()}
-            disabled={!form.name || !form.phone || mutation.isPending}
+            disabled={!form.name || !form.phone || !form.staffId.trim() || !form.password.trim() || mutation.isPending}
             className="w-full py-4 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.97] disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 20px rgba(61,90,241,0.30)' }}
           >
-            {mutation.isPending ? 'Adding...' : 'Add Staff Member'}
+            {mutation.isPending ? 'Adding...' : 'Add Employee'}
           </button>
         </div>
       </div>
@@ -332,7 +359,9 @@ export default function StaffPage() {
   });
 
   const activeStaff  = staff.filter(s => s.status === 'active');
-  const MAX_STAFF    = 10;
+  const removedStaff = staff.filter(s => s.status === 'inactive');
+  const MAX_STAFF = 5;
+  const removingMember = deleteId ? staff.find(s => s.id === deleteId) : null;
 
   if (isLoading) {
     return (
@@ -347,14 +376,28 @@ export default function StaffPage() {
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto" style={{ fontFamily: 'var(--font-sans)', background: '#F5F7FA' }}>
 
+      {/* Owner control banner */}
+      <div
+        className="mb-5 rounded-2xl border p-4"
+        style={{ background: 'linear-gradient(135deg,#EEF0FE,#F5F3FF)', borderColor: 'rgba(61,90,241,0.15)' }}
+      >
+        <p className="text-sm font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
+          You control your team
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-gray-600">
+          Add workers anytime with custom Login ID & password (like Instagram). If someone leaves your shop,
+          tap <strong>Remove from Shop</strong> — they lose work access instantly.
+        </p>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
-            Staff Management
+            Team / Employees
           </h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {activeStaff.length}/{MAX_STAFF} active · Separate logins for each member
+            {activeStaff.length}/{MAX_STAFF} employees · They login at Work as Employee
           </p>
         </div>
         {activeStaff.length < MAX_STAFF && (
@@ -364,7 +407,7 @@ export default function StaffPage() {
             style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 16px rgba(61,90,241,0.30)' }}
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Staff
+            Add Employee
           </button>
         )}
       </div>
@@ -392,15 +435,15 @@ export default function StaffPage() {
           <div className="w-16 h-16 rounded-3xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#EEF0FE' }}>
             <Users className="h-8 w-8" style={{ color: '#3D5AF1' }} />
           </div>
-          <p className="font-extrabold text-gray-700 text-base">No staff members yet</p>
-          <p className="text-sm text-gray-400 mt-1 mb-5">Add workers — they get their own secure login</p>
+          <p className="font-extrabold text-gray-700 text-base">No employees yet</p>
+          <p className="text-sm text-gray-400 mt-1 mb-5">Add your shop workers — they login separately at Work as Employee</p>
           <button
             onClick={() => setShowAdd(true)}
             className="inline-flex items-center gap-2 text-sm font-extrabold text-white px-6 py-3 rounded-2xl"
             style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 4px 16px rgba(61,90,241,0.30)' }}
           >
             <Plus className="h-4 w-4" />
-            Add First Staff Member
+            Add First Employee
           </button>
         </div>
       ) : (
@@ -453,10 +496,10 @@ export default function StaffPage() {
                         <p className="text-xs text-gray-400 font-medium mt-0.5">{member.phone}</p>
                         <div className="flex items-center gap-1.5 mt-1">
                           <code
-                            className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg font-mono"
-                            style={{ background: '#F3F4F6', color: '#6B7280' }}
+                            className="text-[11px] font-extrabold px-2.5 py-1 rounded-lg font-mono"
+                            style={{ background: '#ECFDF5', color: '#059669' }}
                           >
-                            {member.staffId}
+                            {formatWorkerHandle(member.staffId)}
                           </code>
                           {member.lastLoginAt && (
                             <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
@@ -484,12 +527,12 @@ export default function StaffPage() {
                       </button>
                       <button
                         onClick={() => setDeleteId(member.id)}
-                        className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-xl border transition-colors"
-                        style={{ color: '#EF4444', borderColor: 'rgba(239,68,68,0.20)', background: '#FEF2F2' }}
-                        title="Remove access"
+                        className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-2 rounded-xl border transition-colors"
+                        style={{ color: '#EF4444', borderColor: 'rgba(239,68,68,0.25)', background: '#FEF2F2' }}
+                        title="Remove from shop"
                       >
-                        <Trash2 className="h-3 w-3" />
-                        Remove
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove from Shop
                       </button>
                     </div>
                   </div>
@@ -510,6 +553,24 @@ export default function StaffPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Removed workers */}
+      {removedStaff.length > 0 && (
+        <div className="mt-8">
+          <p className="mb-3 text-xs font-extrabold uppercase tracking-widest text-gray-400">Removed from shop</p>
+          <div className="space-y-2">
+            {removedStaff.map((member) => (
+              <div key={member.id} className="flex items-center justify-between rounded-2xl border border-dashed bg-gray-50 px-4 py-3 opacity-70">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 line-through">{member.name}</p>
+                  <p className="text-xs text-gray-400">{formatWorkerHandle(member.staffId)} · No longer has access</p>
+                </div>
+                <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">Removed</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -536,10 +597,18 @@ export default function StaffPage() {
               <AlertTriangle className="h-7 w-7 text-red-500" />
             </div>
             <h3 className="text-lg font-black text-gray-900 text-center" style={{ fontFamily: 'var(--font-display)' }}>
-              Remove Access?
+              Remove from Shop?
             </h3>
-            <p className="text-sm text-gray-500 text-center mt-2 leading-relaxed">
-              This staff member will be <strong>immediately logged out</strong> and cannot access the seller panel anymore.
+            {removingMember && (
+              <div className="mt-3 rounded-2xl bg-gray-50 p-3 text-center">
+                <p className="text-sm font-bold text-gray-900">{removingMember.name}</p>
+                <p className="text-xs font-extrabold text-emerald-600">{formatWorkerHandle(removingMember.staffId)}</p>
+              </div>
+            )}
+            <p className="text-sm text-gray-500 text-center mt-3 leading-relaxed">
+              This person <strong>left or no longer works</strong> at your shop? They will be
+              <strong> logged out immediately</strong> and cannot use their work Login ID anymore.
+              You can add a new worker anytime.
             </p>
             <div className="flex gap-2 mt-5">
               <button
@@ -554,7 +623,7 @@ export default function StaffPage() {
                 className="flex-1 py-3 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.97]"
                 style={{ background: 'linear-gradient(135deg,#EF4444,#DC2626)', boxShadow: '0 4px 16px rgba(239,68,68,0.30)' }}
               >
-                {removeMutation.isPending ? 'Removing...' : 'Yes, Remove'}
+                {removeMutation.isPending ? 'Removing...' : 'Yes, Remove from Shop'}
               </button>
             </div>
           </div>

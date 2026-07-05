@@ -25,6 +25,7 @@ export function SellerSidebar() {
         {sellerNavItems.map((item) => {
           const isBulkUpload = item.href === '/dashboard/products/bulk-upload';
           const isProducts = item.href === '/dashboard/products';
+          const isHighlight = item.href === '/dashboard/staff';
           const isActive = isProducts
             ? pathname === item.href || (pathname.startsWith('/dashboard/products/') && !pathname.includes('bulk-upload'))
             : isBulkUpload
@@ -39,7 +40,9 @@ export function SellerSidebar() {
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : isHighlight
+                    ? 'bg-violet-50 text-violet-700 hover:bg-violet-100 font-semibold'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" />

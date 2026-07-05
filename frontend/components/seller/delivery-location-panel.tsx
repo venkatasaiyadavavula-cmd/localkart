@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ordersApi } from '@/lib/api/orders';
+import { staffWorkApi } from '@/lib/api/staff-work';
 
 interface DeliveryLocationPanelProps {
   orderId: string;
@@ -42,12 +43,22 @@ export function DeliveryLocationPanel({
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          await ordersApi.updateDeliveryLocation(orderId, {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            staffName: staffName || undefined,
-            staffPhone: staffPhone || undefined,
-          });
+          const isStaff = !!localStorage.getItem('staffAccessToken');
+          if (isStaff) {
+            await staffWorkApi.updateDeliveryLocation(orderId, {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              staffName: staffName || undefined,
+              staffPhone: staffPhone || undefined,
+            });
+          } else {
+            await ordersApi.updateDeliveryLocation(orderId, {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              staffName: staffName || undefined,
+              staffPhone: staffPhone || undefined,
+            });
+          }
           setLastUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
           onLocationUpdated?.();
           if (!silent) toast.success('📍 Location shared with customer');

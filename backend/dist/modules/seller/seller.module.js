@@ -32,6 +32,11 @@ const sponsored_product_entity_1 = require("../../core/entities/sponsored-produc
 const transaction_entity_1 = require("../../core/entities/transaction.entity");
 const commission_bill_entity_1 = require("../../core/entities/commission-bill.entity");
 const staff_member_entity_1 = require("../../core/entities/staff-member.entity");
+const catalog_module_1 = require("../catalog/catalog.module");
+const orders_module_1 = require("../orders/orders.module");
+const staff_work_controller_1 = require("./staff-work.controller");
+const staff_work_service_1 = require("./staff-work.service");
+const permissions_guard_1 = require("../../core/guards/permissions.guard");
 const notifications_module_1 = require("../notifications/notifications.module");
 let SellerModule = class SellerModule {
 };
@@ -46,6 +51,8 @@ exports.SellerModule = SellerModule = __decorate([
             ]),
             bull_1.BullModule.registerQueue({ name: 'media' }),
             notifications_module_1.NotificationsModule,
+            catalog_module_1.CatalogModule,
+            orders_module_1.OrdersModule,
             schedule_1.ScheduleModule.forRoot(),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (cfg) => ({
@@ -55,11 +62,11 @@ exports.SellerModule = SellerModule = __decorate([
                 inject: [config_1.ConfigService],
             }),
         ],
-        controllers: [seller_controller_1.SellerController, staff_controller_1.StaffController],
+        controllers: [seller_controller_1.SellerController, staff_controller_1.StaffController, staff_work_controller_1.StaffWorkController],
         providers: [
             seller_service_1.SellerService, subscription_service_1.SubscriptionService, earnings_service_1.EarningsService,
             ad_campaign_service_1.AdCampaignService, weekly_earnings_scheduler_1.WeeklyEarningsScheduler, staff_service_1.StaffService,
-            daily_offer_service_1.DailyOfferService,
+            daily_offer_service_1.DailyOfferService, staff_work_service_1.StaffWorkService, permissions_guard_1.PermissionsGuard,
         ],
         exports: [
             seller_service_1.SellerService, subscription_service_1.SubscriptionService, earnings_service_1.EarningsService,

@@ -15,6 +15,7 @@ const config_1 = require("@nestjs/config");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const user_entity_1 = require("../../core/entities/user.entity");
+const staff_member_entity_1 = require("../../core/entities/staff-member.entity");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const local_strategy_1 = require("./strategies/local.strategy");
 const notifications_module_1 = require("../notifications/notifications.module");
@@ -24,7 +25,7 @@ exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User]),
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, staff_member_entity_1.StaffMember]),
             passport_1.PassportModule,
             notifications_module_1.NotificationsModule,
             jwt_1.JwtModule.registerAsync({

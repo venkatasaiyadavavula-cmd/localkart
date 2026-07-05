@@ -3,8 +3,10 @@ import { StaffRole } from '../../core/entities/staff-member.entity';
 declare class AddStaffDto {
     name: string;
     phone: string;
-    role: StaffRole;
+    role?: StaffRole;
     note?: string;
+    staffId?: string;
+    password?: string;
 }
 declare class UpdateStaffDto {
     role?: StaffRole;
@@ -13,6 +15,9 @@ declare class UpdateStaffDto {
 declare class StaffLoginDto {
     staffId: string;
     password: string;
+}
+declare class ResetPasswordDto {
+    password?: string;
 }
 export declare class StaffController {
     private readonly staffService;
@@ -63,8 +68,10 @@ export declare class StaffController {
     removeStaff(req: any, id: string): Promise<{
         success: boolean;
         message: string;
+        removedStaffId: string;
+        removedName: string;
     }>;
-    resetPassword(req: any, id: string): Promise<{
+    resetPassword(req: any, id: string, dto: ResetPasswordDto): Promise<{
         success: boolean;
         staffId: string;
         newPassword: string;
