@@ -3,6 +3,7 @@ import { LocationService } from './location.service';
 import { NearbyShopsDto } from './dto/nearby-shops.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { Public } from '../../core/decorators/public.decorator';
+import { MAX_DELIVERY_RADIUS_KM } from './delivery-pricing';
 
 @Controller('location')
 @UseGuards(JwtAuthGuard)
@@ -61,7 +62,7 @@ export class LocationController {
     @Query('lng', ParseFloatPipe) lng: number,
     @Query('radius') @Optional() radius?: string,
   ) {
-    const radiusNum = radius ? parseInt(radius, 10) : 20;
+    const radiusNum = radius ? parseInt(radius, 10) : MAX_DELIVERY_RADIUS_KM;
     return this.locationService.checkServiceability(lat, lng, radiusNum);
   }
 }

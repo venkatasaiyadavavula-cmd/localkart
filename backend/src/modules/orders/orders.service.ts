@@ -20,6 +20,7 @@ import { OrderStateMachine } from './workflows/order-state-machine';
 import { TrackingGateway } from './tracking.gateway';
 import { CartService } from '../cart/cart.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { LocationService } from '../location/location.service';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
 import { isShopCurrentlyOpen, getShopHoursStatus } from '../../core/utils/shop-hours.util';
 
@@ -45,6 +46,7 @@ export class OrdersService {
     private readonly stateMachine: OrderStateMachine,
     private readonly notificationsService: NotificationsService,
     private readonly trackingGateway: TrackingGateway,
+    private readonly locationService: LocationService,
   ) {}
 
   private formatOrderResponse(order: Order) {
@@ -90,7 +92,12 @@ export class OrdersService {
     }
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const deliveryCharge = subtotal >= shop.freeDeliveryAbove ? 0 : shop.deliveryCharge;
+    const deliveryCharge = this.locationService.resolveDeliveryCharge(
+      shop,
+      shippingAddress?.latitude,
+      shippingAddress?.longitude,
+      subtotal,
+    );
     const totalAmount = subtotal + deliveryCharge;
 
     const commissionRate = this.calculateCommissionRate(products);

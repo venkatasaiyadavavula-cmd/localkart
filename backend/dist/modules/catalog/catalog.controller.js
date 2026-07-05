@@ -94,6 +94,7 @@ let CatalogController = class CatalogController {
                 where: { productId: product.id, isActive: true, expiresAt: (0, typeorm_2.MoreThan)(now) },
             });
             product.daily_offer = offer;
+            product.daily_offers = offer ? [offer] : [];
         }
         return { data: products };
     }

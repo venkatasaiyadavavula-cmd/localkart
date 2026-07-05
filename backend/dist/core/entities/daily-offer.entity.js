@@ -23,6 +23,8 @@ let DailyOffer = class DailyOffer {
     startsAt;
     expiresAt;
     isActive;
+    sellerNotes;
+    offerDetails;
     createdAt;
     shop;
     product;
@@ -64,6 +66,14 @@ __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)
 ], DailyOffer.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], DailyOffer.prototype, "sellerNotes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Object)
+], DailyOffer.prototype, "offerDetails", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

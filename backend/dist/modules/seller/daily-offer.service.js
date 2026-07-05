@@ -36,6 +36,11 @@ let DailyOfferService = class DailyOfferService {
             throw new common_1.NotFoundException('Shop not found');
         return shop;
     }
+    startOfToday() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
     async getActiveOffers(ownerId) {
         const shop = await this.getShop(ownerId);
         const now = new Date();
@@ -49,17 +54,19 @@ let DailyOfferService = class DailyOfferService {
             order: { createdAt: 'DESC' },
         });
     }
-    async createOffer(ownerId, productId, offerPrice) {
+    async createOffer(ownerId, dto) {
         const shop = await this.getShop(ownerId);
+        const now = new Date();
+        const { productId, offerPrice, sellerNotes, offerDetails } = dto;
         const activeCount = await this.offerRepository.count({
             where: {
                 shopId: shop.id,
                 isActive: true,
-                expiresAt: (0, typeorm_2.MoreThan)(new Date()),
+                expiresAt: (0, typeorm_2.MoreThan)(now),
             },
         });
         if (activeCount >= MAX_ACTIVE_OFFERS) {
-            throw new common_1.BadRequestException(`Maximum ${MAX_ACTIVE_OFFERS} active offers allowed`);
+            throw new common_1.BadRequestException(`Maximum ${MAX_ACTIVE_OFFERS} active offers allowed at a time`);
         }
         const product = await this.productRepository.findOne({
             where: { id: productId, shopId: shop.id, status: product_entity_1.ProductStatus.APPROVED },
@@ -67,8 +74,32 @@ let DailyOfferService = class DailyOfferService {
         if (!product) {
             throw new common_1.NotFoundException('Product not found or not approved');
         }
+        const activeOnProduct = await this.offerRepository.findOne({
+            where: {
+                productId: product.id,
+                isActive: true,
+                expiresAt: (0, typeorm_2.MoreThan)(now),
+            },
+        });
+        if (activeOnProduct) {
+            throw new common_1.BadRequestException('This product already has an active daily offer. Remove it or wait until it expires.');
+        }
+        const offerToday = await this.offerRepository.findOne({
+            where: {
+                productId: product.id,
+                shopId: shop.id,
+                createdAt: (0, typeorm_2.MoreThanOrEqual)(this.startOfToday()),
+            },
+        });
+        if (offerToday) {
+            throw new common_1.BadRequestException('Only one daily offer per product is allowed each day');
+        }
         if (offerPrice >= Number(product.price)) {
             throw new common_1.BadRequestException('Offer price must be less than product price');
+        }
+        const offerStock = offerDetails?.offerStock;
+        if (offerStock != null && Number(offerStock) > product.stock) {
+            throw new common_1.BadRequestException(`Offer quantity (${offerStock}) cannot exceed available stock (${product.stock})`);
         }
         const originalPrice = Number(product.price);
         const discountPercentage = Math.round(((originalPrice - offerPrice) / originalPrice) * 100);
@@ -83,6 +114,8 @@ let DailyOfferService = class DailyOfferService {
             startsAt,
             expiresAt,
             isActive: true,
+            sellerNotes: sellerNotes?.trim() || null,
+            offerDetails: offerDetails || null,
         });
         await this.offerRepository.save(offer);
         return this.offerRepository.findOne({

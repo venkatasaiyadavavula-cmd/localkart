@@ -129,7 +129,7 @@ let SellerController = class SellerController {
         return this.dailyOfferService.getActiveOffers(user.id);
     }
     async createDailyOffer(user, dto) {
-        return this.dailyOfferService.createOffer(user.id, dto.productId, dto.offerPrice);
+        return this.dailyOfferService.createOffer(user.id, dto);
     }
     async deleteDailyOffer(user, id) {
         return this.dailyOfferService.deleteOffer(user.id, id);

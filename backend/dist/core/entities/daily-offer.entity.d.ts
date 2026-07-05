@@ -10,6 +10,8 @@ export declare class DailyOffer {
     startsAt: Date;
     expiresAt: Date;
     isActive: boolean;
+    sellerNotes: string | null;
+    offerDetails: Record<string, string | number> | null;
     createdAt: Date;
     shop: Shop;
     product: Product;

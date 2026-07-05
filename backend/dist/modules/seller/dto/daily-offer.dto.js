@@ -14,6 +14,8 @@ const class_validator_1 = require("class-validator");
 class CreateDailyOfferDto {
     productId;
     offerPrice;
+    sellerNotes;
+    offerDetails;
 }
 exports.CreateDailyOfferDto = CreateDailyOfferDto;
 __decorate([
@@ -23,7 +25,18 @@ __decorate([
 ], CreateDailyOfferDto.prototype, "productId", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], CreateDailyOfferDto.prototype, "offerPrice", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(500),
+    __metadata("design:type", String)
+], CreateDailyOfferDto.prototype, "sellerNotes", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)(),
+    __metadata("design:type", Object)
+], CreateDailyOfferDto.prototype, "offerDetails", void 0);
 //# sourceMappingURL=daily-offer.dto.js.map

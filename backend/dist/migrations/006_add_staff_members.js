@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AddStaffMembers0051700000000005 = void 0;
-class AddStaffMembers0051700000000005 {
-    name = 'AddStaffMembers0051700000000005';
+exports.AddStaffMembers0061700000000006 = void 0;
+class AddStaffMembers0061700000000006 {
+    name = 'AddStaffMembers0061700000000006';
     async up(queryRunner) {
         await queryRunner.query(`
       DO $$ BEGIN
@@ -53,5 +53,5 @@ class AddStaffMembers0051700000000005 {
         await queryRunner.query(`DROP TYPE IF EXISTS "staff_members_role_enum"`);
     }
 }
-exports.AddStaffMembers0051700000000005 = AddStaffMembers0051700000000005;
-//# sourceMappingURL=005_add_staff_members.js.map
+exports.AddStaffMembers0061700000000006 = AddStaffMembers0061700000000006;
+//# sourceMappingURL=006_add_staff_members.js.map

@@ -12,12 +12,14 @@ import { User } from '../../core/entities/user.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { CartModule } from '../cart/cart.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { LocationModule } from '../location/location.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, Product, Shop, User, Transaction]),
     CartModule,
     NotificationsModule,
+    LocationModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, TrackingGateway, OrderStateMachine],
