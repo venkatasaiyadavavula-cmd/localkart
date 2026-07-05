@@ -198,6 +198,32 @@ export default function SellerDashboardPage() {
           </div>
         )}
 
+        <Link href="/dashboard/offers">
+          <div
+            className="relative overflow-hidden rounded-2xl p-4 text-white"
+            style={{
+              background: 'linear-gradient(135deg,#EA580C,#FF6B35)',
+              boxShadow: '0 12px 32px -12px rgba(234,88,12,0.45)',
+            }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-orange-100">Boost Sales</p>
+                <p className="text-xl font-black leading-tight" style={{ fontFamily: 'var(--font-display,Syne,sans-serif)' }}>
+                  DAILY OFFERS
+                </p>
+                <p className="mt-1 text-xs text-orange-50">24h homepage spotlight · 1 product/day</p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+                <Zap className="h-6 w-6 fill-white text-white" />
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-1 text-xs font-bold text-white/90">
+              Create offer <ChevronRight className="h-3.5 w-3.5" />
+            </div>
+          </div>
+        </Link>
+
         <div className="grid grid-cols-2 gap-3">
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (

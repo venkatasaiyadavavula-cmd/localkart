@@ -31,6 +31,12 @@ export class DailyOffer {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  sellerNotes: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  offerDetails: Record<string, string | number> | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

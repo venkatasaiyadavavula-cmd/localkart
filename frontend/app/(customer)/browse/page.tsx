@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronDown, Zap } from 'lucide-react';
 import { ProductCard } from '@/components/product/product-card';
 import { useProducts } from '@/hooks/use-products';
 import { useLocationStore } from '@/store/location-store';
@@ -96,23 +96,25 @@ function BrowseContent({ initialCategory = '' }: { initialCategory?: string }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b sticky top-0 z-30">
-        <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => setActiveCategory(cat.value)}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                activeCategory === cat.value
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-gray-600 border-gray-200'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+      {!isSaleView && (
+        <div className="bg-white border-b sticky top-0 z-30">
+          <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
+            {categories.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setActiveCategory(cat.value)}
+                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  activeCategory === cat.value
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-gray-600 border-gray-200'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="px-4 py-4 flex items-center justify-between">
         <div>
@@ -147,24 +149,53 @@ function BrowseContent({ initialCategory = '' }: { initialCategory?: string }) {
         )}
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px px-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-square rounded-none" />
-          ))}
+      {isSaleView && (
+        <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-100 px-4 py-3">
+          <Zap className="h-4 w-4 text-orange-500" />
+          <p className="text-sm font-bold text-orange-800">Today&apos;s Daily Offers — 24h only</p>
         </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-500">No products found</p>
-          <button onClick={() => { setActiveCategory(''); window.history.replaceState(null, '', '/browse'); }} className="mt-3 text-primary text-sm font-semibold">
-            Clear filters
+      )}
+
+      {initialQuery && !isSaleView && (
+        <div className="px-4 py-2 bg-primary/5 flex items-center justify-between">
+          <p className="text-xs text-gray-600">
+            Results for: <span className="font-semibold text-primary">&quot;{initialQuery}&quot;</span>
+          </p>
+          <button onClick={() => { window.location.href = '/browse'; }}>
+            <X className="h-4 w-4 text-gray-400" />
           </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-gray-200 px-4 pb-24">
-          {products.map((product: any) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+      )}
+
+      <div className="grid grid-cols-2 gap-0.5 md:grid-cols-3 lg:grid-cols-4 px-4 pb-24">
+        {loading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white">
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-2 space-y-1.5">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))
+          : products.map((product: any) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+      </div>
+
+      {!loading && products.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <p className="text-4xl mb-3">🔍</p>
+          <p className="text-sm font-medium">No products found</p>
+          <p className="text-xs mt-1">Try a different category or search</p>
+          {!isSaleView && (
+            <button
+              onClick={() => { setActiveCategory(''); window.history.replaceState(null, '', '/browse'); }}
+              className="mt-3 text-primary text-sm font-semibold"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       )}
     </div>

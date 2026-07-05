@@ -207,7 +207,7 @@ export class SellerController {
 
   @Post('daily-offers')
   async createDailyOffer(@CurrentUser() user: any, @Body() dto: CreateDailyOfferDto) {
-    return this.dailyOfferService.createOffer(user.id, dto.productId, dto.offerPrice);
+    return this.dailyOfferService.createOffer(user.id, dto);
   }
 
   @Delete('daily-offers/:id')

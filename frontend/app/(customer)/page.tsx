@@ -205,20 +205,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {savedLocation && (
-        <section className="mt-1 pt-4 pb-5 bg-white border-y border-gray-100/80">
-          <div className="section-header">
-            <h2 className="section-title flex items-center gap-2">
-              <span className="flex items-center justify-center w-7 h-7 rounded-xl" style={{ background: '#FFF3EE' }}>
-                <Clock className="h-4 w-4" style={{ color: '#FF6B35' }} />
-              </span>
-              {t('homeTodaysOffers')}
-            </h2>
-            <Link href="/browse?sale=true" className="section-link">{t('seeAll')} <ChevronRight className="h-3.5 w-3.5" /></Link>
-          </div>
-          <TodayOffersSection />
-        </section>
-      )}
+      {savedLocation && <TodayOffersSection />}
 
       <section className="pt-4 pb-1">
         <div className="section-header">
