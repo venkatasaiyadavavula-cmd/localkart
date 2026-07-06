@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
+import { ensureStaffMembersColumns } from './helpers/ensure-staff-members-columns';
 
 export class AddStaffMembers0061700000000006 implements MigrationInterface {
   name = 'AddStaffMembers0061700000000006';
@@ -40,6 +41,9 @@ export class AddStaffMembers0061700000000006 implements MigrationInterface {
         CONSTRAINT "FK_staff_members_shop" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE
       )
     `);
+
+    // Pre-existing tables (manual/dev) may lack columns — add before indexing
+    await ensureStaffMembersColumns(queryRunner);
 
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_staff_members_shopId_status"

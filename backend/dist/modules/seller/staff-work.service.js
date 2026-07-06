@@ -75,6 +75,7 @@ exports.StaffWorkService = StaffWorkService;
 exports.StaffWorkService = StaffWorkService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
+    __param(1, (0, common_1.Inject)((0, common_1.forwardRef)(() => catalog_service_1.CatalogService))),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         catalog_service_1.CatalogService,
         orders_service_1.OrdersService])

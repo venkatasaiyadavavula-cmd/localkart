@@ -18,7 +18,7 @@ const category_entity_1 = require("../../core/entities/category.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
 const daily_offer_entity_1 = require("../../core/entities/daily-offer.entity");
 const subscription_entity_1 = require("../../core/entities/subscription.entity");
-const seller_module_1 = require("../seller/seller.module");
+const featured_video_module_1 = require("../seller/featured-video.module");
 let CatalogModule = class CatalogModule {
 };
 exports.CatalogModule = CatalogModule;
@@ -26,7 +26,7 @@ exports.CatalogModule = CatalogModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([product_entity_1.Product, category_entity_1.Category, shop_entity_1.Shop, daily_offer_entity_1.DailyOffer, subscription_entity_1.Subscription]),
-            seller_module_1.SellerModule,
+            featured_video_module_1.FeaturedVideoModule,
         ],
         controllers: [catalog_controller_1.CatalogController],
         providers: [catalog_service_1.CatalogService, search_service_1.SearchService, bulk_upload_service_1.BulkUploadService],

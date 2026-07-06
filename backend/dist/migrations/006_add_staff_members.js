@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AddStaffMembers0061700000000006 = void 0;
+const ensure_staff_members_columns_1 = require("./helpers/ensure-staff-members-columns");
 class AddStaffMembers0061700000000006 {
     name = 'AddStaffMembers0061700000000006';
     async up(queryRunner) {
@@ -38,6 +39,7 @@ class AddStaffMembers0061700000000006 {
         CONSTRAINT "FK_staff_members_shop" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE
       )
     `);
+        await (0, ensure_staff_members_columns_1.ensureStaffMembersColumns)(queryRunner);
         await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_staff_members_shopId_status"
       ON "staff_members" ("shopId", "status")
