@@ -71,26 +71,35 @@ export async function ensureStaffMembersColumns(queryRunner: QueryRunner): Promi
 
   await queryRunner.query(`
     DO $$ BEGIN
-      ALTER TABLE "staff_members"
-      ADD CONSTRAINT "FK_staff_members_shop"
-      FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE;
-    EXCEPTION WHEN duplicate_object THEN null;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'FK_staff_members_shop'
+      ) THEN
+        ALTER TABLE "staff_members"
+        ADD CONSTRAINT "FK_staff_members_shop"
+        FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE;
+      END IF;
     END $$;
   `);
 
   await queryRunner.query(`
     DO $$ BEGIN
-      ALTER TABLE "staff_members"
-      ADD CONSTRAINT "UQ_staff_members_phone" UNIQUE ("phone");
-    EXCEPTION WHEN duplicate_object THEN null;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'UQ_staff_members_phone'
+      ) THEN
+        ALTER TABLE "staff_members"
+        ADD CONSTRAINT "UQ_staff_members_phone" UNIQUE ("phone");
+      END IF;
     END $$;
   `);
 
   await queryRunner.query(`
     DO $$ BEGIN
-      ALTER TABLE "staff_members"
-      ADD CONSTRAINT "UQ_staff_members_staffId" UNIQUE ("staffId");
-    EXCEPTION WHEN duplicate_object THEN null;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'UQ_staff_members_staffId'
+      ) THEN
+        ALTER TABLE "staff_members"
+        ADD CONSTRAINT "UQ_staff_members_staffId" UNIQUE ("staffId");
+      END IF;
     END $$;
   `);
 }
