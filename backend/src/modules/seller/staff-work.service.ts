@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Shop } from '../../core/entities/shop.entity';
@@ -15,6 +15,7 @@ export class StaffWorkService {
   constructor(
     @InjectRepository(Shop)
     private readonly shopRepo: Repository<Shop>,
+    @Inject(forwardRef(() => CatalogService))
     private readonly catalogService: CatalogService,
     private readonly ordersService: OrdersService,
   ) {}

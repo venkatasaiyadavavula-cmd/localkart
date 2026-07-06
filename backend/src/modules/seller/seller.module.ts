@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JwtModule } from '@nestjs/jwt';
@@ -13,8 +13,7 @@ import { WeeklyEarningsScheduler } from './weekly-earnings.scheduler';
 import { StaffService } from './staff.service';
 import { StaffController } from './staff.controller';
 import { DailyOfferService } from './daily-offer.service';
-import { FeaturedVideoService } from './featured-video.service';
-import { FeaturedVideo } from '../../core/entities/featured-video.entity';
+import { FeaturedVideoModule } from './featured-video.module';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
@@ -37,11 +36,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
     TypeOrmModule.forFeature([
       Shop, User, Product, Order,
       Subscription, SponsoredProduct, Transaction,
-      CommissionBill, StaffMember, DailyOffer, FeaturedVideo,
+      CommissionBill, StaffMember, DailyOffer,
     ]),
     BullModule.registerQueue({ name: 'media' }),
     NotificationsModule,
-    CatalogModule,
+    forwardRef(() => CatalogModule),
+    FeaturedVideoModule,
     OrdersModule,
     ScheduleModule.forRoot(),
     JwtModule.registerAsync({
@@ -56,12 +56,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
   providers: [
     SellerService, SubscriptionService, EarningsService,
     AdCampaignService, WeeklyEarningsScheduler, StaffService,
-    DailyOfferService, StaffWorkService, PermissionsGuard, FeaturedVideoService,
+    DailyOfferService, StaffWorkService, PermissionsGuard,
   ],
   exports: [
     SellerService, SubscriptionService, EarningsService,
     AdCampaignService, WeeklyEarningsScheduler, StaffService,
-    DailyOfferService, FeaturedVideoService,
+    DailyOfferService, FeaturedVideoModule,
   ],
 })
 export class SellerModule {}
