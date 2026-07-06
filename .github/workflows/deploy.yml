@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to DigitalOcean
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 30m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            echo "=== Deploying in $APP_DIR ==="
+            cd "$APP_DIR"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            cd backend
+            npm ci
+            npm run build
+            npm run migration:run
+            cd ../frontend
+            npm ci
+            npm run build
+            pm2 restart localkart-backend localkart-frontend
+            pm2 save
+            pm2 status
+            echo "=== Deploy complete ==="
+
+      - name: Checkout repo for QA scripts
+        uses: actions/checkout@v4
+
+      - name: Post-deploy smoke test
+        run: |
+          sleep 20
+          bash scripts/qa-smoke.sh
+          bash scripts/qa-checkout-cod.sh

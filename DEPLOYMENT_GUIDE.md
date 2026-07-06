@@ -321,7 +321,9 @@ pm2 stop localkart-frontend
 
 ## 🔄 Step 11: Update Application
 
-When you push new code to GitHub:
+**Automatic deploy:** See [docs/GITHUB_DEPLOY_SETUP.md](docs/GITHUB_DEPLOY_SETUP.md) — GitHub Actions deploys on every `main` push after SSH secrets are configured.
+
+**Manual deploy** (on server):
 
 ```bash
 cd ~/localkart
