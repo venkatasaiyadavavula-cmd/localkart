@@ -131,13 +131,12 @@ export default function CheckoutPage() {
               Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
             },
             body: JSON.stringify({
-              name: data.name,
-              phone: data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '').slice(-10)}`,
-              address: data.address,
-              city: data.city,
-              state: data.state,
-              pincode: data.pincode,
               type: data.type || 'home',
+              label: data.name || 'Home',
+              fullAddress: [data.address, data.city, data.state, data.pincode].filter(Boolean).join(', '),
+              pincode: data.pincode,
+              latitude: location?.latitude,
+              longitude: location?.longitude,
               isDefault: false,
             }),
           });

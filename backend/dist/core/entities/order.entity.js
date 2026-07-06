@@ -47,6 +47,7 @@ let Order = class Order {
     shopId;
     shop;
     items;
+    subtotal;
     totalAmount;
     deliveryCharge;
     discount;
@@ -107,6 +108,10 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 12, scale: 2 }),
     __metadata("design:type", Number)
+], Order.prototype, "subtotal", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 12, scale: 2 }),
+    __metadata("design:type", Number)
 ], Order.prototype, "totalAmount", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2, default: 0 }),
@@ -125,7 +130,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Order.prototype, "commissionAmount", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'decimal', precision: 5, scale: 2, default: 0 }),
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 5, scale: 2, default: 0, name: 'commissionRate' }),
     __metadata("design:type", Number)
 ], Order.prototype, "commissionPercent", void 0);
 __decorate([
@@ -141,7 +146,7 @@ __decorate([
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb' }),
+    (0, typeorm_1.Column)({ type: 'jsonb', name: 'shippingAddress' }),
     __metadata("design:type", Object)
 ], Order.prototype, "deliveryAddress", void 0);
 __decorate([

@@ -5,14 +5,19 @@ export declare class AddressesService {
     constructor(addressRepo: Repository<SavedAddress>);
     getAddresses(userId: string): Promise<SavedAddress[]>;
     addAddress(userId: string, dto: {
-        type: AddressType;
-        label: string;
-        fullAddress: string;
+        type?: AddressType;
+        label?: string;
+        fullAddress?: string;
         landmark?: string;
         pincode?: string;
         latitude?: number;
         longitude?: number;
         isDefault?: boolean;
+        name?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        phone?: string;
     }): Promise<SavedAddress>;
     updateAddress(userId: string, id: string, dto: Partial<{
         type: AddressType;

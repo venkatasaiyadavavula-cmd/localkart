@@ -31,6 +31,7 @@ export declare class Order {
     shopId: string;
     shop: Shop;
     items: OrderItem[];
+    subtotal: number;
     totalAmount: number;
     deliveryCharge: number;
     discount: number;

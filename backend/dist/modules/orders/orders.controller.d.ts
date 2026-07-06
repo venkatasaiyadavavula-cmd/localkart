@@ -16,6 +16,7 @@ export declare class OrdersController {
         shopId: string;
         shop: import("../../core/entities/shop.entity").Shop;
         items: import("../../core/entities/order-item.entity").OrderItem[];
+        subtotal: number;
         totalAmount: number;
         deliveryCharge: number;
         discount: number;
@@ -54,6 +55,7 @@ export declare class OrdersController {
         shopId: string;
         shop: import("../../core/entities/shop.entity").Shop;
         items: import("../../core/entities/order-item.entity").OrderItem[];
+        subtotal: number;
         totalAmount: number;
         deliveryCharge: number;
         discount: number;
@@ -135,6 +137,7 @@ export declare class OrdersController {
         shopId: string;
         shop: import("../../core/entities/shop.entity").Shop;
         items: import("../../core/entities/order-item.entity").OrderItem[];
+        subtotal: number;
         totalAmount: number;
         deliveryCharge: number;
         discount: number;

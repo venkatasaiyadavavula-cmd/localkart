@@ -29,6 +29,13 @@ let AddressesService = class AddressesService {
         });
     }
     async addAddress(userId, dto) {
+        const type = dto.type ?? saved_address_entity_1.AddressType.HOME;
+        const label = dto.label?.trim() || dto.name?.trim() || 'Home';
+        const fullAddress = dto.fullAddress?.trim() ||
+            [dto.address, dto.city, dto.state, dto.pincode].filter(Boolean).join(', ');
+        if (!fullAddress) {
+            throw new common_1.BadRequestException('Address is required');
+        }
         if (dto.isDefault) {
             await this.addressRepo.update({ userId }, { isDefault: false });
         }
@@ -36,7 +43,17 @@ let AddressesService = class AddressesService {
         if (count >= 10) {
             throw new common_1.BadRequestException('Maximum 10 addresses allowed');
         }
-        const address = this.addressRepo.create({ ...dto, userId });
+        const address = this.addressRepo.create({
+            userId,
+            type,
+            label,
+            fullAddress,
+            landmark: dto.landmark,
+            pincode: dto.pincode,
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            isDefault: dto.isDefault ?? false,
+        });
         return this.addressRepo.save(address);
     }
     async updateAddress(userId, id, dto) {

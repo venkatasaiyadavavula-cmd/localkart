@@ -40,6 +40,7 @@ export declare class OrdersService {
         shopId: string;
         shop: Shop;
         items: OrderItem[];
+        subtotal: number;
         totalAmount: number;
         deliveryCharge: number;
         discount: number;
@@ -78,6 +79,7 @@ export declare class OrdersService {
         shopId: string;
         shop: Shop;
         items: OrderItem[];
+        subtotal: number;
         totalAmount: number;
         deliveryCharge: number;
         discount: number;
@@ -128,6 +130,7 @@ export declare class OrdersService {
         shopId: string;
         shop: Shop;
         items: OrderItem[];
+        subtotal: number;
         totalAmount: number;
         deliveryCharge: number;
         discount: number;

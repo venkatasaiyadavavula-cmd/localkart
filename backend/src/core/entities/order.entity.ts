@@ -60,6 +60,9 @@ export class Order {
   items: OrderItem[];
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
+  subtotal: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
   totalAmount: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
@@ -74,7 +77,7 @@ export class Order {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   commissionAmount: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0, name: 'commissionRate' })
   commissionPercent: number;
 
   @Column({ type: 'enum', enum: PaymentMethod, default: PaymentMethod.COD })
@@ -86,7 +89,7 @@ export class Order {
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING_OTP })
   status: OrderStatus;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'jsonb', name: 'shippingAddress' })
   deliveryAddress: Record<string, any>;
 
   @Column({ nullable: true })
