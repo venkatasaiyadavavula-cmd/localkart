@@ -19,7 +19,7 @@ export interface CreateOrderData {
 export const ordersApi = {
   async createOrder(data: CreateOrderData) {
     const response = await apiClient.post('/orders', data);
-    return unwrapApiData(response.data);
+    return unwrapApiData<{ id: string; orderNumber?: string }>(response.data);
   },
 
   async getMyOrders(page = 1, limit = 20, status?: string) {

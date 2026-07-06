@@ -18,6 +18,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const order_entity_1 = require("../../core/entities/order.entity");
+const return_request_entity_1 = require("../../core/entities/return-request.entity");
 const order_item_entity_1 = require("../../core/entities/order-item.entity");
 const product_entity_1 = require("../../core/entities/product.entity");
 const shop_entity_1 = require("../../core/entities/shop.entity");
@@ -37,6 +38,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
     shopRepository;
     userRepository;
     transactionRepository;
+    returnRepository;
     cartService;
     dataSource;
     stateMachine;
@@ -44,13 +46,14 @@ let OrdersService = OrdersService_1 = class OrdersService {
     trackingGateway;
     locationService;
     logger = new common_1.Logger(OrdersService_1.name);
-    constructor(orderRepository, orderItemRepository, productRepository, shopRepository, userRepository, transactionRepository, cartService, dataSource, stateMachine, notificationsService, trackingGateway, locationService) {
+    constructor(orderRepository, orderItemRepository, productRepository, shopRepository, userRepository, transactionRepository, returnRepository, cartService, dataSource, stateMachine, notificationsService, trackingGateway, locationService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.shopRepository = shopRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
+        this.returnRepository = returnRepository;
         this.cartService = cartService;
         this.dataSource = dataSource;
         this.stateMachine = stateMachine;
@@ -225,13 +228,20 @@ let OrdersService = OrdersService_1 = class OrdersService {
             throw new common_1.BadRequestException('Invalid OTP');
         }
         if (currentUser.role === user_entity_1.UserRole.CUSTOMER) {
-            if (order.status !== order_entity_1.OrderStatus.OUT_FOR_DELIVERY) {
-                throw new common_1.BadRequestException('Order is not out for delivery');
+            if (order.status === order_entity_1.OrderStatus.PENDING_OTP) {
+                order.status = order_entity_1.OrderStatus.CONFIRMED;
+                order.confirmedAt = new Date();
+                order.deliveryOtp = null;
             }
-            order.status = order_entity_1.OrderStatus.DELIVERED;
-            order.deliveredAt = new Date();
-            order.paymentStatus = order_entity_1.PaymentStatus.PAID;
-            order.deliveryOtp = null;
+            else if (order.status === order_entity_1.OrderStatus.OUT_FOR_DELIVERY) {
+                order.status = order_entity_1.OrderStatus.DELIVERED;
+                order.deliveredAt = new Date();
+                order.paymentStatus = order_entity_1.PaymentStatus.PAID;
+                order.deliveryOtp = null;
+            }
+            else {
+                throw new common_1.BadRequestException('Order is not ready for OTP verification');
+            }
         }
         else if (currentUser.role === user_entity_1.UserRole.SELLER) {
             if (order.status !== order_entity_1.OrderStatus.PENDING_OTP) {
@@ -278,7 +288,14 @@ let OrdersService = OrdersService_1 = class OrdersService {
         }
         delete order.deliveryOtp;
         delete order.customer.password;
-        return this.formatOrderResponse(order);
+        const returnRequest = await this.returnRepository.findOne({
+            where: { orderId: id },
+            select: ['id', 'status', 'reason', 'createdAt'],
+        });
+        return this.formatOrderResponse({
+            ...order,
+            returnRequest: returnRequest ?? undefined,
+        });
     }
     async cancelOrder(orderId, userId, reason) {
         const order = await this.orderRepository.findOne({
@@ -533,7 +550,9 @@ exports.OrdersService = OrdersService = OrdersService_1 = __decorate([
     __param(3, (0, typeorm_1.InjectRepository)(shop_entity_1.Shop)),
     __param(4, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __param(5, (0, typeorm_1.InjectRepository)(transaction_entity_1.Transaction)),
+    __param(6, (0, typeorm_1.InjectRepository)(return_request_entity_1.ReturnRequest)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

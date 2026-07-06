@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api/client';
+import { unwrapApiData } from '@/lib/utils';
 
 export interface NearbyShopsParams {
   latitude: number;
@@ -13,11 +14,11 @@ export const locationApi = {
   /**
    * Check if any shops deliver to given coordinates
    */
-  async checkServiceability(lat: number, lng: number, radius: number = 20): Promise<{ serviceable: boolean; shopsCount: number }> {
+  async checkServiceability(lat: number, lng: number, radius: number = 20): Promise<{ serviceable: boolean; shopsCount: number; maxDistance?: number; deliveryCharge?: number }> {
     const { data } = await apiClient.get('/location/check-serviceability', {
       params: { lat, lng, radius },
     });
-    return data;
+    return unwrapApiData(data);
   },
 
   /**

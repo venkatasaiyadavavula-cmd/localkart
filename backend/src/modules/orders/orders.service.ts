@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Order, OrderStatus, PaymentMethod, PaymentStatus } from '../../core/entities/order.entity';
+import { ReturnRequest } from '../../core/entities/return-request.entity';
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
@@ -41,6 +42,8 @@ export class OrdersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
+    @InjectRepository(ReturnRequest)
+    private readonly returnRepository: Repository<ReturnRequest>,
     private readonly cartService: CartService,
     private readonly dataSource: DataSource,
     private readonly stateMachine: OrderStateMachine,
@@ -266,13 +269,18 @@ export class OrdersService {
     }
 
     if (currentUser.role === UserRole.CUSTOMER) {
-      if (order.status !== OrderStatus.OUT_FOR_DELIVERY) {
-        throw new BadRequestException('Order is not out for delivery');
+      if (order.status === OrderStatus.PENDING_OTP) {
+        order.status = OrderStatus.CONFIRMED;
+        order.confirmedAt = new Date();
+        order.deliveryOtp = null;
+      } else if (order.status === OrderStatus.OUT_FOR_DELIVERY) {
+        order.status = OrderStatus.DELIVERED;
+        order.deliveredAt = new Date();
+        order.paymentStatus = PaymentStatus.PAID;
+        order.deliveryOtp = null;
+      } else {
+        throw new BadRequestException('Order is not ready for OTP verification');
       }
-      order.status = OrderStatus.DELIVERED;
-      order.deliveredAt = new Date();
-      order.paymentStatus = PaymentStatus.PAID;
-      order.deliveryOtp = null;
     } else if (currentUser.role === UserRole.SELLER) {
       if (order.status !== OrderStatus.PENDING_OTP) {
         throw new BadRequestException('Order is not pending OTP');
@@ -328,7 +336,15 @@ export class OrdersService {
     delete order.deliveryOtp;
     delete order.customer.password;
 
-    return this.formatOrderResponse(order);
+    const returnRequest = await this.returnRepository.findOne({
+      where: { orderId: id },
+      select: ['id', 'status', 'reason', 'createdAt'],
+    });
+
+    return this.formatOrderResponse({
+      ...order,
+      returnRequest: returnRequest ?? undefined,
+    } as Order & { returnRequest?: ReturnRequest });
   }
 
   async cancelOrder(orderId: string, userId: string, reason?: string) {

@@ -165,7 +165,7 @@ export default function OrdersPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {order.shop.name}
+                        {order.shop?.name ?? 'Shop'}
                       </p>
                     </div>
 

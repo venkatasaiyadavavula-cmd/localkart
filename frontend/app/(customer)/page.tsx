@@ -38,7 +38,7 @@ export default function HomePage() {
   const [bannerAnimating, setBannerAnimating] = useState(false);
 
   const { latitude, longitude, loading: locationLoading, error: locationError, detectLocation } = useGeolocation();
-  const { location: savedLocation, setLocation } = useLocationStore();
+  const { location: savedLocation, setLocation, validateAndSetServiceability } = useLocationStore();
 
   const trustBadges = useMemo(() => [
     { icon: Zap, label: t('homeTrustSameDay'), sub: t('homeTrustSameDaySub'), color: '#3D5AF1', bg: '#EEF0FE' },
@@ -68,8 +68,9 @@ export default function HomePage() {
         pincode: geo.pincode,
         address: geo.address,
       });
+      validateAndSetServiceability(latitude, longitude);
     });
-  }, [latitude, longitude, savedLocation, setLocation]);
+  }, [latitude, longitude, savedLocation, setLocation, validateAndSetServiceability]);
 
   useEffect(() => {
     const interval = setInterval(() => {

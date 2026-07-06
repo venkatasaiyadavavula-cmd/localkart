@@ -1,5 +1,6 @@
 import { Repository, DataSource } from 'typeorm';
 import { Order, OrderStatus, PaymentMethod, PaymentStatus } from '../../core/entities/order.entity';
+import { ReturnRequest } from '../../core/entities/return-request.entity';
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
@@ -20,6 +21,7 @@ export declare class OrdersService {
     private readonly shopRepository;
     private readonly userRepository;
     private readonly transactionRepository;
+    private readonly returnRepository;
     private readonly cartService;
     private readonly dataSource;
     private readonly stateMachine;
@@ -27,7 +29,7 @@ export declare class OrdersService {
     private readonly trackingGateway;
     private readonly locationService;
     private readonly logger;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, productRepository: Repository<Product>, shopRepository: Repository<Shop>, userRepository: Repository<User>, transactionRepository: Repository<Transaction>, cartService: CartService, dataSource: DataSource, stateMachine: OrderStateMachine, notificationsService: NotificationsService, trackingGateway: TrackingGateway, locationService: LocationService);
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, productRepository: Repository<Product>, shopRepository: Repository<Shop>, userRepository: Repository<User>, transactionRepository: Repository<Transaction>, returnRepository: Repository<ReturnRequest>, cartService: CartService, dataSource: DataSource, stateMachine: OrderStateMachine, notificationsService: NotificationsService, trackingGateway: TrackingGateway, locationService: LocationService);
     private formatOrderResponse;
     createOrder(userId: string, createOrderDto: CreateOrderDto): Promise<{
         isShopOpen: true;

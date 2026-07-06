@@ -8,7 +8,7 @@ import { BuyNowWelcomeDialog } from '@/components/orders/buy-now-welcome-dialog'
 
 export function useBuyNowWithWelcome() {
   const router = useRouter();
-  const { addItem, isLoading: cartLoading } = useCartStore();
+  const { addItem, clearCart, isLoading: cartLoading } = useCartStore();
   const [showWelcome, setShowWelcome] = useState(false);
   const [pendingBuy, setPendingBuy] = useState<{ productId: string; quantity: number } | null>(null);
   const [isProceeding, setIsProceeding] = useState(false);
@@ -23,6 +23,7 @@ export function useBuyNowWithWelcome() {
 
     setIsProceeding(true);
     try {
+      await clearCart();
       await addItem(pendingBuy.productId, pendingBuy.quantity);
       setShowWelcome(false);
       setPendingBuy(null);
@@ -32,7 +33,7 @@ export function useBuyNowWithWelcome() {
     } finally {
       setIsProceeding(false);
     }
-  }, [addItem, pendingBuy, router]);
+  }, [addItem, clearCart, pendingBuy, router]);
 
   const dialog = (
     <BuyNowWelcomeDialog

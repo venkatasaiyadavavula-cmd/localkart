@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -35,7 +34,9 @@ import { useCartStore } from '@/store/cart-store';
 import { useShop } from '@/hooks/use-shop';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocationStore, useDeliveryCharge } from '@/store/location-store';
-import { formatPrice, unwrapApiData } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
+import { ordersApi } from '@/lib/api/orders';
+import { addressesApi } from '@/lib/api/addresses';
 import { LocationPicker } from '@/components/map/location-picker';
 
 const addressSchema = z.object({
@@ -55,7 +56,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { items, totalAmount, clearCart } = useCartStore();
-  const { location } = useLocationStore();
+  const { location, setLocation, validateAndSetServiceability } = useLocationStore();
   const deliveryCharge = useDeliveryCharge();
 
   // Get shop details from first item
@@ -72,9 +73,7 @@ export default function CheckoutPage() {
     queryFn: async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return [];
-      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/addresses`,
-        { headers: { Authorization: `Bearer ${token}` } });
-      const addresses = unwrapApiData<any[]>(data) ?? [];
+      const addresses = await addressesApi.list();
       return addresses.map((addr) => ({
         ...addr,
         name: addr.label || user?.name || '',
@@ -124,48 +123,30 @@ export default function CheckoutPage() {
     try {
       if (data.saveAddress) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-            },
-            body: JSON.stringify({
-              type: data.type || 'home',
-              label: data.name || 'Home',
-              fullAddress: [data.address, data.city, data.state, data.pincode].filter(Boolean).join(', '),
-              pincode: data.pincode,
-              latitude: location?.latitude,
-              longitude: location?.longitude,
-              isDefault: false,
-            }),
+          await addressesApi.create({
+            type: data.type || 'home',
+            label: data.name || 'Home',
+            fullAddress: [data.address, data.city, data.state, data.pincode].filter(Boolean).join(', '),
+            pincode: data.pincode,
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+            isDefault: false,
           });
         } catch {
           // non-blocking — order can still proceed
         }
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
-        body: JSON.stringify({
-          shippingAddress: {
-            ...data,
-            phone: data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '').slice(-10)}`,
-            latitude: location?.latitude,
-            longitude: location?.longitude,
-          },
-          paymentMethod: 'cod',
-          deliveryNotes,
-        }),
+      const order = await ordersApi.createOrder({
+        shippingAddress: {
+          ...data,
+          phone: data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '').slice(-10)}`,
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+        },
+        paymentMethod: 'cod',
+        deliveryNotes,
       });
-
-      const raw = await response.json();
-      const order = unwrapApiData<{ id: string; finalAmount?: number; totalAmount?: number }>(raw);
-
-      if (!response.ok) {
-        throw new Error((raw as { message?: string }).message || 'Failed to create order');
-      }
 
       await clearCart();
       toast.success('Order placed successfully!');
@@ -463,6 +444,13 @@ export default function CheckoutPage() {
           onClose={() => setShowLocationPicker(false)}
           onSelect={(lat, lng, address) => {
             setValue('address', address || '');
+            setLocation({
+              latitude: lat,
+              longitude: lng,
+              address,
+              source: 'manual',
+            });
+            validateAndSetServiceability(lat, lng);
             setShowLocationPicker(false);
           }}
         />

@@ -10,13 +10,14 @@ import { Product } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
+import { ReturnRequest } from '../../core/entities/return-request.entity';
 import { CartModule } from '../cart/cart.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LocationModule } from '../location/location.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, Product, Shop, User, Transaction]),
+    TypeOrmModule.forFeature([Order, OrderItem, Product, Shop, User, Transaction, ReturnRequest]),
     CartModule,
     NotificationsModule,
     LocationModule,

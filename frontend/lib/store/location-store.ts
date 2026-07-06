@@ -6,6 +6,7 @@ import {
   calculateDeliveryCharge,
   DELIVERY_CHARGES,
 } from '@/lib/delivery-pricing';
+import { unwrapApiData } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -66,7 +67,12 @@ export const checkServiceability = async (lat: number, lng: number): Promise<{
     const response = await axios.get(`${API_URL}/location/check-serviceability`, {
       params: { lat, lng, radius: MAX_DELIVERY_RADIUS_KM },
     });
-    return response.data;
+    return unwrapApiData<{
+      serviceable: boolean;
+      shopsCount: number;
+      maxDistance?: number;
+      deliveryCharge?: number;
+    }>(response.data);
   } catch (error) {
     console.error('Serviceability check failed:', error);
     return { serviceable: false, shopsCount: 0 };

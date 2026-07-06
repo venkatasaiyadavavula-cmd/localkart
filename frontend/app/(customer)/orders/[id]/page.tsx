@@ -81,8 +81,8 @@ export default function OrderDetailPage() {
       toast.success('Order confirmed successfully');
       setShowOtpDialog(false);
       refetch();
-    } catch (error) {
-      toast.error('Invalid OTP');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || 'Invalid OTP');
     } finally {
       setIsVerifying(false);
     }

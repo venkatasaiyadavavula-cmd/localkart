@@ -20,7 +20,7 @@ export function MobileHeader() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { totalItems } = useCartStore();
-  const { location: savedLocation, setLocation } = useLocationStore();
+  const { location: savedLocation, setLocation, validateAndSetServiceability } = useLocationStore();
   const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,8 +34,9 @@ export function MobileHeader() {
   useEffect(() => {
     if (latitude && longitude && !savedLocation) {
       setLocation({ latitude, longitude, source: 'gps' });
+      validateAndSetServiceability(latitude, longitude);
     }
-  }, [latitude, longitude, savedLocation, setLocation]);
+  }, [latitude, longitude, savedLocation, setLocation, validateAndSetServiceability]);
 
   useEffect(() => {
     const fn = (e: MouseEvent) => {

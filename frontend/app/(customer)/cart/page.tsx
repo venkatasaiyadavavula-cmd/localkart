@@ -25,14 +25,24 @@ import { Separator } from '@/components/ui/separator';
 import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { useCartStore } from '@/store/cart-store';
 import { useShop } from '@/hooks/use-shop';
+import { useDeliveryCharge } from '@/store/location-store';
 import { formatPrice } from '@/lib/utils';
 import { getProductUrl } from '@/lib/product-url';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, updateQuantity, removeItem, clearCart, totalAmount, totalItems, isLoading } = useCartStore();
+  const { items, updateQuantity, removeItem, clearCart, totalAmount, totalItems, isLoading, syncWithServer } = useCartStore();
+  const deliveryCharge = useDeliveryCharge();
+  const shippingFee = deliveryCharge ?? 0;
+  const orderTotal = totalAmount + shippingFee;
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (localStorage.getItem('accessToken')) {
+      syncWithServer();
+    }
+  }, [syncWithServer]);
 
   // Get shop details from first item
   const shopId = items[0]?.shopId;
@@ -54,7 +64,6 @@ export default function CartPage() {
     setUpdatingId(productId);
     try {
       await removeItem(productId);
-      toast.success('Item removed from cart');
     } catch (error) {
       toast.error('Failed to remove item');
     } finally {
@@ -243,13 +252,15 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Charge</span>
-                  <span className="font-medium text-green-600">Free</span>
+                  <span className={shippingFee === 0 ? 'font-medium text-green-600' : 'font-medium'}>
+                    {shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}
+                  </span>
                 </div>
                 <Separator className="my-3" />
                 <div className="flex justify-between">
                   <span className="font-semibold">Total</span>
                   <span className="font-heading text-xl font-bold text-primary">
-                    {formatPrice(totalAmount)}
+                    {formatPrice(orderTotal)}
                   </span>
                 </div>
               </div>

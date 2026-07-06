@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,7 +11,6 @@ import {
   X, ShoppingBag, CheckCircle, Clock, ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -25,8 +24,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
-
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { wishlistApi } from '@/lib/api/wishlist';
+import { getAccessToken } from '@/lib/api/client';
 
 export default function ProductDetailPage() {
   const params   = useParams();
@@ -43,6 +42,13 @@ export default function ProductDetailPage() {
   const [isWishlisted,   setIsWishlisted]   = useState(false);
   const [addedToCart,    setAddedToCart]    = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  useEffect(() => {
+    if (!product?.id || !getAccessToken()) return;
+    wishlistApi.getProductIds().then((ids) => {
+      setIsWishlisted(ids.includes(product.id));
+    }).catch(() => {});
+  }, [product?.id]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -71,19 +77,17 @@ export default function ProductDetailPage() {
 
   const handleWishlist = async () => {
     if (!product) return;
+    if (!getAccessToken()) {
+      toast.error('Login to save to wishlist');
+      return;
+    }
     setWishlistLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      const { data } = await axios.post(
-        `${API}/wishlist/toggle`,
-        { productId: product.id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const result = data?.data ?? data;
+      const result = await wishlistApi.toggle(product.id);
       setIsWishlisted(result.added);
       toast.success(result.added ? '❤️ Added to wishlist!' : 'Removed from wishlist');
     } catch {
-      toast.error('Login to save to wishlist');
+      toast.error('Failed to update wishlist');
     } finally {
       setWishlistLoading(false);
     }
