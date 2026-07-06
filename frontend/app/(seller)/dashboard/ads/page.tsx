@@ -312,20 +312,14 @@ export default function SellerAdsPage() {
               <p className="py-8 text-center text-muted-foreground">No featured videos yet</p>
             ) : (
               <div className="space-y-4">
-                {featuredVideos.map((fv: {
-                  id: string;
-                  status: string;
-                  expiresAt: string;
-                  amount: number;
-                  product?: { name: string };
-                }) => (
+                {featuredVideos.map((fv) => (
                   <div key={fv.id} className="flex items-center justify-between rounded-lg border p-4">
                     <div className="flex items-center gap-3">
                       <Video className="h-5 w-5 text-accent" />
                       <div>
                         <p className="font-medium">{fv.product?.name || 'Product'}</p>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{formatPrice(fv.amount)}</span>
+                          <span>{formatPrice(fv.amount ?? 29)}</span>
                           <span>Expires {format(new Date(fv.expiresAt), 'dd MMM HH:mm')}</span>
                         </div>
                       </div>

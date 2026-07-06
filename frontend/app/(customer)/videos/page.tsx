@@ -11,6 +11,8 @@ import {
 import { toast } from 'sonner';
 import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 
+import type { Product } from '@/types/product';
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function VideoFeedPage() {
@@ -20,13 +22,13 @@ export default function VideoFeedPage() {
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ['video-products'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/catalog/products`, {
         params: { hasVideo: true, limit: 20, sortBy: 'createdAt', sortOrder: 'DESC' },
       });
-      return normalizeList(data).filter((p: { videos?: string[] }) => p.videos?.length);
+      return normalizeList<Product>(data).filter((p) => (p.videos?.length ?? 0) > 0);
     },
   });
 

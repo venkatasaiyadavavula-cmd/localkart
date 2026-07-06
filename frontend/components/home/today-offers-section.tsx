@@ -12,6 +12,7 @@ import { getOfferOnProduct } from '@/lib/daily-offer-questions';
 import { OfferCountdown } from '@/components/offers/offer-countdown';
 import { useLocationStore } from '@/store/location-store';
 import { useTranslation } from '@/hooks/use-translation';
+import type { ProductWithOffer } from '@/types/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -23,14 +24,14 @@ export function TodayOffersSection({ showHeader = true }: TodayOffersSectionProp
   const { location } = useLocationStore();
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<ProductWithOffer[]>({
     queryKey: ['today-offers', location?.latitude, location?.longitude],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (location?.latitude) params.append('lat', String(location.latitude));
       if (location?.longitude) params.append('lng', String(location.longitude));
       const { data: res } = await axios.get(`${API_URL}/catalog/today-offers?${params}`);
-      return normalizeList(res);
+      return normalizeList<ProductWithOffer>(res);
     },
     refetchInterval: 60_000,
   });
@@ -95,7 +96,7 @@ export function TodayOffersSection({ showHeader = true }: TodayOffersSectionProp
             ? Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-56 w-44 flex-shrink-0 snap-start rounded-2xl" />
               ))
-            : data?.map((product: any, index: number) => {
+            : data?.map((product, index) => {
                 const offer = getOfferOnProduct(product);
                 if (!offer) return null;
 

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import type { Product } from '@/types/product';
 
 interface AdminProductsParams {
   status?: string;
@@ -12,7 +13,7 @@ interface AdminProductsParams {
 export function useAdminProducts(params: AdminProductsParams = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<Product[]>({
     queryKey: ['admin', 'products', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
@@ -24,13 +25,13 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
           ? `/admin/products/pending?${searchParams.toString()}`
           : `/admin/products/pending?limit=0`;
       const { data } = await apiClient.get(endpoint);
-      const products = normalizeList<{ status?: string; name?: string }>(data);
+      const products = normalizeList<Product>(data);
       if (params.status && params.status !== 'pending' && params.status !== 'all') {
-        return products.filter((p: { status?: string }) => p.status === params.status);
+        return products.filter((p) => p.status === params.status);
       }
       if (params.search) {
         const q = params.search.toLowerCase();
-        return products.filter((p: { name?: string }) => p.name?.toLowerCase().includes(q));
+        return products.filter((p) => p.name?.toLowerCase().includes(q));
       }
       return products;
     },

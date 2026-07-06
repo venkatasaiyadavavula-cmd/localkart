@@ -1,27 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/client';
-import { unwrapApiData } from '@/lib/utils';
+import { useApiQuery } from '@/lib/hooks/use-api-query';
+import type { Product } from '@/types/product';
 
 /** Public product by slug (customer catalog) */
 export function useProduct(slug: string) {
-  return useQuery({
-    queryKey: ['product', slug],
-    queryFn: async () => {
-      const { data } = await apiClient.get(`/catalog/products/${slug}`);
-      return unwrapApiData(data);
-    },
+  return useApiQuery<Product>(['product', slug], `/catalog/products/${slug}`, {
     enabled: !!slug,
   });
 }
 
 /** Seller product by ID (dashboard edit) */
 export function useSellerProduct(productId: string) {
-  return useQuery({
-    queryKey: ['seller-product', productId],
-    queryFn: async () => {
-      const { data } = await apiClient.get(`/catalog/seller/products/${productId}`);
-      return unwrapApiData(data);
-    },
-    enabled: !!productId,
-  });
+  return useApiQuery<Product>(
+    ['seller-product', productId],
+    `/catalog/seller/products/${productId}`,
+    { enabled: !!productId },
+  );
 }

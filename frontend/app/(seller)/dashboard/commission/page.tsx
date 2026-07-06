@@ -7,6 +7,8 @@ import { AlertCircle, CheckCircle2, Clock, IndianRupee, TrendingUp, Calendar, Cr
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import type { CommissionBillsData } from '@/types/api';
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -35,13 +37,13 @@ declare global { interface Window { Razorpay: any; } }
 export default function CommissionPage() {
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<CommissionBillsData>({
     queryKey: ['commission-bills'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/commission/my-bills`, {
+      const { data: res } = await axios.get(`${API}/commission/my-bills`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return unwrapApiData(data);
+      return unwrapApiData<CommissionBillsData>(res);
     },
   });
 

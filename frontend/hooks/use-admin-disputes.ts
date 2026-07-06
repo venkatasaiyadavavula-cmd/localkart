@@ -1,17 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import type { ReturnRequest } from '@/types/order';
 
 export function useAdminDisputes(params: { status?: string } = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<ReturnRequest[]>({
     queryKey: ['admin', 'disputes', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);
       const { data } = await apiClient.get(`/returns/admin/all?${searchParams.toString()}`);
-      return normalizeList(data);
+      return normalizeList<ReturnRequest>(data);
     },
   });
 

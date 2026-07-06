@@ -27,6 +27,7 @@ import { unwrapApiData } from '@/lib/utils';
 import { haversineKm, estimateEtaMinutes } from '@/lib/geo';
 import { TrackingHero } from '@/components/orders/tracking-hero';
 import { OrderProgress } from '@/components/orders/order-progress';
+import type { TrackedOrder } from '@/types/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const WS = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1').replace(
@@ -62,11 +63,11 @@ function TrackOrderContent() {
   const [orderStatus, setOrderStatus] = useState('');
   const socketRef = useRef<Socket | null>(null);
 
-  const { data: order, isLoading, refetch } = useQuery({
+  const { data: order, isLoading, refetch } = useQuery<TrackedOrder>({
     queryKey: ['order', orderId],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/orders/${orderId}`, { headers: auth() });
-      return unwrapApiData(data);
+      return unwrapApiData<TrackedOrder>(data);
     },
     enabled: !!orderId,
     refetchInterval: connected ? false : 15000,
@@ -262,12 +263,11 @@ function TrackOrderContent() {
               <LeafletMap
                 deliveryLocation={
                   isOutForDelivery && liveLocation
-                    ? liveLocation
+                    ? { latitude: liveLocation.latitude, longitude: liveLocation.longitude }
                     : isOutForDelivery && order.deliveryLatitude
                       ? {
                           latitude: Number(order.deliveryLatitude),
                           longitude: Number(order.deliveryLongitude),
-                          updatedAt: order.locationUpdatedAt,
                         }
                       : null
                 }

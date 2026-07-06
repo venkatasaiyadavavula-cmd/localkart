@@ -1,14 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/client';
-import { unwrapApiData } from '@/lib/utils';
+import { useApiQuery } from '@/lib/hooks/use-api-query';
+import type { Order } from '@/types/order';
 
 export function useOrder(orderId: string) {
-  return useQuery({
-    queryKey: ['order', orderId],
-    queryFn: async () => {
-      const { data } = await apiClient.get(`/orders/${orderId}`);
-      return unwrapApiData(data);
-    },
+  return useApiQuery<Order>(['order', orderId], `/orders/${orderId}`, {
     enabled: !!orderId,
   });
 }

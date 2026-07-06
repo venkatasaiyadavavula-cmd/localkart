@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import type { Order } from '@/types/order';
 
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<Order[]>({
     queryKey: ['seller', 'orders', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
@@ -13,12 +14,10 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
       if (params.status) searchParams.append('status', params.status);
       if (params.search) searchParams.append('search', params.search);
       const { data } = await apiClient.get(`/orders/seller/all?${searchParams.toString()}`);
-      let orders = normalizeList<{ orderNumber?: string }>(data);
+      let orders = normalizeList<Order>(data);
       if (params.search) {
         const q = params.search.toLowerCase();
-        orders = orders.filter((o: { orderNumber?: string }) =>
-          o.orderNumber?.toLowerCase().includes(q),
-        );
+        orders = orders.filter((o) => o.orderNumber?.toLowerCase().includes(q));
       }
       return orders;
     },

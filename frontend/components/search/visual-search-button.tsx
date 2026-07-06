@@ -47,8 +47,8 @@ export function VisualSearchButton({ onResults }: VisualSearchButtonProps) {
           'Xenova/clip-vit-base-patch32',
         );
         const output = await classifier(imageSrc, [...VISUAL_CATEGORIES]);
-        const top = Array.isArray(output) ? output[0] : null;
-        categoryType = top?.label;
+        const top = Array.isArray(output) ? output[0] : output;
+        categoryType = top && 'label' in top ? top.label : undefined;
       } catch (mlError) {
         console.warn('CLIP classification unavailable, using general search', mlError);
       }

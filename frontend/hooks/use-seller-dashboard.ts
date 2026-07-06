@@ -1,13 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/client';
-import { unwrapApiData } from '@/lib/utils';
+import { useApiQuery } from '@/lib/hooks/use-api-query';
+import type { SellerDashboardStats } from '@/types/api';
 
 export function useSellerDashboard(period: 'week' | 'month' | 'year' = 'week') {
-  return useQuery({
-    queryKey: ['seller', 'dashboard', period],
-    queryFn: async () => {
-      const { data } = await apiClient.get(`/seller/dashboard?period=${period}`);
-      return unwrapApiData(data);
-    },
-  });
+  return useApiQuery<SellerDashboardStats>(
+    ['seller', 'dashboard', period],
+    `/seller/dashboard?period=${period}`,
+  );
 }

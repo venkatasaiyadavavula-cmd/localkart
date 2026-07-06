@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils';
+import type { AdminCommissionsSummary } from '@/types/api';
 
 export function useAdminCommissions(period: 'week' | 'month' | 'year' = 'month') {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<AdminCommissionsSummary>({
     queryKey: ['admin', 'commissions', period],
     queryFn: async () => {
       const { data } = await apiClient.get(`/admin/commissions/summary?period=${period}`);
-      return unwrapApiData(data);
+      return unwrapApiData<AdminCommissionsSummary>(data);
     },
   });
 

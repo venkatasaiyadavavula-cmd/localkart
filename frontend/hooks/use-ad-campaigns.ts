@@ -1,18 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList, unwrapApiData } from '@/lib/utils';
+import type { AdCampaignsData } from '@/types/api';
+import type { AdCampaign } from '@/types/ad-campaign';
 
 export function useAdCampaigns() {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<AdCampaignsData>({
     queryKey: ['seller', 'ads'],
     queryFn: async () => {
       const { data } = await apiClient.get('/seller/ads');
-      const campaigns = normalizeList<{ adType?: string }>(unwrapApiData(data));
+      const campaigns = normalizeList<AdCampaign>(unwrapApiData(data));
       return {
-        sponsored: campaigns.filter((c: { adType?: string }) => c.adType === 'sponsored' || !c.adType),
-        video: campaigns.filter((c: { adType?: string }) => c.adType === 'video'),
+        sponsored: campaigns.filter((c) => c.adType === 'sponsored' || !c.adType),
+        video: campaigns.filter((c) => c.adType === 'video'),
         all: campaigns,
       };
     },

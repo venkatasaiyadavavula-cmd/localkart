@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice, normalizeList } from '@/lib/utils';
 import { getOfferQuestionsForProduct, type OfferQuestion } from '@/lib/daily-offer-questions';
 import { OfferCountdown } from '@/components/offers/offer-countdown';
+import type { DailyOffer, Product } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const MAX_OFFERS = 5;
@@ -34,17 +35,17 @@ export default function SellerOffersPage() {
   const [searchProduct, setSearchProduct] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const { data: offers, isLoading: offersLoading } = useQuery({
+  const { data: offers = [], isLoading: offersLoading } = useQuery<DailyOffer[]>({
     queryKey: ['seller-daily-offers'],
     queryFn: async () => {
       const { data } = await axios.get(`${API_URL}/seller/daily-offers`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      return normalizeList(data);
+      return normalizeList<DailyOffer>(data);
     },
   });
 
-  const { data: products } = useQuery({
+  const { data: products } = useQuery<Product[]>({
     queryKey: ['seller-products-for-offer'],
     queryFn: async () => {
       const { data } = await axios.get(`${API_URL}/catalog/seller/products?limit=100`, {
@@ -226,7 +227,7 @@ export default function SellerOffersPage() {
             <p className="text-xs text-gray-400 mt-1">Create your first deal to appear on the homepage</p>
           </div>
         ) : (
-          offers.map((offer: any) => (
+          offers.map((offer) => (
             <div
               key={offer.id}
               className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm"

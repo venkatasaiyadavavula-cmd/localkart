@@ -9,17 +9,20 @@ import { toast } from 'sonner';
 import { formatPrice, unwrapApiData, getProductUrl } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import type { WishlistItem } from '@/types/api';
+import type { Product } from '@/types/product';
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 export default function WishlistPage() {
   const queryClient = useQueryClient();
 
-  const { data: items, isLoading } = useQuery({
+  const { data: items = [], isLoading } = useQuery<WishlistItem[]>({
     queryKey: ['wishlist'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/wishlist`, { headers: auth() });
-      return unwrapApiData(data) ?? [];
+      return unwrapApiData<WishlistItem[]>(data) ?? [];
     },
   });
 
@@ -39,7 +42,7 @@ export default function WishlistPage() {
         <div className="flex items-center gap-2">
           <Heart className="h-5 w-5 text-red-500 fill-red-500" />
           <h1 className="text-xl font-bold text-gray-900">My Wishlist</h1>
-          {items?.length > 0 && (
+          {items.length > 0 && (
             <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5 rounded-full">
               {items.length} items
             </span>
@@ -54,7 +57,7 @@ export default function WishlistPage() {
               <Skeleton key={i} className="h-64 rounded-2xl" />
             ))}
           </div>
-        ) : items?.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Heart className="h-16 w-16 text-gray-200 mb-4" />
             <p className="text-lg font-bold text-gray-600">Wishlist empty</p>
@@ -67,7 +70,7 @@ export default function WishlistPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {items?.map((item: any) => {
+            {items.map((item) => {
               const product = item.product;
               const discount = product.mrp && product.mrp > product.price
                 ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -94,7 +97,7 @@ export default function WishlistPage() {
                       <p className="text-xs font-medium text-gray-800 line-clamp-2 mb-1.5">{product.name}</p>
                       <div className="flex items-baseline gap-1.5 mb-2">
                         <span className="text-sm font-bold text-gray-900">{formatPrice(product.price)}</span>
-                        {product.mrp > product.price && (
+                        {product.mrp != null && product.mrp > product.price && (
                           <span className="text-xs text-gray-400 line-through">{formatPrice(product.mrp)}</span>
                         )}
                       </div>

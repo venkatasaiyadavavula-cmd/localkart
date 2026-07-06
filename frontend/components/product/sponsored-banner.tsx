@@ -84,7 +84,7 @@ export function SponsoredBanner() {
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(currentProduct.price)}
                 </span>
-                {currentProduct.mrp > currentProduct.price && (
+                {currentProduct.mrp != null && currentProduct.mrp > currentProduct.price && (
                   <span className="text-sm text-muted-foreground line-through">
                     {formatPrice(currentProduct.mrp)}
                   </span>

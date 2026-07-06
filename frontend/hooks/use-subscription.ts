@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils';
+import type { SubscriptionData } from '@/types/api';
 
 export function useSubscription() {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<SubscriptionData>({
     queryKey: ['seller', 'subscription'],
     queryFn: async () => {
       const { data } = await apiClient.get('/seller/subscription');
-      return unwrapApiData(data);
+      return unwrapApiData<SubscriptionData>(data);
     },
   });
 

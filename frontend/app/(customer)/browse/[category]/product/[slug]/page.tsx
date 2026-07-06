@@ -173,7 +173,7 @@ export default function ProductDetailPage() {
                 {product.stock <= 5 && product.stock > 0 && <span className="bg-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Only {product.stock} left!</span>}
               </div>
 
-              {product.videos?.length > 0 && (
+              {(product.videos?.length ?? 0) > 0 && (
                 <button onClick={() => setShowVideo(true)} className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/70 text-white text-xs font-semibold px-3 py-2 rounded-full hover:bg-black/80 transition-colors">
                   <Play className="h-3.5 w-3.5 fill-white" /> Watch Video
                 </button>
@@ -189,9 +189,9 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {product.images?.length > 1 && (
+            {(product.images?.length ?? 0) > 1 && (
               <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide border-t bg-white">
-                {product.images.map((img: string, i: number) => (
+                {(product.images ?? []).map((img: string, i: number) => (
                   <button key={i} onClick={() => setSelectedImage(i)} className={cn('relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all', selectedImage === i ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100')}>
                     <Image src={img} alt="" fill className="object-cover" />
                   </button>

@@ -143,13 +143,15 @@ export function getOfferQuestionsForProduct(product: {
   return [...categorySpecific, ...fromAttributes, ...BASE_QUESTIONS];
 }
 
+import type { DailyOffer } from '@/types/api';
+
 export function getOfferOnProduct(product: {
-  daily_offer?: unknown;
-  daily_offers?: unknown[];
-}) {
-  if (product.daily_offer) return product.daily_offer as Record<string, unknown>;
+  daily_offer?: DailyOffer;
+  daily_offers?: DailyOffer[];
+}): DailyOffer | null {
+  if (product.daily_offer) return product.daily_offer;
   if (Array.isArray(product.daily_offers) && product.daily_offers[0]) {
-    return product.daily_offers[0] as Record<string, unknown>;
+    return product.daily_offers[0];
   }
   return null;
 }

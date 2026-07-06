@@ -14,9 +14,7 @@ const nextConfig = {
   // 2. టైమౌట్ సెట్టింగ్
   staticPageGenerationTimeout: 300,
 
-  // 3. టైప్/లింట్ ఎర్రర్లను విస్మరించు
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
+  // 3. టైప్/లింట్ ఎర్రర్లు — CI లో verify అవుతాయి
   
   // 4. ప్రయోగాత్మక ఫీచర్లు
   experimental: { optimizeCss: false },

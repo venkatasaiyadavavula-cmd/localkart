@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import type { Shop } from '@/types/product';
 
 export function useAdminShops(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<Shop[]>({
     queryKey: ['admin', 'shops', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
@@ -16,12 +17,11 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
           ? `/admin/shops/pending?${searchParams.toString()}`
           : `/admin/shops?${searchParams.toString()}`;
       const { data } = await apiClient.get(endpoint);
-      let shops = normalizeList<{ name?: string; city?: string }>(data);
+      let shops = normalizeList<Shop>(data);
       if (params.search) {
         const q = params.search.toLowerCase();
         shops = shops.filter(
-          (s: { name?: string; city?: string }) =>
-            s.name?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q),
+          (s) => s.name?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q),
         );
       }
       return shops;

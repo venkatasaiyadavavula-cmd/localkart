@@ -1,16 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import type { Order } from '@/types/order';
 
 export function useOrders(params: { status?: string } = {}) {
-  return useQuery({
+  return useQuery<Order[]>({
     queryKey: ['orders', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       searchParams.append('limit', '100');
       if (params.status) searchParams.append('status', params.status);
       const { data } = await apiClient.get(`/orders?${searchParams.toString()}`);
-      return normalizeList(data);
+      return normalizeList<Order>(data);
     },
   });
 }

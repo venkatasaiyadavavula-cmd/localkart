@@ -5,6 +5,8 @@ import axios from 'axios';
 import { TrendingUp, TrendingDown, IndianRupee, Package, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 
+import type { WeeklyEarningsData } from '@/types/api';
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 interface WeekData {
@@ -16,13 +18,13 @@ interface WeekData {
 }
 
 export default function EarningsPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<WeeklyEarningsData>({
     queryKey: ['weekly-earnings'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/seller/earnings/weekly`, {
+      const { data: res } = await axios.get(`${API}/seller/earnings/weekly`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      return unwrapApiData(data);
+      return unwrapApiData<WeeklyEarningsData>(res);
     },
   });
 

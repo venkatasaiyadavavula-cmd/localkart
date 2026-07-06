@@ -1,15 +1,11 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils';
-
-interface ProductsResponse {
-  products?: unknown[];
-  data?: unknown[];
-  total?: number;
-}
+import type { Product } from '@/types/product';
+import type { ProductsListResponse } from '@/types/api';
 
 export function useProducts(params: Record<string, unknown> = {}) {
-  return useQuery<ProductsResponse | unknown[]>({
+  return useQuery<ProductsListResponse | Product[]>({
     queryKey: ['products', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
@@ -19,7 +15,7 @@ export function useProducts(params: Record<string, unknown> = {}) {
         }
       });
       const { data } = await apiClient.get(`/catalog/products?${searchParams.toString()}`);
-      return unwrapApiData(data);
+      return unwrapApiData<ProductsListResponse | Product[]>(data);
     },
     placeholderData: keepPreviousData,
   });

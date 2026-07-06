@@ -1,23 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import type { Product } from '@/types/product';
 
 export function useSellerProducts(params: Record<string, unknown> = {}) {
   const queryClient = useQueryClient();
   const queryParams = { limit: 100, ...params };
 
-  const query = useQuery({
+  const query = useQuery<Product[]>({
     queryKey: ['seller', 'products', queryParams],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          const paramKey = key === 'search' ? 'search' : key;
-          searchParams.append(paramKey, String(value));
+          searchParams.append(key, String(value));
         }
       });
       const { data } = await apiClient.get(`/catalog/seller/products?${searchParams.toString()}`);
-      return normalizeList(data);
+      return normalizeList<Product>(data);
     },
   });
 

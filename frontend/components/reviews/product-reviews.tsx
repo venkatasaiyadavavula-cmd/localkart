@@ -9,6 +9,7 @@ import { cn, unwrapApiData } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
+import type { CanReviewResponse, ProductReviewsData } from '@/types/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
@@ -25,22 +26,22 @@ export function ProductReviews({ productId }: Props) {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: reviewData, isLoading } = useQuery({
+  const { data: reviewData, isLoading } = useQuery<ProductReviewsData>({
     queryKey: ['reviews', productId],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/reviews/product/${productId}`);
-      return unwrapApiData(data);
+      return unwrapApiData<ProductReviewsData>(data);
     },
   });
 
-  const { data: canReviewData } = useQuery({
+  const { data: canReviewData } = useQuery<CanReviewResponse>({
     queryKey: ['can-review', productId],
     queryFn: async () => {
       try {
         const { data } = await axios.get(`${API}/reviews/can-review?productId=${productId}`, {
           headers: auth(),
         });
-        return unwrapApiData<{ canReview: boolean; orderId?: string }>(data) ?? { canReview: false };
+        return unwrapApiData<CanReviewResponse>(data) ?? { canReview: false };
       } catch {
         return { canReview: false };
       }
@@ -53,7 +54,7 @@ export function ProductReviews({ productId }: Props) {
     try {
       await axios.post(`${API}/reviews`, {
         productId,
-        orderId: canReviewData.orderId,
+        orderId: canReviewData?.orderId,
         rating,
         comment,
       }, { headers: auth() });
