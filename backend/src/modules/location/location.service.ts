@@ -256,14 +256,18 @@ export class LocationService {
     const shopsCount = parseInt(result.count, 10);
     const rawMinDistance = result.minDistance ?? result.mindistance;
     const minDistanceMeters = rawMinDistance != null ? parseFloat(String(rawMinDistance)) : null;
-    const maxDistanceKm = minDistanceMeters ? Math.round((minDistanceMeters / 1000) * 10) / 10 : undefined;
-    const deliveryCharge = maxDistanceKm !== undefined ? calculateDeliveryCharge(maxDistanceKm) : undefined;
+    const maxDistanceKm =
+      minDistanceMeters != null
+        ? Math.round((minDistanceMeters / 1000) * 10) / 10
+        : undefined;
+    const deliveryCharge =
+      maxDistanceKm != null ? calculateDeliveryCharge(maxDistanceKm) : undefined;
 
     return {
-      serviceable: shopsCount > 0 && (deliveryCharge === undefined || deliveryCharge >= 0),
+      serviceable: shopsCount > 0 && (deliveryCharge == null || deliveryCharge >= 0),
       shopsCount,
-      maxDistance: maxDistanceKm,
-      deliveryCharge: deliveryCharge !== undefined && deliveryCharge >= 0 ? deliveryCharge : undefined,
+      maxDistance: maxDistanceKm ?? 0,
+      deliveryCharge: deliveryCharge != null && deliveryCharge >= 0 ? deliveryCharge : 0,
     };
   }
 
