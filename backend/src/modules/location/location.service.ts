@@ -254,7 +254,8 @@ export class LocationService {
       .getRawOne();
 
     const shopsCount = parseInt(result.count, 10);
-    const minDistanceMeters = result.minDistance ? parseFloat(result.minDistance) : null;
+    const rawMinDistance = result.minDistance ?? result.mindistance;
+    const minDistanceMeters = rawMinDistance != null ? parseFloat(String(rawMinDistance)) : null;
     const maxDistanceKm = minDistanceMeters ? Math.round((minDistanceMeters / 1000) * 10) / 10 : undefined;
     const deliveryCharge = maxDistanceKm !== undefined ? calculateDeliveryCharge(maxDistanceKm) : undefined;
 

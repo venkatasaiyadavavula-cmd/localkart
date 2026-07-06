@@ -167,7 +167,8 @@ let LocationService = class LocationService {
         )`, { lng, lat, radius })
             .getRawOne();
         const shopsCount = parseInt(result.count, 10);
-        const minDistanceMeters = result.minDistance ? parseFloat(result.minDistance) : null;
+        const rawMinDistance = result.minDistance ?? result.mindistance;
+        const minDistanceMeters = rawMinDistance != null ? parseFloat(String(rawMinDistance)) : null;
         const maxDistanceKm = minDistanceMeters ? Math.round((minDistanceMeters / 1000) * 10) / 10 : undefined;
         const deliveryCharge = maxDistanceKm !== undefined ? (0, delivery_pricing_1.calculateDeliveryCharge)(maxDistanceKm) : undefined;
         return {
