@@ -28,11 +28,11 @@ export class Transaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Order, { onDelete: "CASCADE" })
+  @ManyToOne(() => Order, { onDelete: "CASCADE", nullable: true })
   order: Order;
 
-  @Column()
-  orderId: string;
+  @Column({ nullable: true })
+  orderId: string | null;
 
   @Column({ type: 'enum', enum: TransactionType })
   type: TransactionType;

@@ -6,6 +6,7 @@ import {
 import { User }      from './user.entity';
 import { Shop }      from './shop.entity';
 import { OrderItem } from './order-item.entity';
+import { Transaction } from './transaction.entity';
 
 export enum OrderStatus {
   PENDING_OTP      = 'pending_otp',
@@ -58,6 +59,9 @@ export class Order {
 
   @OneToMany(() => OrderItem, i => i.order, { cascade: true })
   items: OrderItem[];
+
+  @OneToMany(() => Transaction, t => t.order)
+  transactions: Transaction[];
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   subtotal: number;
