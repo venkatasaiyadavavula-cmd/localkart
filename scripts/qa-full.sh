@@ -187,6 +187,14 @@ fi
 WISH_HTTP=$(http_code "$API/wishlist" -H "Authorization: Bearer $CUST_TOKEN")
 [ "$WISH_HTTP" = "200" ] && ok "wishlist list" || bad "wishlist ($WISH_HTTP)"
 
+if [ -n "$PROD_ID" ]; then
+  WISH_TOGGLE=$(post_json "$API/wishlist/toggle" -H "Authorization: Bearer $CUST_TOKEN" \
+    -d "{\"productId\":\"$PROD_ID\"}" | json_field "d.get('added')")
+  [ "$WISH_TOGGLE" = "True" ] && ok "wishlist toggle add" || note "wishlist toggle add ($WISH_TOGGLE)"
+  post_json "$API/wishlist/toggle" -H "Authorization: Bearer $CUST_TOKEN" \
+    -d "{\"productId\":\"$PROD_ID\"}" >/dev/null
+fi
+
 ADDR_HTTP=$(http_code "$API/addresses" -H "Authorization: Bearer $CUST_TOKEN")
 [ "$ADDR_HTTP" = "200" ] && ok "addresses list" || bad "addresses ($ADDR_HTTP)"
 echo ""
