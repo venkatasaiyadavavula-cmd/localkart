@@ -16,6 +16,8 @@ const publicRoutes = [
   '/videos',
   '/terms',
   '/privacy',
+  '/about',
+  '/orders/track',
 ];
 
 const sellerPublicRoutes: string[] = [];

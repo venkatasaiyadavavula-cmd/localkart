@@ -30,6 +30,28 @@ export class CommissionService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
+  /** Delivered orders not yet included in a settlement transaction. */
+  private unsettledOrdersQuery(shopId?: string) {
+    const qb = this.orderRepository
+      .createQueryBuilder('order')
+      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .andWhere(
+        `order.id NOT IN (
+          SELECT DISTINCT jsonb_array_elements_text(t.metadata->'orderIds')
+          FROM transactions t
+          WHERE t.type = :settlementType
+            AND t.metadata->'orderIds' IS NOT NULL
+        )`,
+        { settlementType: TransactionType.SETTLEMENT },
+      );
+
+    if (shopId) {
+      qb.andWhere('order.shopId = :shopId', { shopId });
+    }
+
+    return qb;
+  }
+
   async getCommissionSummary(period?: string) {
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
@@ -46,12 +68,8 @@ export class CommissionService {
       .addSelect('SUM(order.totalAmount)', 'totalRevenue')
       .getRawOne();
 
-    const pendingSettlements = await this.orderRepository
-      .createQueryBuilder('order')
-      .leftJoin('order.transactions', 't', 't.type = :type', { type: TransactionType.SETTLEMENT })
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
-      .andWhere('t.id IS NULL')
-      .select('SUM(order.totalAmount - order.commissionAmount)', 'pending')
+    const pendingSettlements = await this.unsettledOrdersQuery()
+      .select('COALESCE(SUM(order.totalAmount - order.commissionAmount), 0)', 'pending')
       .getRawOne();
 
     return {
@@ -72,12 +90,7 @@ export class CommissionService {
 
     const results = [];
     for (const shop of shops) {
-      const pendingRow = await this.orderRepository
-        .createQueryBuilder('order')
-        .leftJoin('order.transactions', 't', 't.type = :type', { type: TransactionType.SETTLEMENT })
-        .where('order.shopId = :shopId', { shopId: shop.id })
-        .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
-        .andWhere('t.id IS NULL')
+      const pendingRow = await this.unsettledOrdersQuery(shop.id)
         .select('COALESCE(SUM(order.totalAmount - order.commissionAmount), 0)', 'pending')
         .getRawOne();
 
@@ -130,13 +143,7 @@ export class CommissionService {
       throw new NotFoundException('Shop not found');
     }
 
-    const unsettledOrders = await this.orderRepository
-      .createQueryBuilder('order')
-      .leftJoin('order.transactions', 't', 't.type = :type', { type: TransactionType.SETTLEMENT })
-      .where('order.shopId = :shopId', { shopId })
-      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
-      .andWhere('t.id IS NULL')
-      .getMany();
+    const unsettledOrders = await this.unsettledOrdersQuery(shopId).getMany();
 
     const totalSettlement = unsettledOrders.reduce(
       (sum, order) => sum + (order.totalAmount - order.commissionAmount),

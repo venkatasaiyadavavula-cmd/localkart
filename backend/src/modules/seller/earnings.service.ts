@@ -45,11 +45,18 @@ export class EarningsService {
 
     const pendingSettlement = await this.orderRepository
       .createQueryBuilder('order')
-      .leftJoin('order.transactions', 'transaction', 'transaction.type = :type', { type: TransactionType.SETTLEMENT })
       .where('order.shopId = :shopId', { shopId: shop.id })
       .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
-      .andWhere('transaction.id IS NULL')
-      .select('SUM(order.totalAmount - order.commissionAmount)', 'pending')
+      .andWhere(
+        `order.id NOT IN (
+          SELECT DISTINCT jsonb_array_elements_text(t.metadata->'orderIds')
+          FROM transactions t
+          WHERE t.type = :settlementType
+            AND t.metadata->'orderIds' IS NOT NULL
+        )`,
+        { settlementType: TransactionType.SETTLEMENT },
+      )
+      .select('COALESCE(SUM(order.totalAmount - order.commissionAmount), 0)', 'pending')
       .getRawOne();
 
     return {
