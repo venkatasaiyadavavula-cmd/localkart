@@ -2,7 +2,7 @@ import axios from 'axios';
 import { staffAuthHeaders } from '@/hooks/use-staff-auth';
 import { unwrapApiData } from '@/lib/utils';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 function staffClient() {
   return axios.create({
@@ -34,7 +34,7 @@ export const staffWorkApi = {
   },
 
   async getOrders(page = 1, status?: string) {
-    const qs = new URLSearchParams({ page: String(page), limit: '20' });
+    const qs = new URLSearchParams({ page: String(page), limit: '100' });
     if (status) qs.append('status', status);
     const { data } = await staffClient().get(`/staff/work/orders?${qs}`);
     return unwrapApiData(data);

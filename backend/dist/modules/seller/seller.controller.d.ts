@@ -51,6 +51,8 @@ export declare class SellerController {
         lowStockProducts: number;
         totalOrders: number;
         pendingOrders: number;
+        pendingOtpOrders: number;
+        confirmedOrders: number;
         productsSold: number;
         totalRevenue: number;
         revenueChange: number;
@@ -127,10 +129,10 @@ export declare class SellerController {
         growth: number;
     }>;
     getEarnings(user: any, period?: string): Promise<{
-        totalEarnings: any;
-        totalCommission: any;
+        totalEarnings: number;
+        totalCommission: number;
         totalOrders: number;
-        pendingSettlement: any;
+        pendingSettlement: number;
         availableForPayout: number;
     }>;
     getEarningsTransactions(user: any, page?: string, limit?: string): Promise<{

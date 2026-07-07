@@ -40,6 +40,8 @@ export declare class SellerService {
         lowStockProducts: number;
         totalOrders: number;
         pendingOrders: number;
+        pendingOtpOrders: number;
+        confirmedOrders: number;
         productsSold: number;
         totalRevenue: number;
         revenueChange: number;

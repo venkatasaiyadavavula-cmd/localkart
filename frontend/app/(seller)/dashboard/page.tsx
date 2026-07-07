@@ -171,9 +171,9 @@ export default function SellerDashboardPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-orange-800">
-                      🔔 {pendingOrders} new order{pendingOrders > 1 ? 's' : ''}!
+                      🔔 {pendingOrders} order{pendingOrders > 1 ? 's' : ''} need attention!
                     </p>
-                    <p className="text-xs text-orange-600">Tap to accept orders</p>
+                    <p className="text-xs text-orange-600">OTP confirm or accept new orders</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-orange-400" />
                 </div>

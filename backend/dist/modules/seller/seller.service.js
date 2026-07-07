@@ -169,6 +169,9 @@ let SellerService = SellerService_1 = class SellerService {
         const totalOrders = await this.orderRepository.count({
             where: { shopId: shop.id },
         });
+        const pendingOtpOrders = await this.orderRepository.count({
+            where: { shopId: shop.id, status: order_entity_1.OrderStatus.PENDING_OTP },
+        });
         const pendingOrders = await this.orderRepository.count({
             where: { shopId: shop.id, status: order_entity_1.OrderStatus.CONFIRMED },
         });
@@ -205,7 +208,9 @@ let SellerService = SellerService_1 = class SellerService {
             activeProducts,
             lowStockProducts,
             totalOrders,
-            pendingOrders,
+            pendingOrders: pendingOtpOrders + pendingOrders,
+            pendingOtpOrders,
+            confirmedOrders: pendingOrders,
             productsSold: Number(productsSold?.total || 0),
             totalRevenue: Number(totalRevenue?.total || 0),
             revenueChange: 0,

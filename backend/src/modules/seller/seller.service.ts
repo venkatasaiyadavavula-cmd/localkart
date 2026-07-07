@@ -208,6 +208,10 @@ export class SellerService {
       where: { shopId: shop.id },
     });
 
+    const pendingOtpOrders = await this.orderRepository.count({
+      where: { shopId: shop.id, status: OrderStatus.PENDING_OTP },
+    });
+
     const pendingOrders = await this.orderRepository.count({
       where: { shopId: shop.id, status: OrderStatus.CONFIRMED },
     });
@@ -249,7 +253,9 @@ export class SellerService {
       activeProducts,
       lowStockProducts,
       totalOrders,
-      pendingOrders,
+      pendingOrders: pendingOtpOrders + pendingOrders,
+      pendingOtpOrders,
+      confirmedOrders: pendingOrders,
       productsSold: Number(productsSold?.total || 0),
       totalRevenue: Number(totalRevenue?.total || 0),
       revenueChange: 0,

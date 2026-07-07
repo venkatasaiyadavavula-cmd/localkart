@@ -45,19 +45,28 @@ export class EarningsService {
 
     const pendingSettlement = await this.orderRepository
       .createQueryBuilder('order')
-      .leftJoin('order.transactions', 'transaction', 'transaction.type = :type', { type: TransactionType.SETTLEMENT })
+      .leftJoin(
+        Transaction,
+        'transaction',
+        'transaction.orderId = order.id AND transaction.type = :settlementType',
+        { settlementType: TransactionType.SETTLEMENT },
+      )
       .where('order.shopId = :shopId', { shopId: shop.id })
       .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
       .andWhere('transaction.id IS NULL')
       .select('SUM(order.totalAmount - order.commissionAmount)', 'pending')
       .getRawOne();
 
+    const earningsVal = totalEarnings?.earnings ?? totalEarnings?.sum;
+    const commissionVal = totalCommission?.commission ?? totalCommission?.sum;
+    const pendingVal = pendingSettlement?.pending ?? pendingSettlement?.sum;
+
     return {
-      totalEarnings: totalEarnings?.earnings || 0,
-      totalCommission: totalCommission?.commission || 0,
+      totalEarnings: Number(earningsVal || 0),
+      totalCommission: Number(commissionVal || 0),
       totalOrders: orderCount,
-      pendingSettlement: pendingSettlement?.pending || 0,
-      availableForPayout: shop.totalEarnings || 0,
+      pendingSettlement: Number(pendingVal || 0),
+      availableForPayout: Number(shop.totalEarnings || 0),
     };
   }
 
@@ -69,13 +78,14 @@ export class EarningsService {
 
     const skip = (page - 1) * limit;
 
-    const [transactions, total] = await this.transactionRepository.findAndCount({
-      where: { order: { shopId: shop.id } },
-      relations: ['order'],
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const [transactions, total] = await this.transactionRepository
+      .createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.order', 'order')
+      .where('order.shopId = :shopId', { shopId: shop.id })
+      .orderBy('transaction.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     return {
       data: transactions,

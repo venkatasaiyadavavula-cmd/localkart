@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Package, Truck, CheckCircle } from 'lucide-react';
 import { staffWorkApi } from '@/lib/api/staff-work';
 import { formatPrice, normalizeList } from '@/lib/utils';
+import { formatDeliveryAddress } from '@/lib/utils/api';
 import { DeliveryLocationPanel } from '@/components/seller/delivery-location-panel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,22 +24,30 @@ const tabs = [
   { label: '🔔 New', value: 'confirmed' },
   { label: '📦 Active', value: 'processing' },
   { label: '🛵 Delivery', value: 'out_for_delivery' },
+  { label: '✅ Done', value: 'delivered' },
 ];
 
 export default function WorkOrdersPage() {
-  const [activeTab, setActiveTab] = useState('out_for_delivery');
+  const [activeTab, setActiveTab] = useState('confirmed');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['staff', 'orders', activeTab],
+  const { data: allOrders, isLoading } = useQuery({
+    queryKey: ['staff', 'orders'],
     queryFn: async () => {
-      const res = await staffWorkApi.getOrders(1, activeTab);
-      return normalizeList(res);
+      const res = await staffWorkApi.getOrders(1);
+      return normalizeList<{ status: string; id: string; orderNumber: string; createdAt: string; totalAmount: number; items?: any[]; deliveryAddress?: any; deliveryStaffName?: string }>(res);
     },
   });
 
-  const orders = data ?? [];
+  const orders = (allOrders ?? []).filter((order) => {
+    if (activeTab === 'processing') {
+      return ['processing', 'ready_for_pickup'].includes(order.status);
+    }
+    return order.status === activeTab;
+  });
+
+  const newCount = (allOrders ?? []).filter((o) => o.status === 'confirmed').length;
 
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
@@ -47,7 +56,9 @@ export default function WorkOrdersPage() {
       toast.success('Order updated');
       qc.invalidateQueries({ queryKey: ['staff', 'orders'] });
     },
-    onError: () => toast.error('Failed to update order'),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update order');
+    },
     onSettled: () => setUpdatingId(null),
   });
 
@@ -59,8 +70,10 @@ export default function WorkOrdersPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-black text-gray-900">Deliveries</h1>
-        <p className="text-xs text-gray-500">Accept orders & manage deliveries</p>
+        <h1 className="text-xl font-black text-gray-900">Orders & Deliveries</h1>
+        <p className="text-xs text-gray-500">
+          {newCount > 0 ? `🔔 ${newCount} new order${newCount > 1 ? 's' : ''} waiting` : 'Accept and deliver orders'}
+        </p>
       </div>
 
       <div className="flex gap-2 overflow-x-auto">
@@ -69,11 +82,16 @@ export default function WorkOrdersPage() {
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
             className={cn(
-              'flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold',
+              'flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold relative',
               activeTab === tab.value ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600',
             )}
           >
             {tab.label}
+            {tab.value === 'confirmed' && newCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                {newCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -109,7 +127,7 @@ export default function WorkOrdersPage() {
 
                 {order.deliveryAddress && (
                   <p className="mt-2 text-xs text-gray-500 line-clamp-2">
-                    📍 {order.deliveryAddress.address}, {order.deliveryAddress.city}
+                    📍 {formatDeliveryAddress(order.deliveryAddress)}
                   </p>
                 )}
 

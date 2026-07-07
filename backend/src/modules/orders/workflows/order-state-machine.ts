@@ -6,7 +6,7 @@ export class OrderStateMachine {
   private readonly transitions: Map<OrderStatus, OrderStatus[]> = new Map([
     [
       OrderStatus.PENDING_OTP,
-      [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CANCELLED],
     ],
     [
       OrderStatus.CONFIRMED,

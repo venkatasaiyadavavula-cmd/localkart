@@ -69,6 +69,7 @@ export default function CommissionPage() {
       toast.success('Commission paid successfully! ✅');
       queryClient.invalidateQueries({ queryKey: ['commission-bills'] });
     },
+    onError: () => toast.error('Payment received but verification failed. Contact support with your payment ID.'),
   });
 
   const openRazorpay = (orderData: any) => {
@@ -211,15 +212,19 @@ export default function CommissionPage() {
                     <p className="text-base font-extrabold text-gray-900">
                       {formatPrice(total)}
                     </p>
-                    <button
-                      onClick={() => payMutation.mutate(bill.id)}
-                      disabled={payMutation.isPending}
-                      className="flex items-center gap-1 text-xs font-extrabold text-white px-3 py-1.5 rounded-xl active:scale-95 transition-all"
-                      style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 2px 10px rgba(61,90,241,0.30)' }}
-                    >
-                      <CreditCard className="h-3 w-3" />
-                      Pay Now
-                    </button>
+                    {RAZORPAY_KEY ? (
+                      <button
+                        onClick={() => payMutation.mutate(bill.id)}
+                        disabled={payMutation.isPending}
+                        className="flex items-center gap-1 text-xs font-extrabold text-white px-3 py-1.5 rounded-xl active:scale-95 transition-all"
+                        style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 2px 10px rgba(61,90,241,0.30)' }}
+                      >
+                        <CreditCard className="h-3 w-3" />
+                        Pay Now
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 text-right">Razorpay setup pending</span>
+                    )}
                   </div>
                 </div>
               );

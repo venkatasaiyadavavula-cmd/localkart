@@ -8,10 +8,10 @@ export declare class EarningsService {
     private readonly shopRepository;
     constructor(orderRepository: Repository<Order>, transactionRepository: Repository<Transaction>, shopRepository: Repository<Shop>);
     getEarningsSummary(ownerId: string, period?: string): Promise<{
-        totalEarnings: any;
-        totalCommission: any;
+        totalEarnings: number;
+        totalCommission: number;
         totalOrders: number;
-        pendingSettlement: any;
+        pendingSettlement: number;
         availableForPayout: number;
     }>;
     getTransactions(ownerId: string, page: number, limit: number): Promise<{

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
+import { ordersApi } from '@/lib/api/orders';
 import type { Order } from '@/types/order';
 
 export function useSellerOrders(params: { status?: string; search?: string } = {}) {
@@ -29,6 +30,17 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ['seller', 'dashboard'] });
+    },
+  });
+
+  const verifyOtpMutation = useMutation({
+    mutationFn: async ({ orderId, otp }: { orderId: string; otp: string }) => {
+      return ordersApi.verifyDeliveryOtp(orderId, otp);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ['seller', 'dashboard'] });
     },
   });
 
@@ -37,5 +49,7 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
     isLoading: query.isLoading,
     updateOrderStatus: (orderId: string, status: string) =>
       updateStatusMutation.mutateAsync({ orderId, status }),
+    verifyOrderOtp: (orderId: string, otp: string) =>
+      verifyOtpMutation.mutateAsync({ orderId, otp }),
   };
 }

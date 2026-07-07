@@ -13,7 +13,7 @@ let OrderStateMachine = class OrderStateMachine {
     transitions = new Map([
         [
             order_entity_1.OrderStatus.PENDING_OTP,
-            [order_entity_1.OrderStatus.CONFIRMED, order_entity_1.OrderStatus.CANCELLED],
+            [order_entity_1.OrderStatus.CANCELLED],
         ],
         [
             order_entity_1.OrderStatus.CONFIRMED,
