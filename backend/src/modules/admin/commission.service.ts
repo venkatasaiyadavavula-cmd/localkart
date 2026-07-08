@@ -6,6 +6,7 @@ import { Transaction, TransactionType, TransactionStatus } from '../../core/enti
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { Category } from '../../core/entities/category.entity';
 import { ProductCategoryType } from '../../core/entities/product.entity';
+import { applyUnsettledOrderFilter } from '../payments/settlement-query.util';
 
 @Injectable()
 export class CommissionService {
@@ -34,22 +35,13 @@ export class CommissionService {
   private unsettledOrdersQuery(shopId?: string) {
     const qb = this.orderRepository
       .createQueryBuilder('order')
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
-      .andWhere(
-        `order.id NOT IN (
-          SELECT DISTINCT jsonb_array_elements_text(t.metadata->'orderIds')
-          FROM transactions t
-          WHERE t.type = :settlementType
-            AND t.metadata->'orderIds' IS NOT NULL
-        )`,
-        { settlementType: TransactionType.SETTLEMENT },
-      );
+      .where('order.status = :status', { status: OrderStatus.DELIVERED });
 
     if (shopId) {
       qb.andWhere('order.shopId = :shopId', { shopId });
     }
 
-    return qb;
+    return applyUnsettledOrderFilter(qb);
   }
 
   async getCommissionSummary(period?: string) {

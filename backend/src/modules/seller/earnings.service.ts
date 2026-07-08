@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../../core/entities/transaction.entity';
 import { Shop } from '../../core/entities/shop.entity';
+import { applyUnsettledOrderFilter } from '../payments/settlement-query.util';
 
 @Injectable()
 export class EarningsService {
@@ -43,19 +44,12 @@ export class EarningsService {
 
     const orderCount = await queryBuilder.clone().getCount();
 
-    const pendingSettlement = await this.orderRepository
-      .createQueryBuilder('order')
-      .where('order.shopId = :shopId', { shopId: shop.id })
-      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
-      .andWhere(
-        `order.id NOT IN (
-          SELECT DISTINCT jsonb_array_elements_text(t.metadata->'orderIds')
-          FROM transactions t
-          WHERE t.type = :settlementType
-            AND t.metadata->'orderIds' IS NOT NULL
-        )`,
-        { settlementType: TransactionType.SETTLEMENT },
-      )
+    const pendingSettlement = await applyUnsettledOrderFilter(
+      this.orderRepository
+        .createQueryBuilder('order')
+        .where('order.shopId = :shopId', { shopId: shop.id })
+        .andWhere('order.status = :status', { status: OrderStatus.DELIVERED }),
+    )
       .select('COALESCE(SUM(order.totalAmount - order.commissionAmount), 0)', 'pending')
       .getRawOne();
 
