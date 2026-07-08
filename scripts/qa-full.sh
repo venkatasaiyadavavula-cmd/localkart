@@ -201,6 +201,7 @@ echo ""
 
 # ── PART 1: COD checkout (if cart has items) ────────────────────
 echo "--- COD checkout ---"
+ORDER_ID=""
 if [ -n "$PROD_ID" ] && [ "${CART_CNT:-0}" -ge 1 ]; then
   ORDER_RESP=$(post_json "$API/orders" -H "Authorization: Bearer $CUST_TOKEN" \
     -d '{"paymentMethod":"cod","shippingAddress":{"name":"QA","phone":"+919876512345","address":"RTC Bus Stand","city":"Kadapa","state":"Andhra Pradesh","pincode":"516001","latitude":14.4673,"longitude":78.8242}}')
