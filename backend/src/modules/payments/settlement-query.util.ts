@@ -4,27 +4,24 @@ import { TransactionType } from '../../core/entities/transaction.entity';
 
 /**
  * Exclude orders already listed in a settlement transaction's metadata.orderIds.
- * Uses NOT EXISTS + id::text because jsonb_array_elements_text returns text,
- * and `uuid NOT IN (text[])` fails in PostgreSQL with:
- *   operator does not exist: uuid = text
+ *
+ * Production 500 root cause (PG error): `operator does not exist: uuid = text`
+ * when using `order.id NOT IN (SELECT jsonb_array_elements_text(...))`.
+ * jsonb_array_elements_text returns text; orders.id is uuid.
  */
 export function applyUnsettledOrderFilter(
   qb: SelectQueryBuilder<Order>,
   orderAlias = 'order',
 ): SelectQueryBuilder<Order> {
+  const idCol = `"${orderAlias}".id`;
+
   return qb.andWhere(
     `NOT EXISTS (
       SELECT 1
       FROM transactions st
-      CROSS JOIN LATERAL jsonb_array_elements_text(
-        CASE
-          WHEN jsonb_typeof(st.metadata->'orderIds') = 'array'
-          THEN st.metadata->'orderIds'
-          ELSE '[]'::jsonb
-        END
-      ) AS settled(order_id)
       WHERE st.type = :settlementType
-        AND settled.order_id = ${orderAlias}.id::text
+        AND st.metadata->'orderIds' IS NOT NULL
+        AND st.metadata->'orderIds' @> jsonb_build_array(${idCol}::text)
     )`,
     { settlementType: TransactionType.SETTLEMENT },
   );
