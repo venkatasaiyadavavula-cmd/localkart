@@ -40,6 +40,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
 
+  const isWorkRoute = pathname.startsWith('/work');
+
   const isPublicRoute =
     publicRoutes.some((route) => matchesRoute(pathname, route)) ||
     sellerPublicRoutes.some((route) => matchesRoute(pathname, route));
@@ -49,6 +51,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    if (isWorkRoute) return;
+
     const timeout = setTimeout(() => setIsChecking(false), 2000);
 
     if (isLoading) return;
@@ -80,7 +84,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     clearTimeout(timeout);
     setIsChecking(false);
-  }, [isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
+  }, [isWorkRoute, isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
+
+  // Staff /work routes use a separate auth system (useStaffAuth) — skip main guard entirely.
+  if (isWorkRoute) {
+    return <>{children}</>;
+  }
 
   if (isLoading && isChecking && !isPublicRoute && !isAuthPage) {
     return (
