@@ -55,7 +55,21 @@ for path in "${PAGES[@]}"; do
   if echo "$body" | grep -qiE 'src="undefined"|src=""|src="#"'; then
     note "$path — suspicious empty image src"
   fi
+
+  if [ "$path" = "/work/login" ]; then
+    if echo "$html" | grep -q 'data-page="work-login"' && echo "$html" | grep -q 'id="staffId"'; then
+      ok "$path — staff login form present"
+    else
+      bad "$path — missing staff login form markers"
+    fi
+  fi
 done
+
+if SITE_URL="$SITE" bash "$SCRIPT_DIR/verify-work-auth.sh" >/tmp/verify-work.out 2>&1; then
+  ok "$(grep '^OK:' /tmp/verify-work.out | sed 's/^OK: //')"
+else
+  bad "$(grep '^FAIL:' /tmp/verify-work.out | head -1 | sed 's/^FAIL: //')"
+fi
 
 if SITE_URL="$SITE" bash "$SCRIPT_DIR/verify-static-assets.sh" >/tmp/verify-static.out 2>&1; then
   ok "$(grep '^OK:' /tmp/verify-static.out | head -1 | sed 's/^OK: //')"

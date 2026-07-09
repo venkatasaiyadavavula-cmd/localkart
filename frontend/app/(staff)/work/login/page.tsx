@@ -50,7 +50,7 @@ export default function WorkLoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-3xl border bg-white p-6 shadow-xl">
+        <form onSubmit={handleSubmit} data-page="work-login" className="space-y-4 rounded-3xl border bg-white p-6 shadow-xl">
           <div className="space-y-2">
             <Label htmlFor="staffId">Login ID</Label>
             <div className="relative">

@@ -86,6 +86,18 @@ PROD_HTTP=$(http_code "$API/catalog/products?sortBy=createdAt&sortOrder=DESC&lim
 [ "$PROD_HTTP" = "200" ] && ok "API products sortBy=createdAt ($PROD_HTTP)" || bad "API products sortBy=createdAt ($PROD_HTTP)"
 echo ""
 
+echo "--- Staff /work auth (must bypass main AuthGuard) ---"
+VERIFY_WORK=$(SITE_URL="$SITE" bash "$(dirname "$0")/verify-work-auth.sh" 2>&1) || WORK_RC=$?
+WORK_RC=${WORK_RC:-0}
+while IFS= read -r line; do
+  case "$line" in
+    OK:*) ok "${line#OK: }" ;;
+    FAIL:*) bad "${line#FAIL: }" ;;
+  esac
+done <<< "$VERIFY_WORK"
+[ "$WORK_RC" -eq 0 ] || true
+echo ""
+
 # ── PART 5: Public pages ────────────────────────────────────────
 echo "--- Frontend pages (HTTP) ---"
 PAGES=(
