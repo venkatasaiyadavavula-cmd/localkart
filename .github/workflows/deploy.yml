@@ -41,7 +41,7 @@ jobs:
             export NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.localkart.store/api/v1}"
             echo "Building frontend with NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL"
             npm run build
-            bash scripts/check-no-localhost-build.sh "$APP_DIR/frontend"
+            bash "$APP_DIR/scripts/check-no-localhost-build.sh" "$APP_DIR/frontend"
             bash scripts/copy-standalone-assets.sh
             pm2 restart localkart-backend
             # Always run via `next start` — standalone server.js omits .next/static unless copied.
