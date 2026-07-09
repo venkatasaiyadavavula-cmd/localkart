@@ -164,12 +164,20 @@ SVC=$(curl -sS "$API/location/check-serviceability?lat=14.4673&lng=78.8242")
 echo "$SVC" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('serviceable') else 1)" \
   && ok "serviceability Kadapa" || bad "serviceability Kadapa"
 
-PROD_ID=$(curl -sS "$API/catalog/products?limit=1" | python3 -c "
+PROD_ID=$(curl -sS "$API/catalog/products?limit=50" | python3 -c "
 import sys,json
 d=json.load(sys.stdin)
 items=d if isinstance(d,list) else (d.get('data') or d)
 if isinstance(items,dict): items=items.get('items') or items.get('products') or []
-print(items[0]['id'] if items else '')
+for p in items:
+  stock=int(p.get('stock',0) or 0)
+  shop_open=p.get('shop',{}).get('isCurrentlyOpen')
+  if stock > 0 and shop_open is not False:
+    print(p['id'])
+    break
+else:
+  # Fallback: first product (may fail with stock/closed errors)
+  print(items[0]['id'] if items else '')
 ")
 
 if [ -n "$PROD_ID" ]; then

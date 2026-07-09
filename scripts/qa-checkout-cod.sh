@@ -20,8 +20,20 @@ TOKEN=$(curl -sS --max-time 15 -X POST "$API/auth/login" \
 
 [ -n "$TOKEN" ] && ok "Customer login" || { bad "Customer login"; exit 1; }
 
-PRODUCT_ID=$(curl -sS --max-time 15 "$API/catalog/products?limit=1" \
-  | python3 -c "import sys,json; items=json.load(sys.stdin).get('data',[]); print(items[0]['id'] if items else '')")
+PRODUCT_ID=$(curl -sS --max-time 15 "$API/catalog/products?limit=50" \
+  | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+items=d if isinstance(d,list) else d.get('data',[])
+if isinstance(items,dict): items=items.get('items') or items.get('products') or []
+for p in items:
+  stock=int(p.get('stock',0) or 0)
+  shop_open=p.get('shop',{}).get('isCurrentlyOpen')
+  if stock > 0 and shop_open is not False:
+    print(p['id']); break
+else:
+  print(items[0]['id'] if items else '')
+")
 
 [ -n "$PRODUCT_ID" ] && ok "Product found ($PRODUCT_ID)" || { bad "No products"; exit 1; }
 
