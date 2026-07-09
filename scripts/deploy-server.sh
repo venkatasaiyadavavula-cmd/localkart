@@ -30,8 +30,13 @@ bash scripts/copy-standalone-assets.sh
 
 echo "--- PM2 restart ---"
 pm2 restart localkart-backend
-pm2 delete localkart-frontend 2>/dev/null || true
-HOSTNAME=0.0.0.0 PORT=3000 pm2 start npm --name localkart-frontend --cwd "$APP_DIR/frontend" -- start
+if pm2 describe localkart-frontend 2>/dev/null | grep -qE 'standalone/server|server\.js'; then
+  echo "Recreating frontend PM2 process (was standalone server.js → npm start)"
+  pm2 delete localkart-frontend
+  HOSTNAME=0.0.0.0 PORT=3000 pm2 start npm --name localkart-frontend --cwd "$APP_DIR/frontend" -- start
+else
+  pm2 restart localkart-frontend
+fi
 pm2 save
 pm2 status
 

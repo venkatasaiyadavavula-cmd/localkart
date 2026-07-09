@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && bash scripts/copy-standalone-assets.sh",
-    "start": "node .next/standalone/server.js",
-    "start:next": "next start",
+    "start": "next start",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "next lint",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit"
