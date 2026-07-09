@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 const ADDRESS_TYPES = [

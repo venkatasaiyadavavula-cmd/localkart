@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { normalizeList } from '@/lib/utils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from '@/lib/api-config';
 
 const CATEGORY_CONFIG: Record<string, {
   emoji:    string;

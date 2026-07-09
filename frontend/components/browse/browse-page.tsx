@@ -11,8 +11,7 @@ import { useLocationStore } from '@/store/location-store';
 import { normalizeList } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProductWithOffer } from '@/types/api';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from '@/lib/api-config';
 
 const categories = [
   { label: 'All', value: '' },

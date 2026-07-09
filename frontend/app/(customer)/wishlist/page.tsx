@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { WishlistItem } from '@/types/api';
 import type { Product } from '@/types/product';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 export default function WishlistPage() {

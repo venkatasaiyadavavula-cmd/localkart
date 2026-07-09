@@ -13,8 +13,7 @@ import { OfferCountdown } from '@/components/offers/offer-countdown';
 import { useLocationStore } from '@/store/location-store';
 import { useTranslation } from '@/hooks/use-translation';
 import type { ProductWithOffer } from '@/types/api';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from '@/lib/api-config';
 
 interface TodayOffersSectionProps {
   showHeader?: boolean;

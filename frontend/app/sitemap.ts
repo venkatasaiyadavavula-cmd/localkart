@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://localkart.com';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { API_URL } from '@/lib/api-config';
 
 const STATIC_ROUTES = [
   '',

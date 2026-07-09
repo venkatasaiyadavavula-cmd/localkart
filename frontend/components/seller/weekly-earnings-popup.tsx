@@ -6,7 +6,7 @@ import { Sparkles, TrendingUp, X, Trophy } from 'lucide-react';
 import axios from 'axios';
 import { formatPrice } from '@/lib/utils';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 
 function getWeekKey() {
   const now = new Date();

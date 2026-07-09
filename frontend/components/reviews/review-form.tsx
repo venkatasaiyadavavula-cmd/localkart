@@ -6,7 +6,7 @@ import axios from 'axios';
 import { Star, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API  = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 interface Props {

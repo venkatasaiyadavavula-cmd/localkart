@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();

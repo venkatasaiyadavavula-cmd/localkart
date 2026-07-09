@@ -13,7 +13,7 @@ import { unwrapApiData, normalizeList } from '@/lib/utils';
 
 import { formatWorkerHandle } from '@/components/work/worker-identity';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 type StaffRole = 'worker' | 'store_manager' | 'products_manager' | 'delivery_staff';

@@ -66,6 +66,26 @@ done <<< "$VERIFY_OUT"
 [ "$VERIFY_RC" -eq 0 ] || true
 echo ""
 
+echo "--- Frontend bundle must not reference localhost API ---"
+HOME_CHUNKS=$(curl -sS --max-time 20 -L "$SITE/" | grep -oE '/_next/static/chunks/[^"'"'"']+\.js' | sort -u | head -30)
+LOCALHOST_HITS=""
+for chunk in $HOME_CHUNKS; do
+  if curl -sS --max-time 15 "$SITE$chunk" | grep -q 'localhost:3001'; then
+    LOCALHOST_HITS="${LOCALHOST_HITS}${chunk}\n"
+  fi
+done
+if [ -z "$LOCALHOST_HITS" ]; then
+  ok "homepage JS chunks have no localhost:3001"
+else
+  bad "localhost:3001 found in JS chunks: $(echo -e "$LOCALHOST_HITS" | head -3 | tr '\n' ' ')"
+fi
+
+TODAY_HTTP=$(http_code "$API/catalog/today-offers")
+[ "$TODAY_HTTP" = "200" ] && ok "API today-offers ($TODAY_HTTP)" || bad "API today-offers ($TODAY_HTTP)"
+PROD_HTTP=$(http_code "$API/catalog/products?sortBy=createdAt&sortOrder=DESC&limit=1")
+[ "$PROD_HTTP" = "200" ] && ok "API products sortBy=createdAt ($PROD_HTTP)" || bad "API products sortBy=createdAt ($PROD_HTTP)"
+echo ""
+
 # ── PART 5: Public pages ────────────────────────────────────────
 echo "--- Frontend pages (HTTP) ---"
 PAGES=(

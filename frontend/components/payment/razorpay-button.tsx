@@ -6,6 +6,7 @@ import { Loader2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { unwrapApiData } from '@/lib/utils';
+import { API_URL } from '@/lib/api-config';
 
 declare global {
   interface Window {
@@ -55,7 +56,7 @@ export function RazorpayButton({
       // Create Razorpay order from backend
       const token = localStorage.getItem('accessToken');
       const { data: raw } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/payments/create-order`,
+        `${API_URL}/payments/create-order`,
         { orderId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -85,7 +86,7 @@ export function RazorpayButton({
             // Verify payment on backend
             const verifyToken = localStorage.getItem('accessToken');
             await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL}/payments/verify`,
+              `${API_URL}/payments/verify`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

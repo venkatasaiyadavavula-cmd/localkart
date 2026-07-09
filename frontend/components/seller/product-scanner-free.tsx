@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Camera, X, Check, Loader2, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { API_URL } from '@/lib/api-config';
 
 interface ProductScannerFreeProps {
   onScanComplete: (images: string[], detectedText?: string) => void;
@@ -53,7 +54,7 @@ export function ProductScannerFree({ onScanComplete }: ProductScannerFreeProps) 
         formData.append('images', blob, `product-${Date.now()}.jpg`);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/scan-product`, {
+      const response = await fetch(`${API_URL}/ai/scan-product`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         body: formData,

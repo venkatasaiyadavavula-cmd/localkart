@@ -2,7 +2,7 @@ import axios from 'axios';
 import { staffAuthHeaders } from '@/hooks/use-staff-auth';
 import { unwrapApiData } from '@/lib/utils';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { API_URL as API } from '@/lib/api-config';
 
 function staffClient() {
   return axios.create({
