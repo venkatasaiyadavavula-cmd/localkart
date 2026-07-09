@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build && bash scripts/copy-standalone-assets.sh",
+    "start": "node .next/standalone/server.js",
+    "start:next": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit"

@@ -26,9 +26,12 @@ echo "--- Frontend ---"
 cd "$APP_DIR/frontend"
 npm ci
 npm run build
+bash scripts/copy-standalone-assets.sh
 
 echo "--- PM2 restart ---"
-pm2 restart localkart-backend localkart-frontend
+pm2 restart localkart-backend
+pm2 delete localkart-frontend 2>/dev/null || true
+HOSTNAME=0.0.0.0 PORT=3000 pm2 start npm --name localkart-frontend --cwd "$APP_DIR/frontend" -- start
 pm2 save
 pm2 status
 

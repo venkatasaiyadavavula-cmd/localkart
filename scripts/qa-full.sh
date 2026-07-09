@@ -54,6 +54,26 @@ if [ -d backend/node_modules ] && [ -d frontend/node_modules ]; then
   echo ""
 fi
 
+echo "--- Frontend static assets (CSS/JS must load, not 404 HTML) ---"
+HOME_HTML=$(curl -sS --max-time 20 -L "$SITE/")
+ASSET_PATH=$(echo "$HOME_HTML" | grep -oE '/_next/static/(css|chunks)/[^"'"'"']+' | head -1)
+if [ -z "$ASSET_PATH" ]; then
+  bad "homepage missing /_next/static asset references"
+else
+  ASSET_HTTP=$(curl -sS -o /tmp/qa_static_asset -w "%{http_code}" --max-time 20 "$SITE$ASSET_PATH")
+  ASSET_CT=$(file -b --mime-type /tmp/qa_static_asset 2>/dev/null || echo "unknown")
+  ASSET_HEAD=$(head -c 20 /tmp/qa_static_asset 2>/dev/null || true)
+  if [ "$ASSET_HTTP" = "200" ] && [[ "$ASSET_CT" == *css* || "$ASSET_CT" == *javascript* || "$ASSET_CT" == *text/plain* ]] \
+     && [[ "$ASSET_HEAD" != "<!DOCTYPE html>" ]]; then
+    ok "static asset $ASSET_PATH ($ASSET_HTTP, $ASSET_CT)"
+  else
+    bad "static asset $ASSET_PATH — HTTP $ASSET_HTTP type=$ASSET_CT (expected real CSS/JS, not HTML 404 page)"
+  fi
+fi
+MAN_HTTP=$(http_code "$SITE/manifest.json")
+[ "$MAN_HTTP" = "200" ] && ok "public manifest.json ($MAN_HTTP)" || bad "public manifest.json ($MAN_HTTP)"
+echo ""
+
 # ── PART 5: Public pages ────────────────────────────────────────
 echo "--- Frontend pages (HTTP) ---"
 PAGES=(

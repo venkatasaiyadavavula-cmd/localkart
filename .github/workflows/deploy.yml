@@ -39,7 +39,10 @@ jobs:
             cd ../frontend
             npm ci
             npm run build
-            pm2 restart localkart-backend localkart-frontend
+            bash scripts/copy-standalone-assets.sh
+            pm2 restart localkart-backend
+            pm2 delete localkart-frontend 2>/dev/null || true
+            HOSTNAME=0.0.0.0 PORT=3000 pm2 start npm --name localkart-frontend --cwd "$APP_DIR/frontend" -- start
             pm2 save
             pm2 status
             echo "=== Deploy complete ==="
