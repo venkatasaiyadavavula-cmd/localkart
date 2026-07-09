@@ -11,7 +11,7 @@ import {
 import { toast } from 'sonner';
 import { unwrapApiData } from '@/lib/utils';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 interface BulkUploadResult {

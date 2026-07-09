@@ -8,8 +8,7 @@ import { ShoppingBag, Star, Flame, TrendingUp, Plus } from 'lucide-react';
 import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from '@/lib/api-config';
 
 function ProductSkeleton() {
   return (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { API_URL } from '@/lib/api-config';
 
 export async function POST(req: NextRequest) {
   if (process.env.PAYMENTS_ENABLED !== 'true') {
@@ -61,7 +62,7 @@ async function handlePaymentCaptured(payment: any) {
   // Update order status to PAID, release inventory, etc.
   console.log('Payment captured:', payment.id);
   // Call your backend service
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/webhooks/razorpay`, {
+  await fetch(`${API_URL}/webhooks/razorpay`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event: 'payment.captured', payment }),
@@ -70,7 +71,7 @@ async function handlePaymentCaptured(payment: any) {
 
 async function handlePaymentFailed(payment: any) {
   console.log('Payment failed:', payment.id);
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/webhooks/razorpay`, {
+  await fetch(`${API_URL}/webhooks/razorpay`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event: 'payment.failed', payment }),
@@ -79,7 +80,7 @@ async function handlePaymentFailed(payment: any) {
 
 async function handleRefundProcessed(refund: any) {
   console.log('Refund processed:', refund.id);
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/webhooks/razorpay`, {
+  await fetch(`${API_URL}/webhooks/razorpay`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event: 'refund.processed', refund }),
@@ -88,7 +89,7 @@ async function handleRefundProcessed(refund: any) {
 
 async function handleOrderPaid(order: any) {
   console.log('Order paid:', order.id);
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/webhooks/razorpay`, {
+  await fetch(`${API_URL}/webhooks/razorpay`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event: 'order.paid', order }),

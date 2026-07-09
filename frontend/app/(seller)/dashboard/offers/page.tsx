@@ -20,7 +20,7 @@ import { getOfferQuestionsForProduct, type OfferQuestion } from '@/lib/daily-off
 import { OfferCountdown } from '@/components/offers/offer-countdown';
 import type { DailyOffer, Product } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from '@/lib/api-config';
 const MAX_OFFERS = 5;
 
 const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : '');

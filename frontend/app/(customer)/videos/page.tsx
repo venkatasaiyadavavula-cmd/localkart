@@ -13,7 +13,7 @@ import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 
 import type { Product } from '@/types/product';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 
 export default function VideoFeedPage() {
   const [currentIndex, setCurrentIndex] = useState(0);

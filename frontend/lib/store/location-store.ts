@@ -7,8 +7,7 @@ import {
   DELIVERY_CHARGES,
 } from '@/lib/delivery-pricing';
 import { unwrapApiData } from '@/lib/utils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { API_URL } from '@/lib/api-config';
 
 export { MAX_DELIVERY_RADIUS_KM, DELIVERY_CHARGES, calculateDeliveryCharge };
 

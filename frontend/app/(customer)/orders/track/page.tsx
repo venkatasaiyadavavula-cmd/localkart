@@ -29,11 +29,9 @@ import { TrackingHero } from '@/components/orders/tracking-hero';
 import { OrderProgress } from '@/components/orders/order-progress';
 import type { TrackedOrder } from '@/types/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
-const WS = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1').replace(
-  /\/api\/v1\/?$/,
-  '',
-);
+import { API_URL as API, getApiWebSocketOrigin } from '@/lib/api-config';
+
+const WS = getApiWebSocketOrigin();
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 const LeafletMap = dynamic(() => import('@/components/map/tracking-map'), {

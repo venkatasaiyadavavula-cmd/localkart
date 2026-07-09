@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import type { CanReviewResponse, ProductReviewsData } from '@/types/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 interface Props {

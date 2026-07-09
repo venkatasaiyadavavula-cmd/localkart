@@ -25,7 +25,10 @@ npm run migration:run
 echo "--- Frontend ---"
 cd "$APP_DIR/frontend"
 npm ci
+export NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.localkart.store/api/v1}"
+echo "Building frontend with NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL"
 npm run build
+bash "$APP_DIR/scripts/check-no-localhost-build.sh" "$APP_DIR/frontend"
 bash scripts/copy-standalone-assets.sh
 
 echo "--- PM2 restart ---"

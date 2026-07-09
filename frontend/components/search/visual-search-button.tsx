@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { normalizeList, unwrapApiData } from '@/lib/utils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { API_URL } from '@/lib/api-config';
 
 const VISUAL_CATEGORIES = [
   'groceries',

@@ -10,7 +10,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { FeaturedVideo, VideoPreviewItem } from '@/types/api';
 import type { Product } from '@/types/product';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 
 function formatCountdown(expiresAt: string) {
   const diff = new Date(expiresAt).getTime() - Date.now();

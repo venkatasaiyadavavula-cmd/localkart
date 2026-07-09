@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
+import { API_URL } from '@/lib/api-config';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 
 interface ProductCardProps {
@@ -78,7 +79,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     }
     try {
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/wishlist/toggle`,
+        `${API_URL}/wishlist/toggle`,
         { productId: product.id },
         { headers: { Authorization: `Bearer ${token}` } },
       );

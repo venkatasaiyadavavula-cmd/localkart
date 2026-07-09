@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 import type { CommissionBillsData } from '@/types/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL as API } from '@/lib/api-config';
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
 type BillStatus = 'pending' | 'paid' | 'overdue';
