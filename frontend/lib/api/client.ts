@@ -48,7 +48,10 @@ apiClient.interceptors.response.use(
         // Refresh failed - logout
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login?intent=customer';
+        const path = window.location.pathname;
+        const intent = path.startsWith('/dashboard') || path.startsWith('/seller') ? 'seller' : 'customer';
+        const redirect = path.startsWith('/login') ? '/' : path;
+        window.location.href = `/login?intent=${intent}&redirect=${encodeURIComponent(redirect)}`;
         toast.error('Session expired. Please login again.');
       }
     }

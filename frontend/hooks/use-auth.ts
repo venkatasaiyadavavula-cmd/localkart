@@ -32,12 +32,14 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hasHydrated: boolean;
   login: (phone: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   sendOtp: (phone: string, mode?: string, orderId?: string | null) => Promise<void>;
   verifyOtp: (phone: string, otp: string, mode?: string, orderId?: string | null) => Promise<any>;
   setUser: (user: User | null) => void;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -45,7 +47,9 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
       login: async (phone, password, rememberMe = false) => {
@@ -123,7 +127,10 @@ export const useAuthStore = create<AuthStore>()(
       name: 'localkart-auth',
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
       onRehydrateStorage: () => (state) => {
-        if (state) state.isLoading = false;
+        if (state) {
+          state.isLoading = false;
+          state.setHasHydrated(true);
+        }
       },
     }
   )

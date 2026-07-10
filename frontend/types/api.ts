@@ -85,6 +85,7 @@ export interface FeaturedVideo {
     name: string;
     price: number;
     slug?: string;
+    categoryType?: string;
   };
 }
 
@@ -94,6 +95,7 @@ export interface VideoPreviewItem {
   name: string;
   price: number;
   slug?: string;
+  categoryType?: string;
   expiresAt?: string;
   isFeatured: boolean;
 }

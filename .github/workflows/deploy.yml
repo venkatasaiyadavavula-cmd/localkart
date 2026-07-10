@@ -71,3 +71,4 @@ jobs:
           bash scripts/qa-smoke.sh
           bash scripts/qa-checkout-cod.sh
           bash scripts/qa-html-sweep.sh
+          bash scripts/run-playwright-e2e.sh --project=desktop

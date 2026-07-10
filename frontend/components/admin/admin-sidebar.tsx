@@ -8,6 +8,8 @@ import {
   Package,
   DollarSign,
   AlertTriangle,
+  Users,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -18,6 +20,8 @@ const navItems = [
   { icon: Package, label: 'Products', href: '/admin/products' },
   { icon: DollarSign, label: 'Commissions', href: '/admin/commissions' },
   { icon: AlertTriangle, label: 'Disputes', href: '/admin/disputes' },
+  { icon: Users, label: 'Customers', href: '/admin/customers' },
+  { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
 export function AdminSidebar() {

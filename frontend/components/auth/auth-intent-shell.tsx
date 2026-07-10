@@ -16,7 +16,7 @@ export function AuthIntentShell({ intent, children }: AuthIntentShellProps) {
 
   return (
     <div className={cn('relative min-h-screen bg-gradient-to-br', theme.gradient)}>
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
 
       <Link
         href="/"
@@ -33,8 +33,8 @@ export function AuthIntentShell({ intent, children }: AuthIntentShellProps) {
             className="relative hidden overflow-hidden rounded-3xl p-10 text-white lg:flex lg:flex-col lg:justify-between"
             style={{ background: theme.panelGradient, boxShadow: '0 24px 64px -12px rgba(0,0,0,0.35)' }}
           >
-            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full opacity-20 blur-3xl" style={{ background: theme.accent }} />
-            <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full opacity-15 blur-3xl" style={{ background: theme.accentSecondary }} />
+            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: theme.accent }} />
+            <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full opacity-15 blur-3xl pointer-events-none" style={{ background: theme.accentSecondary }} />
 
             <div className="relative">
               <Link href="/" className="inline-block">

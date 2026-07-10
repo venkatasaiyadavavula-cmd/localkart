@@ -1,0 +1,14 @@
+{
+  "name": "localkart-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:desktop": "playwright test --project=desktop",
+    "test:mobile": "playwright test --project=mobile"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3"
+  }
+}

@@ -37,7 +37,7 @@ function isSellerIntentPath(pathname: string) {
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
 
   const isWorkRoute = pathname.startsWith('/work');
@@ -51,7 +51,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (isWorkRoute) return;
+    if (isWorkRoute || !_hasHydrated) return;
 
     const timeout = setTimeout(() => setIsChecking(false), 2000);
 
@@ -84,14 +84,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     clearTimeout(timeout);
     setIsChecking(false);
-  }, [isWorkRoute, isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
+  }, [isWorkRoute, _hasHydrated, isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
 
   // Staff /work routes use a separate auth system (useStaffAuth) — skip main guard entirely.
   if (isWorkRoute) {
     return <>{children}</>;
   }
 
-  if (isLoading && isChecking && !isPublicRoute && !isAuthPage) {
+  const awaitingAuth = (!_hasHydrated || isLoading) && isChecking;
+
+  if (awaitingAuth && !isPublicRoute && !isAuthPage) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -218,7 +218,7 @@ export function TrendingProductsSection() {
                           className="text-[10px] font-bold"
                           style={{ color: '#6B7280' }}
                         >
-                          4.{Math.floor(Math.random() * 3) + 1}
+                          4.{(product.id.charCodeAt(0) % 3) + 1}
                         </span>
                       </div>
 

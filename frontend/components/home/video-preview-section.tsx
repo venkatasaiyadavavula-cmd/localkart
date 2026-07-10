@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Link from 'next/link';
 import { Play, ChevronRight, Sparkles, Clock } from 'lucide-react';
-import { formatPrice, normalizeList } from '@/lib/utils';
+import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import type { FeaturedVideo, VideoPreviewItem } from '@/types/api';
 import type { Product } from '@/types/product';
@@ -71,6 +71,7 @@ export function VideoPreviewSection() {
         name: fv.product?.name ?? '',
         price: fv.product?.price ?? 0,
         slug: fv.product?.slug,
+        categoryType: fv.product?.categoryType,
         expiresAt: fv.expiresAt,
         isFeatured: true,
       }))
@@ -80,6 +81,7 @@ export function VideoPreviewSection() {
         name: p.name,
         price: p.price,
         slug: p.slug,
+        categoryType: p.categoryType,
         isFeatured: false,
       }));
 
@@ -107,7 +109,7 @@ export function VideoPreviewSection() {
         {items.map((item) => (
           <Link
             key={item.id}
-            href={item.slug ? `/browse/fashion/product/${item.slug}` : '/videos'}
+            href={item.slug ? getProductUrl({ slug: item.slug, categoryType: item.categoryType }) : '/videos'}
             className="snap-start flex-shrink-0 w-28"
           >
             <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-gray-900 shadow-md">

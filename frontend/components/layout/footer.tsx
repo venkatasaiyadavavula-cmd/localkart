@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { buildLoginUrl, buildRegisterUrl, SELLER_ONBOARDING_PATH } from '@/lib/auth-routes';
 
 const footerLinks = {
-  company: [{ label: 'About Us', href: '/' }],
+  company: [{ label: 'About Us', href: '/about' }],
   support: [
     { label: 'Help Center', href: 'mailto:support@localkart.com', external: true },
     { label: 'Contact Us', href: 'mailto:support@localkart.com', external: true },
@@ -135,7 +135,7 @@ export function Footer() {
         <Separator className="my-8" />
 
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" suppressHydrationWarning>
             © {new Date().getFullYear()} LocalKart. All rights reserved.
           </p>
           <div className="flex gap-4">
