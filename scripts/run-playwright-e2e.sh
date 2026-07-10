@@ -27,7 +27,7 @@ export ADMIN_PASS="${ADMIN_PASS:-Admin@123}"
 export STAFF_ID="${STAFF_ID:-qa_test_worker}"
 export STAFF_PASS="${STAFF_PASS:-Test@1234}"
 
-# Desktop full suite; mobile runs key public + staff tests only
+# Desktop full suite (live-site.spec.ts + live-site-extended.spec.ts); mobile runs key flows
 npx playwright test --project=desktop "$@"
 DESKTOP_RC=$?
 

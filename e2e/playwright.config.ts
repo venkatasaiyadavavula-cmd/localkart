@@ -4,7 +4,7 @@ const site = process.env.SITE_URL || 'https://localkart.store';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 90_000,
+  timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

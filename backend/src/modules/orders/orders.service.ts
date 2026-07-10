@@ -136,8 +136,21 @@ export class OrdersService {
       const isCod = paymentMethod === PaymentMethod.COD;
 
       for (const item of cart.items) {
-        const product = products.find((p) => p.id === item.productId);
-        if (!product) continue;
+        const lockedProduct = await queryRunner.manager
+          .getRepository(Product)
+          .createQueryBuilder('product')
+          .setLock('pessimistic_write')
+          .where('product.id = :id', { id: item.productId })
+          .getOne();
+
+        if (!lockedProduct) {
+          throw new BadRequestException(`Product ${item.name} is no longer available`);
+        }
+        if (lockedProduct.stock < item.quantity) {
+          throw new BadRequestException(
+            `Only ${lockedProduct.stock} of ${item.name} available`,
+          );
+        }
 
         const orderItem = this.orderItemRepository.create({
           orderId: savedOrder.id,
@@ -147,15 +160,15 @@ export class OrdersService {
           quantity: item.quantity,
           pricePerUnit: item.price,
           totalPrice: item.price * item.quantity,
-          commissionRate: this.getProductCommissionRate(product),
-          commissionAmount: (item.price * item.quantity * this.getProductCommissionRate(product)) / 100,
+          commissionRate: this.getProductCommissionRate(lockedProduct),
+          commissionAmount: (item.price * item.quantity * this.getProductCommissionRate(lockedProduct)) / 100,
         });
         await queryRunner.manager.save(orderItem);
 
         if (isCod) {
-          product.stock -= item.quantity;
-          product.orderCount += 1;
-          await queryRunner.manager.save(product);
+          lockedProduct.stock -= item.quantity;
+          lockedProduct.orderCount += 1;
+          await queryRunner.manager.save(lockedProduct);
         }
       }
 
@@ -317,6 +330,12 @@ export class OrdersService {
   }
 
   async getOrderById(id: string, userId: string, role: UserRole) {
+    const uuidRe =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRe.test(id)) {
+      throw new NotFoundException('Order not found');
+    }
+
     const order = await this.orderRepository.findOne({
       where: { id },
       relations: ['items', 'items.product', 'shop', 'customer'],

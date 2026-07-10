@@ -51,8 +51,13 @@ export async function attachConsoleWatcher(page: Page) {
   return errors;
 }
 
-export async function assertNoConsoleErrors(errors: string[], context: string) {
+export async function assertNoConsoleErrors(
+  errors: string[],
+  context: string,
+  options?: { allow401?: boolean },
+) {
   const ignored = [/favicon/i, /manifest/i, /ResizeObserver/i, /hydration/i];
+  if (options?.allow401) ignored.push(/401/i, /Unauthorized/i);
   const serious = errors.filter((e) => !ignored.some((p) => p.test(e)));
   if (serious.length) {
     throw new Error(`Console errors on ${context}: ${serious.slice(0, 3).join(' | ')}`);

@@ -1,3 +1,7 @@
+/**
+ * Live-site Playwright smoke + exhaustive browser audit.
+ * Part A (exhaustive UI clicks) + Part B (edge cases): see live-site-extended.spec.ts
+ */
 import { test, expect } from '@playwright/test';
 import {
   assertNoConsoleErrors,
