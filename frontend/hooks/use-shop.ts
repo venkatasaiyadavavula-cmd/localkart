@@ -8,9 +8,9 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-export function useShop(slugOrId?: string) {
+export function useShop(slugOrId?: string, options?: { sellerShop?: boolean }) {
   const queryClient = useQueryClient();
-  const isSellerShop = !slugOrId;
+  const isSellerShop = options?.sellerShop === true;
 
   const query = useQuery<ShopData>({
     queryKey: isSellerShop ? ['seller', 'shop'] : isUuid(slugOrId!) ? ['shop', 'id', slugOrId] : ['shop', slugOrId],

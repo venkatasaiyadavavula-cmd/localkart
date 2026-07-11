@@ -24,7 +24,7 @@ import { WeeklyEarningsPopup } from '@/components/seller/weekly-earnings-popup';
 export default function SellerDashboardPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
   const { data, isLoading } = useSellerDashboard(period);
-  const { data: shop, toggleShop, isToggling } = useShop();
+  const { data: shop, toggleShop, isToggling } = useShop(undefined, { sellerShop: true });
 
   const pendingOrders = data?.pendingOrders || 0;
   const lowStockProducts = data?.lowStockProducts || 0;

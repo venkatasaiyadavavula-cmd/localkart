@@ -17,9 +17,11 @@ interface StaffAuthState {
   token: string | null;
   staff: StaffSession | null;
   isLoading: boolean;
+  _hasHydrated: boolean;
   login: (staffId: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (perm: string) => boolean;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useStaffAuth = create<StaffAuthState>()(
@@ -28,6 +30,8 @@ export const useStaffAuth = create<StaffAuthState>()(
       token: null,
       staff: null,
       isLoading: false,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       login: async (staffId, password) => {
         set({ isLoading: true });
@@ -58,6 +62,9 @@ export const useStaffAuth = create<StaffAuthState>()(
     {
       name: 'staff-auth',
       partialize: (s) => ({ token: s.token, staff: s.staff }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.setHasHydrated(true);
+      },
     },
   ),
 );

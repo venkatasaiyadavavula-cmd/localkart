@@ -34,7 +34,7 @@ const shopSchema = z.object({
 type ShopFormData = z.infer<typeof shopSchema>;
 
 export default function ShopSettingsPage() {
-  const { data: shop, isLoading, updateShop, updateHours, isSavingHours } = useShop();
+  const { data: shop, isLoading, updateShop, updateHours, isSavingHours } = useShop(undefined, { sellerShop: true });
   const [isUpdating, setIsUpdating] = useState(false);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>(DEFAULT_OPERATING_HOURS);
   const [hoursDirty, setHoursDirty] = useState(false);

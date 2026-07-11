@@ -98,7 +98,8 @@ function TrackOrderContent() {
     socketRef.current?.disconnect();
 
     const socket = io(`${WS}/tracking`, {
-      transports: ['websocket'],
+      // Long-polling only: nginx on api.localkart.store returns 400 on WebSocket upgrade to /socket.io/
+      transports: ['polling'],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,

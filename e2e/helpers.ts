@@ -132,11 +132,18 @@ export async function loginAdmin(page: Page) {
 }
 
 export async function loginStaff(page: Page) {
-  await page.goto('/work/login');
+  await page.goto('/work/login', { waitUntil: 'networkidle' });
   await page.locator('#staffId').fill(CREDS.staff.id);
   await page.locator('#password').fill(CREDS.staff.password);
-  await page.getByRole('button', { name: /start working/i }).click();
-  await page.waitForURL(/\/work\/?$/, { timeout: 20_000 });
+  const [response] = await Promise.all([
+    page.waitForResponse((r) => r.url().includes('/staff/login'), { timeout: 40_000 }),
+    page.getByRole('button', { name: /start working/i }).click(),
+  ]);
+  if (!response.ok()) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`Staff login API failed (${response.status()}): ${body.slice(0, 120)}`);
+  }
+  await page.waitForURL(/\/work\/?$/, { timeout: 40_000 });
 }
 
 export async function clearAuth(page: Page) {

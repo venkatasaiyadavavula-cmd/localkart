@@ -18,18 +18,23 @@ const nav = [
 
 export default function WorkPanelLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { token, staff, logout, hasPermission } = useStaffAuth();
+  const { token, staff, logout, hasPermission, _hasHydrated } = useStaffAuth();
+
+  const effectiveToken =
+    token ??
+    (typeof window !== 'undefined' ? localStorage.getItem('staffAccessToken') : null);
 
   const { error } = useQuery({
     queryKey: ['staff', 'me'],
     queryFn: () => staffWorkApi.getProfile(),
-    enabled: !!token,
+    enabled: !!effectiveToken,
     retry: false,
   });
 
   useEffect(() => {
-    if (!token) router.replace('/work/login');
-  }, [token, router]);
+    if (!_hasHydrated) return;
+    if (!effectiveToken) router.replace('/work/login');
+  }, [_hasHydrated, effectiveToken, router]);
 
   useEffect(() => {
     if (error && (error as any)?.response?.status === 401) {
@@ -38,7 +43,7 @@ export default function WorkPanelLayout({ children }: { children: React.ReactNod
     }
   }, [error, logout, router]);
 
-  if (!token || !staff) {
+  if (!_hasHydrated || !effectiveToken || !staff) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
