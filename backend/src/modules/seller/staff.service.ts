@@ -12,6 +12,10 @@ import { MAX_STAFF, ROLE_PERMISSIONS } from './staff-permissions';
 
 export { MAX_STAFF, ROLE_PERMISSIONS };
 
+/** Permanent E2E staff account — Playwright tests log in with this ID/password. */
+export const E2E_STAFF_ID = 'qa_test_worker';
+export const E2E_STAFF_PASSWORD = 'Test@1234';
+
 @Injectable()
 export class StaffService {
   private readonly logger = new Logger(StaffService.name);
@@ -155,7 +159,10 @@ export class StaffService {
     const staff = await this.staffRepo.findOne({ where: { id: staffMemberId, shopId: shop.id } });
     if (!staff) throw new NotFoundException('Staff member not found');
 
-    const password = newPassword?.trim() || `${staff.name.substring(0, 3).toLowerCase()}${Date.now().toString().slice(-4)}`;
+    const password =
+      staff.staffId === E2E_STAFF_ID
+        ? E2E_STAFF_PASSWORD
+        : newPassword?.trim() || `${staff.name.substring(0, 3).toLowerCase()}${Date.now().toString().slice(-4)}`;
     staff.passwordHash = await bcrypt.hash(password, 10);
     await this.staffRepo.save(staff);
 

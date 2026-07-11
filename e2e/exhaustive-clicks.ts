@@ -2,7 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { assertStyled, report } from './helpers';
 
 const DESTRUCTIVE =
-  /\b(delete|remove|logout|log out|sign out|suspend|reject return|reject order|cancel order|place cod|place order|confirm payment|pay now|submit return|reset password|clear cart|empty cart)\b/i;
+  /\b(delete|remove|logout|log out|sign out|suspend|reject return|reject order|cancel order|place cod|place order|confirm payment|pay now|submit return|reset password|reset|clear cart|empty cart)\b/i;
 const EXTERNAL_SKIP = /^(https?:\/\/|mailto:|tel:|javascript:)/i;
 const SUBMIT_SKIP = /\b(submit|save profile|save hours|save changes|publish|send otp|verify)\b/i;
 

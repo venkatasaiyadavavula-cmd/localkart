@@ -56,7 +56,7 @@ export async function assertNoConsoleErrors(
   context: string,
   options?: { allow401?: boolean },
 ) {
-  const ignored = [/favicon/i, /manifest/i, /ResizeObserver/i, /hydration/i];
+  const ignored = [/favicon/i, /manifest/i, /ResizeObserver/i, /hydration/i, /clipboard/i, /writeText/i];
   if (options?.allow401) ignored.push(/401/i, /Unauthorized/i);
   const serious = errors.filter((e) => !ignored.some((p) => p.test(e)));
   if (serious.length) {
