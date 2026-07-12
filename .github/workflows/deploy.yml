@@ -72,6 +72,10 @@ jobs:
         env:
           QA_THROTTLE_BYPASS_TOKEN: ${{ secrets.QA_THROTTLE_BYPASS_TOKEN }}
         run: |
+          if [ -z "${QA_THROTTLE_BYPASS_TOKEN:-}" ]; then
+            echo "::error::Set GitHub secret QA_THROTTLE_BYPASS_TOKEN (openssl rand -hex 32) — required so Playwright is not rate-limited"
+            exit 1
+          fi
           sleep 20
           for i in $(seq 1 15); do
             if curl -sf https://api.localkart.store/api/v1/catalog/products > /dev/null; then
