@@ -18,6 +18,9 @@ git reset --hard "origin/$BRANCH"
 
 echo "--- Backend ---"
 cd "$APP_DIR/backend"
+if [ -n "${QA_THROTTLE_BYPASS_TOKEN:-}" ]; then
+  bash "$APP_DIR/scripts/sync-qa-throttle-env.sh" "$APP_DIR/backend/.env"
+fi
 npm ci
 npm run build
 npm run migration:run
@@ -32,7 +35,11 @@ bash "$APP_DIR/scripts/check-no-localhost-build.sh" "$APP_DIR/frontend"
 bash scripts/copy-standalone-assets.sh
 
 echo "--- PM2 restart ---"
-pm2 restart localkart-backend
+cd "$APP_DIR/backend"
+pm2 delete localkart-backend 2>/dev/null || true
+pm2 start ecosystem.config.cjs --update-env
+pm2 save
+cd "$APP_DIR/frontend"
 # Always run via `next start` — standalone server.js omits .next/static unless copied.
 pm2 delete localkart-frontend 2>/dev/null || true
 pm2 start ecosystem.config.cjs --cwd "$APP_DIR/frontend"

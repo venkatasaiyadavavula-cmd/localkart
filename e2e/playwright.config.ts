@@ -1,7 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const site = process.env.SITE_URL || 'https://localkart.store';
-const qaBypass = process.env.QA_THROTTLE_BYPASS_TOKEN;
 
 export default defineConfig({
   testDir: './tests',
@@ -19,9 +18,7 @@ export default defineConfig({
     video: 'off',
     actionTimeout: 20_000,
     navigationTimeout: 30_000,
-    ...(qaBypass
-      ? { extraHTTPHeaders: { 'X-QA-Throttle-Bypass': qaBypass } }
-      : {}),
+    // Bypass header is injected only for api.localkart.store in qa-fixtures.ts
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

@@ -35,15 +35,7 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
-            if [ -n "${QA_THROTTLE_BYPASS_TOKEN:-}" ]; then
-              ENV_FILE="backend/.env"
-              touch "$ENV_FILE"
-              if grep -q '^QA_THROTTLE_BYPASS_TOKEN=' "$ENV_FILE"; then
-                sed -i "s|^QA_THROTTLE_BYPASS_TOKEN=.*|QA_THROTTLE_BYPASS_TOKEN=${QA_THROTTLE_BYPASS_TOKEN}|" "$ENV_FILE"
-              else
-                echo "QA_THROTTLE_BYPASS_TOKEN=${QA_THROTTLE_BYPASS_TOKEN}" >> "$ENV_FILE"
-              fi
-            fi
+            bash "$APP_DIR/scripts/sync-qa-throttle-env.sh" "$APP_DIR/backend/.env"
             cd backend
             npm ci
             npm run build
@@ -55,8 +47,11 @@ jobs:
             npm run build
             bash "$APP_DIR/scripts/check-no-localhost-build.sh" "$APP_DIR/frontend"
             bash scripts/copy-standalone-assets.sh
-            pm2 restart localkart-backend
-            # Always run via `next start` — standalone server.js omits .next/static unless copied.
+            cd "$APP_DIR/backend"
+            pm2 delete localkart-backend 2>/dev/null || true
+            pm2 start ecosystem.config.cjs --update-env
+            pm2 save
+            cd "$APP_DIR/frontend"
             pm2 delete localkart-frontend 2>/dev/null || true
             pm2 start ecosystem.config.cjs --cwd "$APP_DIR/frontend"
             pm2 save
@@ -86,6 +81,7 @@ jobs:
             sleep 5
           done
           bash scripts/verify-static-assets.sh
+          bash scripts/verify-qa-throttle-bypass.sh
           bash scripts/qa-smoke.sh
           bash scripts/qa-checkout-cod.sh
           bash scripts/qa-html-sweep.sh

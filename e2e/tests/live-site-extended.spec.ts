@@ -2,7 +2,7 @@
  * Part A (exhaustive UI clicks) + Part B (business-logic edge cases).
  * Companion to live-site.spec.ts — discovered automatically by Playwright.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../qa-fixtures';
 import {
   assertNoConsoleErrors,
   assertStyled,

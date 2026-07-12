@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../qa-fixtures';
 import { API, CREDS, loginCustomer, loginStaff, clearAuth } from '../helpers';
 
 test.describe('Production failure regressions', () => {
