@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/qa-throttle-bypass.sh
 source "$ROOT/scripts/qa-throttle-bypass.sh"
+qa_throttle_init_curl_headers
 
 API="${API_URL:-https://api.localkart.store/api/v1}"
 CUSTOMER_PHONE="${CUSTOMER_PHONE:-9876512345}"
@@ -19,13 +20,13 @@ echo "=== COD Checkout QA ==="
 
 TOKEN=$(curl -sS --max-time 15 -X POST "$API/auth/login" \
   -H "Content-Type: application/json" \
-  $(qa_throttle_curl_args) \
+  "${QA_THROTTLE_CURL_HEADERS[@]}" \
   -d "{\"phone\":\"$CUSTOMER_PHONE\",\"password\":\"$CUSTOMER_PASS\"}" \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('accessToken',''))")
 
 [ -n "$TOKEN" ] && ok "Customer login" || { bad "Customer login"; exit 1; }
 
-PRODUCT_ID=$(curl -sS --max-time 15 "$API/catalog/products?limit=50" \
+PRODUCT_ID=$(curl -sS --max-time 15 "${QA_THROTTLE_CURL_HEADERS[@]}" "$API/catalog/products?limit=50" \
   | python3 -c "
 import sys,json
 d=json.load(sys.stdin)
@@ -42,14 +43,16 @@ else:
 
 [ -n "$PRODUCT_ID" ] && ok "Product found ($PRODUCT_ID)" || { bad "No products"; exit 1; }
 
-curl -sS -X DELETE "$API/cart" -H "Authorization: Bearer $TOKEN" > /dev/null 2>&1 || true
+curl -sS -X DELETE "${QA_THROTTLE_CURL_HEADERS[@]}" "$API/cart" -H "Authorization: Bearer $TOKEN" > /dev/null 2>&1 || true
 ADD_HTTP=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 15 -X POST "$API/cart/items" \
+  "${QA_THROTTLE_CURL_HEADERS[@]}" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"productId\":\"$PRODUCT_ID\",\"quantity\":1}")
 [ "$ADD_HTTP" = "200" ] || [ "$ADD_HTTP" = "201" ] && ok "Add to cart ($ADD_HTTP)" || bad "Add to cart ($ADD_HTTP)"
 
 ORDER_RESP=$(curl -sS --max-time 30 -X POST "$API/orders" \
+  "${QA_THROTTLE_CURL_HEADERS[@]}" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
