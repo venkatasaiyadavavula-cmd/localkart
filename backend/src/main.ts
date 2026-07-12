@@ -4,7 +4,9 @@ if (!(global as any).crypto) { (global as any).crypto = webcrypto; }
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './core/filters/http-exception.filter';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 
@@ -26,20 +28,23 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
   
+  app.use(helmet({
+    contentSecurityPolicy: false, // API-only; CSP set by frontend
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
   app.useWebSocketAdapter(new IoAdapter(app));
   
   app.setGlobalPrefix('api/v1');
   
+  const isProduction = process.env.NODE_ENV === 'production';
   app.enableCors({
-    origin: [
-      'https://localkart.store',
-      'https://www.localkart.store',
-      /\.vercel\.app$/,
-      'http://localhost:3000',
-    ],
+    origin: isProduction
+      ? ['https://localkart.store', 'https://www.localkart.store']
+      : ['https://localkart.store', 'https://www.localkart.store', 'http://localhost:3000'],
     credentials: true,
   });
 
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

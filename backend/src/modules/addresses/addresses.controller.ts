@@ -5,7 +5,8 @@ import {
 import { AddressesService } from './addresses.service';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
-import { AddressType } from '../../core/entities/saved-address.entity';
+import { CreateAddressDto } from './dto/create-address.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Controller('addresses')
 @UseGuards(JwtAuthGuard)
@@ -20,16 +21,7 @@ export class AddressesController {
   @Post()
   async addAddress(
     @CurrentUser() user: any,
-    @Body() dto: {
-      type: AddressType;
-      label: string;
-      fullAddress: string;
-      landmark?: string;
-      pincode?: string;
-      latitude?: number;
-      longitude?: number;
-      isDefault?: boolean;
-    },
+    @Body() dto: CreateAddressDto,
   ) {
     return this.addressesService.addAddress(user.id, dto);
   }
@@ -38,7 +30,7 @@ export class AddressesController {
   async updateAddress(
     @CurrentUser() user: any,
     @Param('id') id: string,
-    @Body() dto: any,
+    @Body() dto: UpdateAddressDto,
   ) {
     return this.addressesService.updateAddress(user.id, id, dto);
   }

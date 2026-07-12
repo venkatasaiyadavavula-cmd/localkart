@@ -128,7 +128,7 @@ export class ReturnsService {
     };
   }
 
-  async getReturnRequestById(id: string, userId: string, role: UserRole) {
+  async getReturnRequestById(id: string, userId: string, role: UserRole | string, shopId?: string) {
     const request = await this.returnRepository.findOne({
       where: { id },
       relations: ['order', 'order.shop', 'customer'],
@@ -140,8 +140,13 @@ export class ReturnsService {
 
     if (role === UserRole.CUSTOMER && request.customerId !== userId) {
       throw new ForbiddenException('Access denied');
-    }
-    if (role === UserRole.SELLER && request.shopId !== (await this.getShopIdByOwner(userId))) {
+    } else if (role === UserRole.SELLER && request.shopId !== (await this.getShopIdByOwner(userId))) {
+      throw new ForbiddenException('Access denied');
+    } else if (role === 'staff') {
+      if (!shopId || request.shopId !== shopId) {
+        throw new ForbiddenException('Access denied');
+      }
+    } else if (role !== UserRole.ADMIN) {
       throw new ForbiddenException('Access denied');
     }
 

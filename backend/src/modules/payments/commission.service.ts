@@ -203,11 +203,19 @@ export class CommissionService {
       throw new BadRequestException('Invalid payment signature');
     }
 
-    await this.billRepo.update(billId, {
-      status:            CommissionBillStatus.PAID,
-      razorpayPaymentId,
-      paidAt:            new Date(),
-    });
+    const bill = await this.billRepo.findOne({ where: { id: billId, shopId } });
+    if (!bill) {
+      throw new NotFoundException('Commission bill not found');
+    }
+
+    await this.billRepo.update(
+      { id: billId, shopId },
+      {
+        status:            CommissionBillStatus.PAID,
+        razorpayPaymentId,
+        paidAt:            new Date(),
+      },
+    );
 
     return { success: true, message: 'Commission payment confirmed' };
   }

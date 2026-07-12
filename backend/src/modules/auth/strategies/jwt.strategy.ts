@@ -25,6 +25,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    if (payload?.typ === 'refresh') {
+      throw new UnauthorizedException('Refresh tokens cannot be used for API access');
+    }
+
     if (payload.role === 'staff') {
       const staff = await this.staffRepository.findOne({
         where: { id: payload.sub, status: StaffStatus.ACTIVE },
@@ -43,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         shopId: staff.shopId,
         shopName: staff.shop?.name,
         name: staff.name,
-        permissions: ROLE_PERMISSIONS[staff.role] ?? payload.permissions ?? [],
+        permissions: ROLE_PERMISSIONS[staff.role] ?? [],
       };
     }
 

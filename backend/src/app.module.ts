@@ -5,6 +5,8 @@ import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
+import { AppThrottlerGuard } from './core/guards/throttler.guard';
 
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
@@ -25,6 +27,7 @@ import { ReturnRequest } from './core/entities/return-request.entity';
 import { SponsoredProduct } from './core/entities/sponsored-product.entity';
 import { DailyOffer } from './core/entities/daily-offer.entity';
 import { Review } from './core/entities/review.entity';
+import { ReviewHelpfulVote } from './core/entities/review-helpful-vote.entity';
 import { Wishlist } from './core/entities/wishlist.entity';
 import { SavedAddress } from './core/entities/saved-address.entity';
 import { StaffMember } from './core/entities/staff-member.entity';
@@ -47,7 +50,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60000, limit: 120 },
+      { name: 'auth', ttl: 60000, limit: 10 },
+    ]),
 
     ConfigModule.forRoot({
       isGlobal: true,
@@ -68,7 +74,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         entities: [
           User, Shop, Product, Category, Order, OrderItem,
           Subscription, Transaction, ReturnRequest, SponsoredProduct,
-          DailyOffer, Review, Wishlist, SavedAddress, StaffMember, CommissionBill,
+          DailyOffer, Review, ReviewHelpfulVote, Wishlist, SavedAddress, StaffMember, CommissionBill,
           FeaturedVideo,
         ],
         synchronize: false,
@@ -117,6 +123,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     WishlistModule,
     AddressesModule,
 
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
   ],
 })
 export class AppModule {}

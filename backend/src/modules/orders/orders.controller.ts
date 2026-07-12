@@ -118,7 +118,7 @@ export class OrdersController {
 
   @Get(':id')
   async getOrderById(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.ordersService.getOrderById(id, user.id, user.role);
+    return this.ordersService.getOrderById(id, user.id, user.role, user.shopId);
   }
 
   @Put(':id/cancel')

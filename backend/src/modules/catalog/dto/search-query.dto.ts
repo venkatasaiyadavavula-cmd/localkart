@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum, IsIn, Min, Max } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ProductCategoryType } from '../../../core/entities/product.entity';
 
@@ -42,7 +42,7 @@ export class SearchQueryDto {
   maxPrice?: number;
 
   @IsOptional()
-  @IsString()
+  @IsIn(['createdAt', 'updatedAt', 'price', 'name', 'displayOrder'])
   sortBy?: string = 'createdAt';
 
   @IsOptional()

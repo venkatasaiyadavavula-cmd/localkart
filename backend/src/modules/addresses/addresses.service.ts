@@ -4,6 +4,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SavedAddress, AddressType } from '../../core/entities/saved-address.entity';
+import { CreateAddressDto } from './dto/create-address.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Injectable()
 export class AddressesService {
@@ -19,22 +21,7 @@ export class AddressesService {
     });
   }
 
-  async addAddress(userId: string, dto: {
-    type?: AddressType;
-    label?: string;
-    fullAddress?: string;
-    landmark?: string;
-    pincode?: string;
-    latitude?: number;
-    longitude?: number;
-    isDefault?: boolean;
-    /** Legacy / checkout form fields */
-    name?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    phone?: string;
-  }) {
+  async addAddress(userId: string, dto: CreateAddressDto) {
     const type = dto.type ?? AddressType.HOME;
     const label = dto.label?.trim() || dto.name?.trim() || 'Home';
     const fullAddress =
@@ -68,14 +55,7 @@ export class AddressesService {
     return this.addressRepo.save(address);
   }
 
-  async updateAddress(userId: string, id: string, dto: Partial<{
-    type: AddressType;
-    label: string;
-    fullAddress: string;
-    landmark: string;
-    pincode: string;
-    isDefault: boolean;
-  }>) {
+  async updateAddress(userId: string, id: string, dto: UpdateAddressDto) {
     const address = await this.addressRepo.findOne({ where: { id, userId } });
     if (!address) throw new NotFoundException('Address not found');
 
@@ -83,8 +63,18 @@ export class AddressesService {
       await this.addressRepo.update({ userId }, { isDefault: false });
     }
 
-    await this.addressRepo.update(id, dto);
-    return this.addressRepo.findOne({ where: { id } });
+    const allowed: Partial<SavedAddress> = {};
+    if (dto.type !== undefined) allowed.type = dto.type;
+    if (dto.label !== undefined) allowed.label = dto.label;
+    if (dto.fullAddress !== undefined) allowed.fullAddress = dto.fullAddress;
+    if (dto.landmark !== undefined) allowed.landmark = dto.landmark;
+    if (dto.pincode !== undefined) allowed.pincode = dto.pincode;
+    if (dto.latitude !== undefined) allowed.latitude = dto.latitude;
+    if (dto.longitude !== undefined) allowed.longitude = dto.longitude;
+    if (dto.isDefault !== undefined) allowed.isDefault = dto.isDefault;
+
+    await this.addressRepo.update({ id, userId }, allowed);
+    return this.addressRepo.findOne({ where: { id, userId } });
   }
 
   async deleteAddress(userId: string, id: string) {

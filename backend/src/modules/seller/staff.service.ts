@@ -192,6 +192,7 @@ export class StaffService {
       role: 'staff',
       staffRole: staff.role,
       permissions,
+      typ: 'access',
     });
 
     return {

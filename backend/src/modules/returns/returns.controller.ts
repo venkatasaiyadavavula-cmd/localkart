@@ -53,7 +53,7 @@ export class ReturnsController {
 
   @Get(':id')
   async getReturnRequestById(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.returnsService.getReturnRequestById(id, user.id, user.role);
+    return this.returnsService.getReturnRequestById(id, user.id, user.role, user.shopId);
   }
 
   @Put(':id/cancel')

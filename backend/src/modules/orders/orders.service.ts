@@ -178,7 +178,9 @@ export class OrdersService {
         await this.cartService.clearCart(userId);
       }
 
-      this.logger.log(`Order OTP for ${orderNumber}: ${savedOrder.deliveryOtp}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`Order OTP generated for ${orderNumber}`);
+      }
       this.notificationsService
         .sendDeliveryOtp(user.phone, savedOrder.deliveryOtp)
         .catch((e) => this.logger.error('Delivery OTP SMS failed: ' + e.message));
@@ -329,7 +331,7 @@ export class OrdersService {
     };
   }
 
-  async getOrderById(id: string, userId: string, role: UserRole) {
+  async getOrderById(id: string, userId: string, role: UserRole | string, shopId?: string) {
     const uuidRe =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRe.test(id)) {
@@ -347,8 +349,13 @@ export class OrdersService {
 
     if (role === UserRole.CUSTOMER && order.customerId !== userId) {
       throw new ForbiddenException('Access denied');
-    }
-    if (role === UserRole.SELLER && order.shop.ownerId !== userId) {
+    } else if (role === UserRole.SELLER && order.shop.ownerId !== userId) {
+      throw new ForbiddenException('Access denied');
+    } else if (role === 'staff') {
+      if (!shopId || order.shopId !== shopId) {
+        throw new ForbiddenException('Access denied');
+      }
+    } else if (role !== UserRole.ADMIN) {
       throw new ForbiddenException('Access denied');
     }
 
@@ -481,7 +488,9 @@ export class OrdersService {
       if (!order.deliveryStaffName) {
         order.deliveryStaffName = 'Delivery Partner';
       }
-      this.logger.log(`Delivery OTP for order ${order.orderNumber}: ${order.deliveryOtp}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`Delivery OTP generated for order ${order.orderNumber}`);
+      }
     }
     if (notes) {
       order.deliveryNotes = notes;

@@ -1,7 +1,10 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+/** Staff JWTs may only call /staff/work/* APIs (work portal). */
+const STAFF_API_PREFIX = '/staff/work';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -9,7 +12,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -17,10 +20,22 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
-    return super.canActivate(context);
+
+    const activated = (await super.canActivate(context)) as boolean;
+    if (!activated) return false;
+
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+    if (user?.role === 'staff') {
+      const path: string = request.path ?? request.url ?? '';
+      if (!path.includes(STAFF_API_PREFIX)) {
+        throw new ForbiddenException('Staff accounts must use the work portal API');
+      }
+    }
+    return true;
   }
 
-  handleRequest(err: any, user: any, info: any) {
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
     if (err || !user) {
       throw err || new UnauthorizedException('Invalid or expired token');
     }

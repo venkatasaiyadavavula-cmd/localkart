@@ -30,11 +30,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(exception);
     }
 
-    response.status(status).json({
+    const isProduction = process.env.NODE_ENV === 'production';
+    const body: Record<string, unknown> = {
       statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      message,
-    });
+      message: typeof message === 'object' && message !== null && 'message' in message
+        ? (message as { message: string | string[] }).message
+        : message,
+    };
+
+    if (!isProduction) {
+      body.timestamp = new Date().toISOString();
+      body.path = request.url;
+    }
+
+    response.status(status).json(body);
   }
 }

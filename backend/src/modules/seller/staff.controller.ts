@@ -2,6 +2,7 @@ import {
   Controller, Get, Post, Patch, Delete,
   Param, Body, Request, UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { StaffService } from './staff.service';
 import { StaffRole } from '../../core/entities/staff-member.entity';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
@@ -76,6 +77,7 @@ export class StaffController {
   }
 
   @Public()
+  @Throttle({ auth: { limit: 10, ttl: 60000 } })
   @Post('login')
   staffLogin(@Body() dto: StaffLoginDto) {
     return this.staffService.staffLogin(dto.staffId, dto.password);

@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSignedUploadUrl, getSignedViewUrl, BUCKET_NAME } from '../../config/storage.config';
 import { Shop } from '../../core/entities/shop.entity';
 import { Product } from '../../core/entities/product.entity';
+import { UserRole } from '../../core/entities/user.entity';
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../../core/entities/subscription.entity';
 
 // ✅ Plan limits
@@ -149,9 +150,13 @@ export class MediaService {
 
   // ─── Get video upload status ───────────────────────────────────────────────
 
-  async getVideoStatus(jobId: string) {
+  async getVideoStatus(jobId: string, user: { id: string; role: string }) {
     const job = await this.mediaQueue.getJob(jobId);
     if (!job) throw new BadRequestException('Job not found');
+
+    if (user.role !== UserRole.ADMIN && job.data?.userId !== user.id) {
+      throw new ForbiddenException('You do not have access to this job');
+    }
 
     const state    = await job.getState();
     const progress = job.progress();
@@ -209,7 +214,51 @@ export class MediaService {
 
   // ─── Signed URL for viewing ────────────────────────────────────────────────
 
-  async getSignedUrl(key: string) {
+  async getSignedUrl(key: string, user: { id: string; role: string; shopId?: string }) {
+    await this.assertKeyAccess(key, user);
     return { url: await getSignedViewUrl(key) };
+  }
+
+  private async assertKeyAccess(
+    key: string,
+    user: { id: string; role: string; shopId?: string },
+  ): Promise<void> {
+    const normalized = decodeURIComponent(key).replace(/^\/+/, '');
+    if (!normalized || normalized.includes('..')) {
+      throw new BadRequestException('Invalid media key');
+    }
+
+    if (user.role === UserRole.ADMIN) {
+      return;
+    }
+
+    if (normalized.startsWith(`avatars/${user.id}/`) || normalized.startsWith(`uploads/${user.id}/`)) {
+      return;
+    }
+
+    if (user.role === UserRole.SELLER) {
+      const shopPrefix = await this.shopVideoPrefixForOwner(user.id);
+      if (shopPrefix && normalized.startsWith(shopPrefix)) {
+        return;
+      }
+    }
+
+    if (user.role === 'staff' && user.shopId && normalized.startsWith(`videos/${user.shopId}/`)) {
+      return;
+    }
+
+    throw new ForbiddenException('You do not have access to this file');
+  }
+
+  private shopVideoPrefixCache = new Map<string, string | null>();
+
+  private async shopVideoPrefixForOwner(ownerId: string): Promise<string | null> {
+    if (this.shopVideoPrefixCache.has(ownerId)) {
+      return this.shopVideoPrefixCache.get(ownerId) ?? null;
+    }
+    const shop = await this.shopRepo.findOne({ where: { ownerId }, select: ['id'] });
+    const prefix = shop ? `videos/${shop.id}/` : null;
+    this.shopVideoPrefixCache.set(ownerId, prefix);
+    return prefix;
   }
 }

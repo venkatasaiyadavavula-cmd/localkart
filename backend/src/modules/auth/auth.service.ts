@@ -129,7 +129,9 @@ export class AuthService {
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    this.logger.log(`OTP for ${normalizedPhone}: ${otp}`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(`OTP generated for ${normalizedPhone}`);
+    }
 
     // Save OTP to DB
     await this.userRepository.query(
@@ -239,20 +241,36 @@ export class AuthService {
   }
 
   async refreshToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token required');
+    }
     try {
       const payload = this.jwtService.verify(refreshToken);
-      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+      if (payload?.typ !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+      if (payload?.role === 'staff') {
+        throw new UnauthorizedException('Staff sessions cannot be refreshed via this endpoint');
+      }
+      const user = await this.userRepository.findOne({ where: { id: payload.sub, isActive: true } });
       if (!user) throw new UnauthorizedException('User not found');
       return this.generateTokens(user);
-    } catch {
+    } catch (e) {
+      if (e instanceof UnauthorizedException) throw e;
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
   private async generateTokens(user: User) {
-    const payload = { sub: user.id, phone: user.phone, role: user.role };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
+    const base = { sub: user.id, phone: user.phone, role: user.role };
+    const accessToken = this.jwtService.sign(
+      { ...base, typ: 'access' },
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+    );
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, typ: 'refresh' },
+      { expiresIn: '30d' },
+    );
     return { accessToken, refreshToken };
   }
 }

@@ -92,15 +92,16 @@ export class MediaController {
   // ─── Signed URL for secure viewing ────────────────────────────────────────
 
   @Get('signed-url/:key')
-  async getSignedUrl(@Param('key') key: string) {
+  async getSignedUrl(@CurrentUser() user: any, @Param('key') key: string) {
     if (!key) throw new BadRequestException('Key is required');
-    return this.mediaService.getSignedUrl(key);
+    return this.mediaService.getSignedUrl(key, user);
   }
 
   // ─── Video processing status ──────────────────────────────────────────────
 
   @Get('video-status/:jobId')
-  async getVideoProcessingStatus(@Param('jobId') jobId: string) {
-    return this.mediaService.getVideoStatus(jobId);
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  async getVideoProcessingStatus(@CurrentUser() user: any, @Param('jobId') jobId: string) {
+    return this.mediaService.getVideoStatus(jobId, user);
   }
 }

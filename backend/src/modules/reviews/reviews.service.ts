@@ -5,6 +5,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from '../../core/entities/review.entity';
+import { ReviewHelpfulVote } from '../../core/entities/review-helpful-vote.entity';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { Product } from '../../core/entities/product.entity';
 
@@ -13,6 +14,8 @@ export class ReviewsService {
   constructor(
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
+    @InjectRepository(ReviewHelpfulVote)
+    private readonly helpfulVoteRepo: Repository<ReviewHelpfulVote>,
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(Product)
@@ -104,6 +107,17 @@ export class ReviewsService {
   async markHelpful(reviewId: string, userId: string) {
     const review = await this.reviewRepo.findOne({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('Review not found');
+
+    const existingVote = await this.helpfulVoteRepo.findOne({
+      where: { reviewId, userId },
+    });
+    if (existingVote) {
+      throw new BadRequestException('You already marked this review as helpful');
+    }
+
+    await this.helpfulVoteRepo.save(
+      this.helpfulVoteRepo.create({ reviewId, userId }),
+    );
     await this.reviewRepo.increment({ id: reviewId }, 'helpfulCount', 1);
     return { message: 'Marked as helpful' };
   }
