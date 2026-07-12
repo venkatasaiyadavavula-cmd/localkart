@@ -26,6 +26,8 @@ export ADMIN_PHONE="${ADMIN_PHONE:-9999999999}"
 export ADMIN_PASS="${ADMIN_PASS:-Admin@123}"
 export STAFF_ID="${STAFF_ID:-qa_test_worker}"
 export STAFF_PASS="${STAFF_PASS:-Test@1234}"
+# CI-only: must match QA_THROTTLE_BYPASS_TOKEN on the API server (GitHub Actions secret).
+export QA_THROTTLE_BYPASS_TOKEN="${QA_THROTTLE_BYPASS_TOKEN:-}"
 
 # Desktop full suite (live-site.spec.ts + live-site-extended.spec.ts); mobile runs key flows
 npx playwright test --project=desktop "$@"

@@ -2,6 +2,10 @@
 # Post-deploy COD checkout test — uses Kadapa coords within 10 km of seed shop
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/qa-throttle-bypass.sh
+source "$ROOT/scripts/qa-throttle-bypass.sh"
+
 API="${API_URL:-https://api.localkart.store/api/v1}"
 CUSTOMER_PHONE="${CUSTOMER_PHONE:-9876512345}"
 CUSTOMER_PASS="${CUSTOMER_PASS:-Customer@123}"
@@ -15,6 +19,7 @@ echo "=== COD Checkout QA ==="
 
 TOKEN=$(curl -sS --max-time 15 -X POST "$API/auth/login" \
   -H "Content-Type: application/json" \
+  $(qa_throttle_curl_args) \
   -d "{\"phone\":\"$CUSTOMER_PHONE\",\"password\":\"$CUSTOMER_PASS\"}" \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('accessToken',''))")
 

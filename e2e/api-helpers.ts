@@ -3,6 +3,11 @@ import { API, CREDS } from './helpers';
 
 export type ApiLoginResult = { accessToken: string; refreshToken?: string; user: Record<string, unknown> };
 
+function qaThrottleHeaders(): Record<string, string> {
+  const token = process.env.QA_THROTTLE_BYPASS_TOKEN;
+  return token ? { 'X-QA-Throttle-Bypass': token } : {};
+}
+
 export async function apiLogin(
   request: APIRequestContext,
   phone: string,
@@ -10,6 +15,7 @@ export async function apiLogin(
 ): Promise<ApiLoginResult> {
   const res = await request.post(`${API}/auth/login`, {
     data: { phone, password },
+    headers: qaThrottleHeaders(),
   });
   if (!res.ok()) {
     throw new Error(`API login failed (${res.status()}): ${await res.text()}`);
@@ -45,6 +51,7 @@ export async function getAdminToken(request: APIRequestContext) {
 export async function staffApiLogin(request: APIRequestContext, staffId: string, password: string) {
   const res = await request.post(`${API}/seller/staff/login`, {
     data: { staffId, password },
+    headers: qaThrottleHeaders(),
   });
   if (!res.ok()) {
     return { ok: false as const, status: res.status(), body: await res.text() };

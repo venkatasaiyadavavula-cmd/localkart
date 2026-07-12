@@ -17,12 +17,15 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          QA_THROTTLE_BYPASS_TOKEN: ${{ secrets.QA_THROTTLE_BYPASS_TOKEN }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           command_timeout: 30m
+          envs: QA_THROTTLE_BYPASS_TOKEN
           script: |
             set -e
             APP_DIR="${{ secrets.DEPLOY_PATH }}"
@@ -32,6 +35,15 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
+            if [ -n "${QA_THROTTLE_BYPASS_TOKEN:-}" ]; then
+              ENV_FILE="backend/.env"
+              touch "$ENV_FILE"
+              if grep -q '^QA_THROTTLE_BYPASS_TOKEN=' "$ENV_FILE"; then
+                sed -i "s|^QA_THROTTLE_BYPASS_TOKEN=.*|QA_THROTTLE_BYPASS_TOKEN=${QA_THROTTLE_BYPASS_TOKEN}|" "$ENV_FILE"
+              else
+                echo "QA_THROTTLE_BYPASS_TOKEN=${QA_THROTTLE_BYPASS_TOKEN}" >> "$ENV_FILE"
+              fi
+            fi
             cd backend
             npm ci
             npm run build
@@ -57,6 +69,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Post-deploy smoke test
+        env:
+          QA_THROTTLE_BYPASS_TOKEN: ${{ secrets.QA_THROTTLE_BYPASS_TOKEN }}
         run: |
           sleep 20
           for i in $(seq 1 15); do

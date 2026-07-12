@@ -7,6 +7,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './core/filters/http-exception.filter';
+import { QA_THROTTLE_BYPASS_HEADER } from './core/constants/qa-throttle.constants';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 
@@ -42,6 +43,7 @@ async function bootstrap() {
       ? ['https://localkart.store', 'https://www.localkart.store']
       : ['https://localkart.store', 'https://www.localkart.store', 'http://localhost:3000'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', QA_THROTTLE_BYPASS_HEADER],
   });
 
   app.useGlobalFilters(new HttpExceptionFilter());
