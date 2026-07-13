@@ -10,11 +10,12 @@ export const test = base.extend({
     const token = process.env.QA_THROTTLE_BYPASS_TOKEN;
     if (token) {
       await page.route(`**${API_HOST}/**`, async (route) => {
+        if (route.request().method() === 'OPTIONS') {
+          await route.continue();
+          return;
+        }
         await route.continue({
-          headers: {
-            ...route.request().headers(),
-            'x-qa-throttle-bypass': token,
-          },
+          headers: { 'x-qa-throttle-bypass': token },
         });
       });
     }

@@ -42,7 +42,7 @@ export class SearchQueryDto {
   maxPrice?: number;
 
   @IsOptional()
-  @IsIn(['createdAt', 'updatedAt', 'price', 'name', 'displayOrder'])
+  @IsIn(['createdAt', 'updatedAt', 'price', 'name', 'displayOrder', 'orderCount', 'rating'])
   sortBy?: string = 'createdAt';
 
   @IsOptional()
