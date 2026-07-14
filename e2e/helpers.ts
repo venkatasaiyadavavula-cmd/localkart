@@ -94,11 +94,12 @@ export async function waitForAuthReady(page: Page) {
 }
 
 export async function submitLoginForm(page: Page) {
+  const loginBtn = page.getByRole('button', { name: /sign in/i });
   const [response] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/auth/login') && r.status() < 400, { timeout: 25_000 }),
-    page.locator('form').first().evaluate((form) => {
-      (form as HTMLFormElement).requestSubmit();
+    page.waitForResponse((r) => r.url().includes('/auth/login') && r.request().method() === 'POST', {
+      timeout: 25_000,
     }),
+    loginBtn.click(),
   ]);
   if (!response.ok()) {
     const body = await response.text().catch(() => '');
@@ -108,7 +109,7 @@ export async function submitLoginForm(page: Page) {
 }
 
 export async function loginCustomer(page: Page) {
-  await page.goto('/login?intent=customer', { waitUntil: 'networkidle' });
+  await page.goto('/login?intent=customer', { waitUntil: 'domcontentloaded' });
   await page.locator('#phone').fill(CREDS.customer.phone);
   await page.locator('#password').fill(CREDS.customer.password);
   await submitLoginForm(page);
@@ -116,7 +117,7 @@ export async function loginCustomer(page: Page) {
 }
 
 export async function loginSeller(page: Page) {
-  await page.goto('/login?intent=seller&redirect=/dashboard', { waitUntil: 'networkidle' });
+  await page.goto('/login?intent=seller&redirect=/dashboard', { waitUntil: 'domcontentloaded' });
   await page.locator('#phone').fill(CREDS.seller.phone);
   await page.locator('#password').fill(CREDS.seller.password);
   await submitLoginForm(page);
@@ -124,7 +125,7 @@ export async function loginSeller(page: Page) {
 }
 
 export async function loginAdmin(page: Page) {
-  await page.goto('/login?redirect=/admin', { waitUntil: 'networkidle' });
+  await page.goto('/login?redirect=/admin', { waitUntil: 'domcontentloaded' });
   await page.locator('#phone').fill(CREDS.admin.phone);
   await page.locator('#password').fill(CREDS.admin.password);
   await submitLoginForm(page);
@@ -132,11 +133,20 @@ export async function loginAdmin(page: Page) {
 }
 
 export async function loginStaff(page: Page) {
-  await page.goto('/work/login', { waitUntil: 'networkidle' });
-  await page.locator('#staffId').fill(CREDS.staff.id);
-  await page.locator('#password').fill(CREDS.staff.password);
+  await page.goto('/work/login', { waitUntil: 'domcontentloaded' });
+  // Staff page uses controlled useState inputs; wait for hydration when route interceptor is active.
+  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+  const staffId = page.locator('#staffId');
+  const password = page.locator('#password');
+  await staffId.click();
+  await staffId.pressSequentially(CREDS.staff.id, { delay: 15 });
+  await password.click();
+  await password.pressSequentially(CREDS.staff.password, { delay: 15 });
   const [response] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/staff/login'), { timeout: 40_000 }),
+    page.waitForResponse(
+      (r) => r.url().includes('/staff/login') && r.request().method() === 'POST',
+      { timeout: 40_000 },
+    ),
     page.getByRole('button', { name: /start working/i }).click(),
   ]);
   if (!response.ok()) {
@@ -167,7 +177,7 @@ export async function clickLinkExpect(
 ) {
   await link.scrollIntoViewIfNeeded();
   await link.click({ force: true });
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   const url = page.url();
   if (typeof urlPattern === 'string') {
     expect(url, label).toContain(urlPattern);

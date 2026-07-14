@@ -14,9 +14,14 @@ export const test = base.extend({
           await route.continue();
           return;
         }
-        await route.continue({
-          headers: { 'x-qa-throttle-bypass': token },
-        });
+        // Playwright replaces (not merges) headers when continue({ headers }) is set.
+        // Spread existing headers but omit hop-by-hop fields the browser manages.
+        const headers = { ...route.request().headers() };
+        for (const key of ['content-length', 'host', 'connection', 'transfer-encoding']) {
+          delete headers[key];
+        }
+        headers['x-qa-throttle-bypass'] = token;
+        await route.continue({ headers });
       });
     }
     await use(page);

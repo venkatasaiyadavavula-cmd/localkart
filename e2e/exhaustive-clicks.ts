@@ -1,6 +1,9 @@
 import { Page, Locator } from '@playwright/test';
 import { assertStyled, report } from './helpers';
 
+/** Use domcontentloaded — networkidle is unreliable with React Query refetch intervals. */
+const PAGE_LOAD: 'domcontentloaded' | 'load' | 'networkidle' = 'domcontentloaded';
+
 const DESTRUCTIVE =
   /\b(delete|remove|logout|log out|sign out|suspend|reject return|reject order|cancel order|place cod|place order|confirm payment|pay now|submit return|reset password|reset|clear cart|empty cart)\b/i;
 const EXTERNAL_SKIP = /^(https?:\/\/|mailto:|tel:|javascript:)/i;
@@ -66,7 +69,7 @@ export async function exhaustPageClicks(
   let skipped = 0;
   let failed = 0;
 
-  await page.goto(route, { waitUntil: 'networkidle' });
+  await page.goto(route, { waitUntil: PAGE_LOAD });
   await assertStyled(page, pageLabel);
 
   const interactives = await getInteractives(page);
@@ -75,7 +78,7 @@ export async function exhaustPageClicks(
   for (let i = 0; i < Math.min(interactives.length, limit); i++) {
     // Re-open page each iteration — prior clicks may have changed DOM
     if (i > 0) {
-      await page.goto(route, { waitUntil: 'networkidle' });
+      await page.goto(route, { waitUntil: PAGE_LOAD });
     }
 
     const fresh = await getInteractives(page);
@@ -129,12 +132,12 @@ export async function exhaustPageClicks(
       if (!options.allowNavigate && !page.url().includes(new URL(route, page.url()).pathname)) {
         const path = route.split('?')[0];
         if (!page.url().includes(path)) {
-          await page.goto(route, { waitUntil: 'networkidle' });
+          await page.goto(route, { waitUntil: PAGE_LOAD });
         }
       } else if (page.url() !== urlBefore && route.startsWith('/')) {
         const basePath = route.split('?')[0];
         if (!page.url().includes(basePath)) {
-          await page.goto(route, { waitUntil: 'networkidle' });
+          await page.goto(route, { waitUntil: PAGE_LOAD });
         }
       }
 
@@ -142,7 +145,7 @@ export async function exhaustPageClicks(
     } catch (e) {
       report(label, 'fail', String(e).message?.slice(0, 100) || 'click failed');
       failed++;
-      await page.goto(route, { waitUntil: 'networkidle' }).catch(() => {});
+      await page.goto(route, { waitUntil: PAGE_LOAD }).catch(() => {});
     }
   }
 
