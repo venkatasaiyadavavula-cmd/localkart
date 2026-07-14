@@ -16,6 +16,7 @@ import {
   loginStaff,
   report,
   snap,
+  waitForAuthReady,
 } from '../helpers';
 
 const CATEGORIES = ['groceries', 'fashion', 'electronics', 'beauty', 'home-essentials', 'accessories'];
@@ -385,8 +386,10 @@ test.describe('Part 5 — Admin flow', () => {
 
     const routes = ['/admin', '/admin/sellers', '/admin/products', '/admin/commissions', '/admin/disputes', '/admin/customers', '/admin/settings'];
     for (const route of routes) {
-      await page.goto(route);
-      await page.waitForLoadState('networkidle');
+      if (!page.url().includes(route)) {
+        await page.goto(route, { waitUntil: 'domcontentloaded' });
+      }
+      await waitForAuthReady(page);
       if (!page.url().includes(route) || page.url().includes('/login')) {
         throw new Error(`Admin ${route} failed — at ${page.url()}`);
       }

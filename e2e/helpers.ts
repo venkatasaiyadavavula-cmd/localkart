@@ -176,12 +176,9 @@ export async function clickLinkExpect(
   label: string,
 ) {
   await link.scrollIntoViewIfNeeded();
-  await link.click({ force: true });
-  await page.waitForLoadState('domcontentloaded');
-  const url = page.url();
-  if (typeof urlPattern === 'string') {
-    expect(url, label).toContain(urlPattern);
-  } else {
-    expect(url, label).toMatch(urlPattern);
-  }
+  await expect(link).toBeVisible();
+  const navigation = typeof urlPattern === 'string'
+    ? page.waitForURL((url) => url.href.includes(urlPattern), { timeout: 20_000 })
+    : page.waitForURL(urlPattern, { timeout: 20_000 });
+  await Promise.all([navigation, link.click()]);
 }
