@@ -2,6 +2,10 @@ name: Commission merge dry-run
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/commission-merge-dry-run.yml'
 
 concurrency:
   group: commission-merge-dry-run
