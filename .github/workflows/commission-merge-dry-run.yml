@@ -1,0 +1,63 @@
+name: Commission merge dry-run
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: commission-merge-dry-run
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    name: Production DB dry-run (read-only)
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout branch with dry-run scripts
+        uses: actions/checkout@v4
+        with:
+          ref: cursor/weekly-commission-billing-cf91
+
+      - name: Run dry-run on production server via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 15m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            echo "=== Commission merge DRY-RUN (no writes) ==="
+            cd "$APP_DIR"
+            git fetch origin cursor/weekly-commission-billing-cf91
+            git checkout origin/cursor/weekly-commission-billing-cf91 -- \
+              backend/src/scripts/merge-daily-bills-dry-run.ts \
+              backend/src/modules/payments/merge-daily-bills.util.ts \
+              backend/src/modules/payments/commission-week.util.ts
+            cd backend
+            export DRY_RUN_OUTPUT="/tmp/commission-merge-dry-run.txt"
+            npx ts-node -r tsconfig-paths/register src/scripts/merge-daily-bills-dry-run.ts
+            echo ""
+            echo "=== FULL REPORT FILE ==="
+            cat /tmp/commission-merge-dry-run.txt
+
+      - name: Download report from server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: "/tmp/commission-merge-dry-run.txt"
+          target: "."
+
+      - name: Upload dry-run report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: commission-merge-dry-run
+          path: commission-merge-dry-run.txt
+          if-no-files-found: warn
