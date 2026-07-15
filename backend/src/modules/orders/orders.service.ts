@@ -24,6 +24,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { LocationService } from '../location/location.service';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
 import { isShopCurrentlyOpen, getShopHoursStatus } from '../../core/utils/shop-hours.util';
+import { assertScopedResourceAccess } from '../../core/utils/scoped-access.util';
 
 @Injectable()
 export class OrdersService {
@@ -347,17 +348,16 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    if (role === UserRole.CUSTOMER && order.customerId !== userId) {
-      throw new ForbiddenException('Access denied');
-    } else if (role === UserRole.SELLER && order.shop.ownerId !== userId) {
-      throw new ForbiddenException('Access denied');
-    } else if (role === 'staff') {
-      if (!shopId || order.shopId !== shopId) {
-        throw new ForbiddenException('Access denied');
-      }
-    } else if (role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Access denied');
-    }
+    assertScopedResourceAccess(
+      {
+        customerId: order.customerId,
+        shopId: order.shopId,
+        shopOwnerId: order.shop?.ownerId,
+      },
+      role,
+      userId,
+      { staffShopId: shopId },
+    );
 
     delete order.deliveryOtp;
     delete order.customer.password;

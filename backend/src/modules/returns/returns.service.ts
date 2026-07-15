@@ -16,6 +16,7 @@ import { User, UserRole } from '../../core/entities/user.entity';
 import { CreateReturnRequestDto, UpdateReturnStatusDto } from './dto/return-request.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { getSignedUploadUrl, BUCKET_NAME } from '../../config/storage.config';
+import { assertScopedResourceAccess } from '../../core/utils/scoped-access.util';
 
 @Injectable()
 export class ReturnsService {
@@ -138,17 +139,19 @@ export class ReturnsService {
       throw new NotFoundException('Return request not found');
     }
 
-    if (role === UserRole.CUSTOMER && request.customerId !== userId) {
-      throw new ForbiddenException('Access denied');
-    } else if (role === UserRole.SELLER && request.shopId !== (await this.getShopIdByOwner(userId))) {
-      throw new ForbiddenException('Access denied');
-    } else if (role === 'staff') {
-      if (!shopId || request.shopId !== shopId) {
-        throw new ForbiddenException('Access denied');
-      }
-    } else if (role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Access denied');
-    }
+    const sellerShopId =
+      role === UserRole.SELLER ? await this.getShopIdByOwner(userId) : undefined;
+
+    assertScopedResourceAccess(
+      {
+        customerId: request.customerId,
+        shopId: request.shopId,
+        shopOwnerId: request.order?.shop?.ownerId,
+      },
+      role,
+      userId,
+      { staffShopId: shopId, sellerShopId },
+    );
 
     delete request.customer.password;
     return request;
