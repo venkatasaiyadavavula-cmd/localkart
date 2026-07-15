@@ -36,9 +36,8 @@ jobs:
             if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
             echo "=== Commission merge DRY-RUN (no writes) ==="
             cd "$APP_DIR"
-            git fetch origin cursor/weekly-commission-billing-cf91
-            git checkout origin/cursor/weekly-commission-billing-cf91 -- \
-              backend/src/scripts/merge-daily-bills-dry-run.js
+            git fetch origin main
+            git checkout origin/main -- backend/src/scripts/merge-daily-bills-dry-run.js
             cd backend
             export DRY_RUN_OUTPUT="/tmp/commission-merge-dry-run.txt"
             node src/scripts/merge-daily-bills-dry-run.js
