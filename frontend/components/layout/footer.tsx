@@ -59,7 +59,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="border-t bg-muted/20">
+    <footer className="border-t bg-muted/20 pb-20 lg:pb-0">
       <div className="container py-8 md:py-12">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">

@@ -45,20 +45,14 @@ test.describe('Part 1 — Public pages', () => {
     report('Homepage footer → /terms', 'pass');
 
     await page.goto('/');
-    await clickLinkExpect(page, page.getByRole('link', { name: /privacy/i }).first(), '/privacy', 'Footer Privacy');
+    await clickLinkExpect(page, page.locator('footer a[href="/privacy"]').first(), '/privacy', 'Footer Privacy');
     report('Homepage footer → /privacy', 'pass');
 
     await page.goto('/');
-    const aboutLink = page.locator('footer a[href="/about"], footer a:has-text("About")').first();
+    const aboutLink = page.locator('footer a[href="/about"]').first();
     if (await aboutLink.count()) {
-      await aboutLink.click();
-      await page.waitForLoadState('networkidle');
-      const url = page.url();
-      if (url.includes('/about')) {
-        report('Homepage footer About Us → /about', 'pass');
-      } else {
-        report('Homepage footer About Us', 'fail', `went to ${url} not /about`);
-      }
+      await clickLinkExpect(page, aboutLink, '/about', 'Footer About Us');
+      report('Homepage footer About Us → /about', 'pass');
     } else {
       report('Homepage footer About Us link', 'skip', 'no /about footer link found');
     }
