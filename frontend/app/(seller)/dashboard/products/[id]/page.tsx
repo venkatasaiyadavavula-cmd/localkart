@@ -48,6 +48,16 @@ const categoryOptions = [
   { value: 'accessories', label: 'Accessories' },
 ];
 
+const emptyProductDefaults: ProductFormData = {
+  name: '',
+  description: '',
+  price: 0,
+  stock: 0,
+  sku: '',
+  brand: '',
+  categoryType: 'groceries',
+};
+
 export default function EditProductPage() {
   const params = useParams();
   const router = useRouter();
@@ -62,6 +72,7 @@ export default function EditProductPage() {
   const [existingVideos, setExistingVideos] = useState<string[]>([]);
   const [newVideos, setNewVideos] = useState<File[]>([]);
   const [newVideoUrls, setNewVideoUrls] = useState<string[]>([]);
+  const [formHydrated, setFormHydrated] = useState(false);
 
   const {
     register,
@@ -72,23 +83,27 @@ export default function EditProductPage() {
     formState: { errors, isDirty },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
+    defaultValues: emptyProductDefaults,
   });
 
   useEffect(() => {
-    if (product) {
-      reset({
-        name: product.name,
-        description: product.description || '',
-        price: product.price,
-        mrp: product.mrp || undefined,
-        stock: product.stock,
-        sku: product.sku || '',
-        brand: product.brand || '',
-        categoryType: product.categoryType,
-      });
-      setExistingImages(product.images || []);
-      setExistingVideos(product.videos || []);
+    if (!product) {
+      setFormHydrated(false);
+      return;
     }
+    reset({
+      name: product.name,
+      description: product.description || '',
+      price: product.price,
+      mrp: product.mrp || undefined,
+      stock: product.stock,
+      sku: product.sku || '',
+      brand: product.brand || '',
+      categoryType: product.categoryType,
+    });
+    setExistingImages(product.images || []);
+    setExistingVideos(product.videos || []);
+    setFormHydrated(true);
   }, [product, reset]);
 
   const handleNewImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,6 +216,21 @@ export default function EditProductPage() {
         <h1 className="text-xl font-bold">Product not found</h1>
         <p className="text-muted-foreground text-sm">This product may have been deleted or you do not have access.</p>
         <Button onClick={() => router.push('/dashboard/products')}>Back to Products</Button>
+      </div>
+    );
+  }
+
+  if (!formHydrated) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-64 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
