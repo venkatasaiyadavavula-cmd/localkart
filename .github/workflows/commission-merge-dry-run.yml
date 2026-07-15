@@ -38,12 +38,10 @@ jobs:
             cd "$APP_DIR"
             git fetch origin cursor/weekly-commission-billing-cf91
             git checkout origin/cursor/weekly-commission-billing-cf91 -- \
-              backend/src/scripts/merge-daily-bills-dry-run.ts \
-              backend/src/modules/payments/merge-daily-bills.util.ts \
-              backend/src/modules/payments/commission-week.util.ts
+              backend/src/scripts/merge-daily-bills-dry-run.js
             cd backend
             export DRY_RUN_OUTPUT="/tmp/commission-merge-dry-run.txt"
-            npx ts-node -r tsconfig-paths/register src/scripts/merge-daily-bills-dry-run.ts
+            node src/scripts/merge-daily-bills-dry-run.js
             echo ""
             echo "=== FULL REPORT FILE ==="
             cat /tmp/commission-merge-dry-run.txt
