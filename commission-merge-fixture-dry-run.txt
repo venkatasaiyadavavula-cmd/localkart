@@ -1,0 +1,11 @@
+=== Weekly Commission Bill Merge — DRY RUN ===
+Generated: 2026-07-15T16:06:31.374Z
+Groups: 2
+
+shopId | shop | week (Sat–Fri) | old daily # | orders | commission | fine | status | paid daily | notes
+---
+bbbbbbbb | City Electronics | 2025-07-05 → 2025-07-11 | 3 | 7 | ₹120 | ₹225 | overdue | 1/3 | Partial: 1 daily bill(s) paid (₹40.00); weekly bill covers remaining ₹120.00
+aaaaaaaa | Kadapa Fresh Mart | 2025-07-12 → 2025-07-18 | 7 | 42 | ₹350 | ₹50 | pending | 0/7 | No daily bills paid — full weekly commission due
+
+=== PARTIAL PAYMENT WEEKS (review carefully) ===
+  City Electronics: week 2025-07-11 — already paid ₹40, remaining ₹120

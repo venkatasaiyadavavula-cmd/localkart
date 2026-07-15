@@ -114,6 +114,8 @@ export interface CommissionBillsData {
   bills: {
     id: string;
     billDate: string;
+    weekStartDate?: string | null;
+    weekLabel?: string;
     orderCount: number;
     totalOrderValue: number;
     commissionAmount: number;

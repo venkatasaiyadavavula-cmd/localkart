@@ -83,12 +83,12 @@ export class CommissionController {
     return this.commissionService.getOverdueShops();
   }
 
-  // Admin: manually trigger bill generation (for testing)
+  // Admin: manually trigger weekly bill generation (for testing)
   @Post('admin/generate-today')
   @Roles(UserRole.ADMIN)
   @UseGuards(RolesGuard)
   async generateToday() {
-    await this.commissionService.generateDailyBills();
-    return { success: true, message: 'Bills generated for today' };
+    await this.commissionService.generateWeeklyBills();
+    return { success: true, message: 'Weekly commission bills generated for current Sat–Fri week' };
   }
 }

@@ -84,7 +84,9 @@ export default function AdminCommissionsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Commission Management</h1>
-          <p className="text-muted-foreground">Track and manage platform commissions</p>
+          <p className="text-muted-foreground">
+            Platform commissions · Sellers billed weekly (Sat–Fri), due Friday, ₹25/day fine from Saturday
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
