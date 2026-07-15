@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { buildLoginUrl } from '@/lib/auth-routes';
+import { authTrace } from '@/lib/auth-trace';
 
 const publicRoutes = [
   '/',
@@ -38,7 +39,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
-  const [isChecking, setIsChecking] = useState(true);
+  const [authResolved, setAuthResolved] = useState(false);
 
   const isWorkRoute = pathname.startsWith('/work');
 
@@ -51,39 +52,53 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (isWorkRoute || !_hasHydrated) return;
+    if (isWorkRoute) return;
 
-    const timeout = setTimeout(() => setIsChecking(false), 2000);
-
-    if (isLoading) return;
+    if (!_hasHydrated || isLoading) {
+      authTrace('guard-effect', {
+        pathname,
+        phase: 'waiting-store',
+        _hasHydrated,
+        isLoading,
+      });
+      setAuthResolved(false);
+      return;
+    }
 
     const isSellerRoute = sellerRoutes.some((route) => matchesRoute(pathname, route));
     const isAdminRoute = adminRoutes.some((route) => matchesRoute(pathname, route));
 
+    authTrace('guard-effect', {
+      pathname,
+      phase: 'checking',
+      isAuthenticated,
+      role: user?.role ?? null,
+    });
+
     if (!isAuthenticated && !isPublicRoute && !isAuthPage) {
       const intent = isSellerIntentPath(pathname) ? 'seller' : 'customer';
+      authTrace('guard-redirect', { pathname, reason: 'unauthenticated', intent });
       router.push(buildLoginUrl({ intent, redirect: pathname }));
-      clearTimeout(timeout);
-      setIsChecking(false);
+      setAuthResolved(true);
       return;
     }
 
     if (isAuthenticated && isSellerRoute && user?.role !== 'seller' && user?.role !== 'admin') {
+      authTrace('guard-redirect', { pathname, reason: 'not-seller' });
       router.push('/seller-onboarding');
-      clearTimeout(timeout);
-      setIsChecking(false);
+      setAuthResolved(true);
       return;
     }
 
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
+      authTrace('guard-redirect', { pathname, reason: 'not-admin' });
       router.push('/');
-      clearTimeout(timeout);
-      setIsChecking(false);
+      setAuthResolved(true);
       return;
     }
 
-    clearTimeout(timeout);
-    setIsChecking(false);
+    authTrace('guard-resolved', { pathname, isAuthenticated, role: user?.role ?? null });
+    setAuthResolved(true);
   }, [isWorkRoute, _hasHydrated, isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
 
   // Staff /work routes use a separate auth system (useStaffAuth) — skip main guard entirely.
@@ -91,9 +106,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  const awaitingAuth = (!_hasHydrated || isLoading) && isChecking;
+  const awaitingAuth = !_hasHydrated || isLoading || !authResolved;
 
   if (awaitingAuth && !isPublicRoute && !isAuthPage) {
+    authTrace('guard-await', {
+      pathname,
+      _hasHydrated,
+      isLoading,
+      authResolved,
+    });
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

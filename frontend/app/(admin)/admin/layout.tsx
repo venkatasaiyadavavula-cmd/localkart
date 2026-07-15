@@ -2,7 +2,8 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { AdminHeader } from '@/components/admin/admin-header';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
-import { getServerSession } from '@/lib/auth';
+import { getServerSession, hasAccessTokenCookie } from '@/lib/auth';
+import { authTrace } from '@/lib/auth-trace';
 
 export const metadata: Metadata = {
   title: {
@@ -16,10 +17,20 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const hasToken = hasAccessTokenCookie();
   const session = await getServerSession();
 
-  if (!session || session.user.role !== 'admin') {
-    redirect('/login?redirect=/admin');
+  if (!session) {
+    if (!hasToken) {
+      authTrace('admin-layout', { action: 'redirect-login', reason: 'no-token' });
+      redirect('/login?redirect=/admin');
+    }
+    // Cookie present but profile could not be validated (transient API failure).
+    // Defer to client AuthGuard instead of falsely redirecting a logged-in admin.
+    authTrace('admin-layout', { action: 'defer-client', reason: 'session-unresolved' });
+  } else if (session.user.role !== 'admin') {
+    authTrace('admin-layout', { action: 'redirect-home', role: session.user.role });
+    redirect('/');
   }
 
   return (

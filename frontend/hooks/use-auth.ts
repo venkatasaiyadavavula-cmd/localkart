@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api/client';
 import { useCartStore } from '@/store/cart-store';
+import { authTrace } from '@/lib/auth-trace';
 
 const setAuthCookie = (accessToken: string) => {
   if (typeof document !== 'undefined') {
@@ -126,11 +127,18 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'localkart-auth',
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isLoading = false;
-          state.setHasHydrated(true);
-        }
+      onRehydrateStorage: () => {
+        authTrace('rehydrate-start', { storageKey: 'localkart-auth' });
+        return (state) => {
+          if (state) {
+            state.isLoading = false;
+            state.setHasHydrated(true);
+            authTrace('rehydrate-done', {
+              isAuthenticated: state.isAuthenticated,
+              role: state.user?.role ?? null,
+            });
+          }
+        };
       },
     }
   )

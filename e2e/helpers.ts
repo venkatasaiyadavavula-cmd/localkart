@@ -79,6 +79,48 @@ export async function assertStyled(page: Page, context: string) {
   expect(cssHref, `${context}: missing CSS link`).toBeTruthy();
 }
 
+export async function enableAuthTrace(page: Page) {
+  await page.addInitScript(() => {
+    (window as Window & { __AUTH_TRACE__?: boolean }).__AUTH_TRACE__ = true;
+  });
+}
+
+export async function dumpAuthState(page: Page, label: string) {
+  const snapshot = await page.evaluate(() => {
+    let persisted: { isAuthenticated?: boolean; role?: string } | null = null;
+    try {
+      const raw = localStorage.getItem('localkart-auth');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        persisted = {
+          isAuthenticated: parsed.state?.isAuthenticated,
+          role: parsed.state?.user?.role,
+        };
+      }
+    } catch {
+      persisted = null;
+    }
+    return {
+      url: location.href,
+      pathname: location.pathname,
+      hasAccessToken: !!localStorage.getItem('accessToken'),
+      hasAuthCookie: document.cookie.includes('accessToken='),
+      persisted,
+    };
+  });
+  console.info(`[admin-auth-debug] ${label}`, JSON.stringify(snapshot));
+  return snapshot;
+}
+
+export function assertOnRoute(page: Page, route: string) {
+  const url = new URL(page.url());
+  if (url.pathname.includes('/login')) {
+    throw new Error(`Redirected to login while visiting ${route} — at ${page.url()}`);
+  }
+  if (!url.pathname.startsWith(route)) {
+    throw new Error(`Admin ${route} failed — at ${page.url()}`);
+  }
+}
 export async function waitForAuthReady(page: Page) {
   await page.waitForFunction(() => !!localStorage.getItem('accessToken'), { timeout: 15_000 });
   await page.waitForFunction(() => document.cookie.includes('accessToken='), { timeout: 10_000 });

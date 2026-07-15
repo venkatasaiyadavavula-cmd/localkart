@@ -14,6 +14,9 @@ import {
   loginCustomer,
   loginSeller,
   loginStaff,
+  enableAuthTrace,
+  dumpAuthState,
+  assertOnRoute,
   report,
   snap,
   waitForAuthReady,
@@ -373,20 +376,24 @@ test.describe('Part 4 — Staff flow', () => {
 
 test.describe('Part 5 — Admin flow', () => {
   test('Admin dashboard and sections', async ({ page }) => {
+    await enableAuthTrace(page);
     const errors = await attachConsoleWatcher(page);
     await clearAuth(page);
     await loginAdmin(page);
+    await dumpAuthState(page, 'after-login');
     report('Admin login', 'pass');
 
     const routes = ['/admin', '/admin/sellers', '/admin/products', '/admin/commissions', '/admin/disputes', '/admin/customers', '/admin/settings'];
     for (const route of routes) {
-      if (!page.url().includes(route)) {
+      const before = new URL(page.url()).pathname;
+      if (!before.startsWith(route)) {
         await page.goto(route, { waitUntil: 'domcontentloaded' });
       }
       await waitForAuthReady(page);
-      if (!page.url().includes(route) || page.url().includes('/login')) {
-        throw new Error(`Admin ${route} failed — at ${page.url()}`);
+      if (new URL(page.url()).pathname.includes('/login')) {
+        await dumpAuthState(page, `redirect-at-${route}`);
       }
+      assertOnRoute(page, route);
       await assertStyled(page, route);
       report(`Admin ${route}`, 'pass');
     }
