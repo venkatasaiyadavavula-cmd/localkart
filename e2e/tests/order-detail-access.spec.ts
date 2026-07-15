@@ -1,6 +1,6 @@
 import { test, expect } from '../qa-fixtures';
 import { attachConsoleWatcher, clearAuth, loginCustomer, API } from '../helpers';
-import { getCustomerOrders, getCustomerToken } from '../api-helpers';
+import { getCustomerOrders, getCustomerToken, apiLogin } from '../api-helpers';
 
 test.describe('Order detail access regression', () => {
   test('owning customer: API 200 + no 403 on order detail, track, profile', async ({
@@ -19,17 +19,20 @@ test.describe('Order detail access regression', () => {
     expect(ownRes.status(), 'GET /orders/:id for owning customer').toBe(200);
 
     const phoneB = `9876${String(Date.now()).slice(-6)}`;
+    const passB = 'CrossTest@123';
     const reg = await request.post(`${API}/auth/register`, {
       data: {
         name: 'Cross Customer QA',
         phone: phoneB,
-        password: 'CrossTest@123',
+        password: passB,
         role: 'customer',
       },
     });
     expect(reg.ok(), 'register temp customer B').toBeTruthy();
-    const regBody = await reg.json();
-    const tokenB = regBody.accessToken ?? regBody.data?.accessToken;
+
+    const { accessToken: tokenB } = await apiLogin(request, phoneB, passB);
+    expect(tokenB, 'customer B login must return accessToken').toBeTruthy();
+
     const denyRes = await request.get(`${API}/orders/${orderId}`, {
       headers: { Authorization: `Bearer ${tokenB}` },
     });
