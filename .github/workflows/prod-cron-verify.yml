@@ -1,3 +1,4 @@
+# Post-deploy: confirms weekly bill cron only (no daily bill-generation cron).
 name: Production cron verify
 
 on:
