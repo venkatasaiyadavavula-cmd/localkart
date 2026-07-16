@@ -417,6 +417,7 @@ export class OrdersService {
 
       this.trackingGateway.emitStatusUpdate(orderId, { status: OrderStatus.CANCELLED });
 
+      delete order.deliveryOtp;
       return { message: 'Order cancelled successfully', order };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -634,6 +635,8 @@ export class OrdersService {
     }
 
     if (order.paymentStatus === PaymentStatus.PAID) {
+      delete order.deliveryOtp;
+      delete order.customer?.password;
       return order;
     }
 
@@ -669,6 +672,8 @@ export class OrdersService {
 
       await this.cartService.clearCart(order.customerId);
 
+      delete order.deliveryOtp;
+      delete order.customer?.password;
       return order;
     } catch (error) {
       await queryRunner.rollbackTransaction();

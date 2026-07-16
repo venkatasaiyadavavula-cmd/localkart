@@ -16,6 +16,7 @@ import { TrackingGateway } from './tracking.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LocationService } from '../location/location.service';
 import { OrderStatus } from '../../core/entities/order.entity';
+import { PaymentStatus } from '../../core/entities/order.entity';
 
 const ORDER_ID = '05e3815a-ffea-4dfa-9428-e86562276a80';
 const OWNER_ID = '2ef7befb-7fbb-46b4-807f-cd72ed34648a';
@@ -232,5 +233,125 @@ describe('OrdersService.updateOrderStatusBySeller', () => {
       { status: OrderStatus.OUT_FOR_DELIVERY },
     );
     expect(result.deliveryOtp).toBeUndefined();
+  });
+});
+
+describe('OrdersService.cancelOrder', () => {
+  let service: OrdersService;
+  const orderRepository = { findOne: jest.fn() };
+  const stateMachine = { canTransition: jest.fn().mockReturnValue(true) };
+  const trackingGateway = { emitStatusUpdate: jest.fn() };
+  const queryRunner = {
+    connect: jest.fn(),
+    startTransaction: jest.fn(),
+    commitTransaction: jest.fn(),
+    rollbackTransaction: jest.fn(),
+    release: jest.fn(),
+    manager: { increment: jest.fn(), save: jest.fn() },
+  };
+  const dataSource = { createQueryRunner: jest.fn(() => queryRunner) };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: orderRepository },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: {} },
+        { provide: DataSource, useValue: dataSource },
+        { provide: OrderStateMachine, useValue: stateMachine },
+        { provide: NotificationsService, useValue: {} },
+        { provide: TrackingGateway, useValue: trackingGateway },
+        { provide: LocationService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({ status: OrderStatus.CONFIRMED, deliveryOtp: '999888', items: [] }),
+    );
+    stateMachine.canTransition.mockReturnValue(true);
+  });
+
+  it('strips deliveryOtp from the cancelled order response', async () => {
+    const result = await service.cancelOrder(ORDER_ID, OWNER_ID, 'changed mind');
+    expect((result.order as Order).deliveryOtp).toBeUndefined();
+  });
+});
+
+describe('OrdersService.confirmPaidOrder', () => {
+  let service: OrdersService;
+  const orderRepository = { findOne: jest.fn() };
+  const cartService = { clearCart: jest.fn() };
+  const queryRunner = {
+    connect: jest.fn(),
+    startTransaction: jest.fn(),
+    commitTransaction: jest.fn(),
+    rollbackTransaction: jest.fn(),
+    release: jest.fn(),
+    manager: {
+      decrement: jest.fn(),
+      increment: jest.fn(),
+      save: jest.fn(),
+    },
+  };
+  const dataSource = { createQueryRunner: jest.fn(() => queryRunner) };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: orderRepository },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: cartService },
+        { provide: DataSource, useValue: dataSource },
+        { provide: OrderStateMachine, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
+        { provide: TrackingGateway, useValue: {} },
+        { provide: LocationService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+  });
+
+  it('strips deliveryOtp and customer.password when order already paid', async () => {
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({
+        paymentStatus: PaymentStatus.PAID,
+        deliveryOtp: '111222',
+        customer: { password: 'hash' } as User,
+      }),
+    );
+    const result = await service.confirmPaidOrder(ORDER_ID, 'pay_123');
+    expect(result.deliveryOtp).toBeUndefined();
+    expect(result.customer?.password).toBeUndefined();
+  });
+
+  it('strips deliveryOtp and customer.password after confirming payment', async () => {
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({
+        paymentStatus: PaymentStatus.PENDING,
+        deliveryOtp: '333444',
+        customer: { password: 'hash' } as User,
+        items: [{ productId: 'p1', quantity: 1 }] as any,
+      }),
+    );
+    queryRunner.manager.save.mockImplementation(async (o) => o);
+    const result = await service.confirmPaidOrder(ORDER_ID, 'pay_456');
+    expect(result.deliveryOtp).toBeUndefined();
+    expect(result.customer?.password).toBeUndefined();
   });
 });
