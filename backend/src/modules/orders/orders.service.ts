@@ -310,6 +310,7 @@ export class OrdersService {
 
     this.trackingGateway.emitStatusUpdate(orderId, { status: order.status });
 
+    delete order.customer?.password;
     return { message: 'OTP verified successfully', order };
   }
 
@@ -525,6 +526,7 @@ export class OrdersService {
       ).catch((e) => this.logger.error('WhatsApp status update failed: ' + e.message));
     }
 
+    delete order.deliveryOtp;
     return order;
   }
 

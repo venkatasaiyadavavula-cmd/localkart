@@ -19,15 +19,20 @@ type TrackingJwtPayload = {
   shopId?: string;
 };
 
-@WebSocketGateway({
-  namespace: '/tracking',
-  cors: {
-    origin: [
+const isProduction = process.env.NODE_ENV === 'production';
+export const trackingCorsOrigins = isProduction
+  ? ['https://localkart.store', 'https://www.localkart.store']
+  : [
       'https://localkart.store',
       'https://www.localkart.store',
       /\.vercel\.app$/,
       'http://localhost:3000',
-    ],
+    ];
+
+@WebSocketGateway({
+  namespace: '/tracking',
+  cors: {
+    origin: trackingCorsOrigins,
     credentials: true,
   },
 })

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { TrackingGateway } from './tracking.gateway';
+import { TrackingGateway, trackingCorsOrigins } from './tracking.gateway';
 import { Order } from '../../core/entities/order.entity';
 import { UserRole } from '../../core/entities/user.entity';
 
@@ -92,5 +92,27 @@ describe('TrackingGateway.handleJoinOrder', () => {
     jwtService.verify.mockReturnValue({ sub: OTHER_ID, role: UserRole.CUSTOMER, typ: 'access' });
     const result = await gateway.handleJoinOrder(mockSocket('valid-token'), { orderId: ORDER_ID });
     expect(result).toEqual({ joined: false, error: 'Access denied' });
+  });
+});
+
+describe('trackingCorsOrigins', () => {
+  it('excludes vercel.app in production', () => {
+    const prod = trackingCorsOrigins.filter((o) => typeof o !== 'string' || o.includes('vercel'));
+    if (process.env.NODE_ENV === 'production') {
+      expect(prod).toHaveLength(0);
+      expect(trackingCorsOrigins).toEqual([
+        'https://localkart.store',
+        'https://www.localkart.store',
+      ]);
+    }
+  });
+
+  it('includes vercel.app only outside production', () => {
+    if (process.env.NODE_ENV !== 'production') {
+      const hasVercel = trackingCorsOrigins.some(
+        (o) => o instanceof RegExp && o.test('https://foo.vercel.app'),
+      );
+      expect(hasVercel).toBe(true);
+    }
   });
 });

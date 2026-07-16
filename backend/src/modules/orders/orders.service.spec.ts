@@ -15,6 +15,7 @@ import { OrderStateMachine } from './workflows/order-state-machine';
 import { TrackingGateway } from './tracking.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LocationService } from '../location/location.service';
+import { OrderStatus } from '../../core/entities/order.entity';
 
 const ORDER_ID = '05e3815a-ffea-4dfa-9428-e86562276a80';
 const OWNER_ID = '2ef7befb-7fbb-46b4-807f-cd72ed34648a';
@@ -139,5 +140,97 @@ describe('OrdersService.getUserOrders', () => {
     const result = await service.getUserOrders(OWNER_ID, 1, 20);
     expect(result.data).toHaveLength(1);
     expect((result.data[0] as Order).deliveryOtp).toBeUndefined();
+  });
+});
+
+describe('OrdersService.verifyDeliveryOtp', () => {
+  let service: OrdersService;
+  const orderRepository = { findOne: jest.fn(), save: jest.fn() };
+  const trackingGateway = { emitStatusUpdate: jest.fn() };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: orderRepository },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: {} },
+        { provide: DataSource, useValue: {} },
+        { provide: OrderStateMachine, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
+        { provide: TrackingGateway, useValue: trackingGateway },
+        { provide: LocationService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({ status: OrderStatus.PENDING_OTP, deliveryOtp: '654321' }),
+    );
+    orderRepository.save.mockImplementation(async (o) => o);
+  });
+
+  it('strips customer.password from the returned order', async () => {
+    const result = await service.verifyDeliveryOtp(
+      ORDER_ID,
+      '654321',
+      { id: OWNER_ID, role: UserRole.CUSTOMER },
+    );
+    expect(result.order.customer?.password).toBeUndefined();
+  });
+});
+
+describe('OrdersService.updateOrderStatusBySeller', () => {
+  let service: OrdersService;
+  const orderRepository = { findOne: jest.fn(), save: jest.fn() };
+  const shopRepository = { findOne: jest.fn() };
+  const stateMachine = { canTransition: jest.fn().mockReturnValue(true) };
+  const trackingGateway = { emitStatusUpdate: jest.fn(), emitLocationUpdate: jest.fn() };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: orderRepository },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: shopRepository },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: {} },
+        { provide: DataSource, useValue: {} },
+        { provide: OrderStateMachine, useValue: stateMachine },
+        { provide: NotificationsService, useValue: { sendOrderStatusWhatsApp: jest.fn().mockResolvedValue(undefined) } },
+        { provide: TrackingGateway, useValue: trackingGateway },
+        { provide: LocationService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+    shopRepository.findOne.mockResolvedValue({ id: SHOP_ID, ownerId: SELLER_ID });
+    orderRepository.findOne
+      .mockResolvedValueOnce(
+        mockOrder({ status: OrderStatus.READY_FOR_PICKUP, deliveryOtp: undefined }),
+      )
+      .mockResolvedValueOnce({ customer: { phone: '+919876512345', name: 'QA' } });
+    orderRepository.save.mockImplementation(async (o) => o);
+    stateMachine.canTransition.mockReturnValue(true);
+  });
+
+  it('strips deliveryOtp from the returned order when marking out for delivery', async () => {
+    const result = await service.updateOrderStatusBySeller(
+      ORDER_ID,
+      SELLER_ID,
+      { status: OrderStatus.OUT_FOR_DELIVERY },
+    );
+    expect(result.deliveryOtp).toBeUndefined();
   });
 });
