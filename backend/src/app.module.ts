@@ -7,6 +7,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AppThrottlerGuard } from './core/guards/throttler.guard';
+import { JwtAuthGuard } from './core/guards/jwt-auth.guard';
 
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
@@ -126,6 +127,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
   ],
   providers: [
     { provide: APP_GUARD, useClass: AppThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule {}
