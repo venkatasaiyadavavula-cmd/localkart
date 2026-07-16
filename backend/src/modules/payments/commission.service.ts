@@ -285,10 +285,12 @@ export class CommissionService {
 
   // ─── Admin: all overdue shops ─────────────────────────────────
   async getOverdueShops() {
-    return this.billRepo.find({
+    const bills = await this.billRepo.find({
       where: { status: CommissionBillStatus.OVERDUE },
       relations: ['shop', 'shop.owner'],
       order: { daysOverdue: 'DESC' },
     });
+    bills.forEach((b) => delete b.shop?.owner?.password);
+    return bills;
   }
 }

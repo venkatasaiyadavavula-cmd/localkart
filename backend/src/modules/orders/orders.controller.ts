@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -131,6 +132,7 @@ export class OrdersController {
     return this.ordersService.cancelOrder(id, user.id, reason);
   }
 
+  @Throttle({ auth: { limit: 10, ttl: 60000 } })
   @Post(':id/verify-otp')
   @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async verifyDeliveryOtp(

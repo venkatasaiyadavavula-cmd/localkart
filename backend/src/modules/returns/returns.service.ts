@@ -188,11 +188,13 @@ export class ReturnsService {
       throw new NotFoundException('Shop not found');
     }
 
-    return this.returnRepository.find({
+    const requests = await this.returnRepository.find({
       where: { shopId: shop.id, status: ReturnStatus.PENDING },
       relations: ['order', 'customer'],
       order: { createdAt: 'DESC' },
     });
+    requests.forEach((r) => delete r.customer?.password);
+    return requests;
   }
 
   async approveReturnRequest(id: string, ownerId: string) {
@@ -224,6 +226,7 @@ export class ReturnsService {
       `Your return request for order #${request.order.orderNumber} has been approved.`,
     );
 
+    delete request.customer?.password;
     return request;
   }
 

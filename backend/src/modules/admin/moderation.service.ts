@@ -71,6 +71,7 @@ export class ModerationService {
       'Congratulations! Your shop has been approved and is now live on LocalKart.',
     );
 
+    delete shop.owner?.password;
     return shop;
   }
 
@@ -93,6 +94,7 @@ export class ModerationService {
       `Your shop registration was rejected. Reason: ${reason}`,
     );
 
+    delete shop.owner?.password;
     return shop;
   }
 
@@ -115,6 +117,7 @@ export class ModerationService {
       `Your shop has been suspended. Reason: ${reason}`,
     );
 
+    delete shop.owner?.password;
     return shop;
   }
 

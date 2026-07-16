@@ -103,12 +103,18 @@ function TrackOrderContent() {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
+      auth: { token: localStorage.getItem('accessToken') ?? '' },
     });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       setConnected(true);
-      socket.emit('join-order', { orderId });
+      socket.emit('join-order', { orderId }, (ack: { joined?: boolean; error?: string }) => {
+        if (ack && ack.joined === false) {
+          setConnected(false);
+          toast.error(ack.error ?? 'Could not subscribe to live tracking');
+        }
+      });
       refetch();
     });
     socket.on('disconnect', () => setConnected(false));

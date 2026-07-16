@@ -39,6 +39,7 @@ export class FraudDetectionService {
       .leftJoinAndSelect('order.customer', 'customer')
       .getMany();
 
+    highValueCod.forEach((o) => delete o.customer?.password);
     return highValueCod;
   }
 

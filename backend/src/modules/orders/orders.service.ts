@@ -326,6 +326,8 @@ export class OrdersService {
       take: limit,
     });
 
+    orders.forEach((o) => delete o.deliveryOtp);
+
     return {
       data: orders,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },

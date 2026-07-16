@@ -130,7 +130,8 @@ export class StaffService {
 
     await this.staffRepo.save(staff);
 
-    return { ...staff, permissions: ROLE_PERMISSIONS[staff.role] };
+    const { passwordHash, ...safeStaff } = staff;
+    return { ...safeStaff, permissions: ROLE_PERMISSIONS[staff.role] };
   }
 
   async removeStaff(ownerId: string, staffMemberId: string) {

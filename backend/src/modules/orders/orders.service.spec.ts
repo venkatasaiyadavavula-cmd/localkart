@@ -103,3 +103,41 @@ describe('OrdersService.getOrderById', () => {
     ).rejects.toThrow(NotFoundException);
   });
 });
+
+describe('OrdersService.getUserOrders', () => {
+  let service: OrdersService;
+  const orderRepository = {
+    findAndCount: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: orderRepository },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: {} },
+        { provide: DataSource, useValue: {} },
+        { provide: OrderStateMachine, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
+        { provide: TrackingGateway, useValue: {} },
+        { provide: LocationService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+    orderRepository.findAndCount.mockResolvedValue([[mockOrder()], 1]);
+  });
+
+  it('strips deliveryOtp from each order in the list', async () => {
+    const result = await service.getUserOrders(OWNER_ID, 1, 20);
+    expect(result.data).toHaveLength(1);
+    expect((result.data[0] as Order).deliveryOtp).toBeUndefined();
+  });
+});
