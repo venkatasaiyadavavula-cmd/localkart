@@ -17,6 +17,8 @@ type BillStatus = 'pending' | 'paid' | 'overdue';
 interface CommissionBill {
   id: string;
   billDate: string;
+  weekStartDate?: string | null;
+  weekLabel?: string;
   orderCount: number;
   totalOrderValue: number;
   commissionAmount: number;
@@ -24,6 +26,17 @@ interface CommissionBill {
   daysOverdue: number;
   status: BillStatus;
   paidAt?: string;
+}
+
+function formatBillWeek(bill: CommissionBill): string {
+  if (bill.weekLabel) return bill.weekLabel;
+  if (bill.weekStartDate) {
+    const start = new Date(bill.weekStartDate);
+    const end = new Date(bill.billDate);
+    const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return `${fmt(start)} – ${fmt(end)}`;
+  }
+  return new Date(bill.billDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
 const STATUS_CONFIG = {
@@ -91,7 +104,7 @@ export default function CommissionPage() {
       currency:    orderData.currency,
       order_id:    orderData.razorpayOrderId,
       name:        'LocalKart',
-      description: `Commission for ${orderData.billDetails?.billDate ?? 'bill'}`,
+      description: `Commission week ${orderData.billDetails?.weekLabel ?? orderData.billDetails?.billDate ?? 'bill'}`,
       theme:       { color: '#3D5AF1' },
       handler: (response: any) => {
         verifyMutation.mutate({
@@ -125,10 +138,10 @@ export default function CommissionPage() {
 
       <div>
         <h1 className="text-xl font-black text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
-          Commission Bills
+          Weekly Commission Bills
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Category-based rates · Billed daily at 10 PM · ₹25/day fine if unpaid
+          Sat–Fri billing week · Billed Friday 10 PM · Due end of Friday · ₹25/day fine from Saturday
         </p>
         <div className="flex flex-wrap gap-2 mt-2">
           {[
@@ -187,7 +200,10 @@ export default function CommissionPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-gray-800">
-                          {new Date(bill.billDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          {formatBillWeek(bill)}
+                        </p>
+                        <p className="text-[10px] text-gray-400">
+                          Due {new Date(bill.billDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </p>
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
                           {cfg.label}
@@ -249,7 +265,7 @@ export default function CommissionPage() {
                   <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#059669' }} />
                   <div>
                     <p className="text-sm font-bold text-gray-700">
-                      {new Date(bill.billDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      {formatBillWeek(bill)}
                     </p>
                     <p className="text-xs text-gray-400">{bill.orderCount} orders</p>
                   </div>
@@ -267,7 +283,7 @@ export default function CommissionPage() {
         <div className="text-center py-12">
           <p className="text-4xl mb-3">📋</p>
           <p className="font-bold text-gray-600">No bills yet</p>
-          <p className="text-sm text-gray-400 mt-1">Bills are generated after orders are delivered</p>
+          <p className="text-sm text-gray-400 mt-1">Weekly bills are generated Friday 10 PM for delivered orders that week</p>
         </div>
       )}
     </div>

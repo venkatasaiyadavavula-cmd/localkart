@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Checkout branch with dry-run scripts
         uses: actions/checkout@v4
-        with:
-          ref: cursor/weekly-commission-billing-cf91
 
       - name: Run dry-run on production server via SSH
         uses: appleboy/ssh-action@v1.2.0

@@ -31,6 +31,10 @@ export class CommissionBill {
   @Column({ type: 'date' })
   billDate: string;
 
+  /** Saturday starting the Sat–Fri billing week; billDate is the ending Friday (due date). */
+  @Column({ type: 'date', nullable: true })
+  weekStartDate: string | null;
+
   @Column({ type: 'int', default: 0 })
   orderCount: number;
 
