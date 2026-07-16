@@ -1,0 +1,66 @@
+name: Production cron verify
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: prod-cron-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify weekly commission cron on production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Verify deployed cron and migration via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            cd "$APP_DIR"
+            echo "=== Git commit on server ==="
+            git rev-parse HEAD
+            echo ""
+            echo "=== Commission bill cron expressions in deployed backend ==="
+            grep -n "Cron\|generateWeeklyBills\|generateDailyBills" backend/dist/modules/payments/commission.service.js || true
+            echo ""
+            echo "=== Assert weekly bill cron present ==="
+            grep -q "0 22 \* \* 5" backend/dist/modules/payments/commission.service.js
+            echo "OK: weekly cron 0 22 * * 5 found on generateWeeklyBills"
+            echo ""
+            echo "=== Assert daily bill-generation cron absent ==="
+            if grep -q "Cron)('0 22 \* \* \*'" backend/dist/modules/payments/commission.service.js; then
+              echo "FAIL: daily bill-generation cron 0 22 * * * still present"
+              exit 1
+            fi
+            if grep -A2 'generateDailyBills", null' backend/dist/modules/payments/commission.service.js | grep -q Cron; then
+              echo "FAIL: @Cron still attached to generateDailyBills"
+              exit 1
+            fi
+            echo "OK: no daily bill-generation cron (0 22 * * *); generateDailyBills has no @Cron"
+            echo ""
+            echo "=== Migration 014: weekStartDate column ==="
+            cd backend
+            node -e "
+            require('dotenv').config();
+            const { Client } = require('pg');
+            (async () => {
+              const c = new Client({ connectionString: process.env.DATABASE_URL });
+              await c.connect();
+              const r = await c.query(\"SELECT column_name FROM information_schema.columns WHERE table_name='commission_bills' AND column_name='weekStartDate'\");
+              if (r.rowCount === 0) { console.error('FAIL: weekStartDate column missing'); process.exit(1); }
+              console.log('OK: weekStartDate column exists');
+              const n = await c.query('SELECT COUNT(*)::int AS n FROM commission_bills');
+              console.log('commission_bills rows:', n.rows[0].n);
+              await c.end();
+            })().catch(e => { console.error(e); process.exit(1); });
+            "
+            echo "=== Verification complete ==="
