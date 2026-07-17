@@ -5,7 +5,10 @@ import { test, expect } from '../qa-fixtures';
 
 test.describe.configure({ timeout: 120_000 });
 
+test.use({ viewport: { width: 390, height: 844 } });
+
 test('GPS detect persists localkart-location and updates Delivering to', async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 14.4673, longitude: 78.8242 });
 
@@ -14,7 +17,7 @@ test('GPS detect persists localkart-location and updates Delivering to', async (
 
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  const locBtn = page.getByRole('button', { name: /set location|delivering to|kadapa/i }).first();
+  const locBtn = page.locator('button').filter({ hasText: /delivering to|set location/i }).first();
   await locBtn.click();
 
   const detect = page.getByRole('button', { name: /detect my location/i });
@@ -45,13 +48,14 @@ test('GPS detect persists localkart-location and updates Delivering to', async (
 });
 
 test('manual pincode entry persists location and updates Delivering to', async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await context.clearPermissions();
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.removeItem('localkart-location'));
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  const locBtn = page.getByRole('button', { name: /set location|delivering to/i }).first();
+  const locBtn = page.locator('button').filter({ hasText: /delivering to|set location/i }).first();
   await locBtn.click();
 
   const manualLink = page.getByRole('button', { name: /enter pincode manually/i });
