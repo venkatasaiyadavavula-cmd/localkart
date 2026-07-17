@@ -1,3 +1,5 @@
+import { SITE_CONTACT } from '@/lib/site-contact';
+
 export default function TermsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
@@ -59,8 +61,8 @@ export default function TermsPage() {
             support@localkart.com
           </a>{' '}
           or WhatsApp{' '}
-          <a href="https://wa.me/917032028503" className="text-primary hover:underline">
-            +91 70320 28503
+          <a href={SITE_CONTACT.whatsappUrl} className="text-primary hover:underline">
+            {SITE_CONTACT.phoneDisplay}
           </a>
           .
         </p>
