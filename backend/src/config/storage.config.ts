@@ -4,12 +4,17 @@ export const s3Client = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION || 'ap-south-1',
+  signatureVersion: 'v4',
   // For Cloudflare R2, add endpoint override:
   // endpoint: process.env.R2_ENDPOINT,
   // s3ForcePathStyle: true,
 });
 
 export const BUCKET_NAME = process.env.AWS_BUCKET_NAME || 'localkart-media';
+export const AWS_REGION = process.env.AWS_REGION || 'ap-south-1';
+
+export const getPublicObjectUrl = (key: string) =>
+  `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${key}`;
 
 export const getSignedUploadUrl = (key: string, contentType: string, expiresIn = 300) => {
   return s3Client.getSignedUrlPromise('putObject', {
@@ -17,7 +22,6 @@ export const getSignedUploadUrl = (key: string, contentType: string, expiresIn =
     Key: key,
     ContentType: contentType,
     Expires: expiresIn,
-    ACL: 'public-read',
   });
 };
 

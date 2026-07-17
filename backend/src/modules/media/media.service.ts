@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bull';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { getSignedUploadUrl, getSignedViewUrl, BUCKET_NAME } from '../../config/storage.config';
+import { getSignedUploadUrl, getSignedViewUrl, getPublicObjectUrl } from '../../config/storage.config';
 import { Shop } from '../../core/entities/shop.entity';
 import { Product } from '../../core/entities/product.entity';
 import { UserRole } from '../../core/entities/user.entity';
@@ -56,7 +56,7 @@ export class MediaService {
     return {
       uploadUrl,
       key,
-      publicUrl: `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`,
+      publicUrl: getPublicObjectUrl(key),
       fileType:  file.mimetype,
     };
   }
@@ -136,7 +136,7 @@ export class MediaService {
       jobId:        job.id,
       status:       'pending',
       message:      'Video uploaded. Transcoding in progress.',
-      publicUrl:    `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`,
+      publicUrl:    getPublicObjectUrl(key),
       chargeAmount,
       plan,
       monthlyCount: monthlyVideoCount + 1,
