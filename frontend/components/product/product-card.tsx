@@ -5,11 +5,13 @@ import Image from 'next/image';
 import { ShoppingBag, Star, Heart, Plus } from 'lucide-react';
 import { formatPrice, getProductUrl } from '@/lib/utils';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { API_URL } from '@/lib/api-config';
+import { invalidateWishlistQueries } from '@/lib/wishlist-cache';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 
 interface ProductCardProps {
@@ -41,6 +43,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const [wishlisted, setWishlisted] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const { addItem } = useCartStore();
+  const queryClient = useQueryClient();
 
   const mrp = product.mrp || product.originalPrice;
   const discount = mrp && mrp > product.price
@@ -85,6 +88,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       );
       const added = data?.data?.added ?? data?.added;
       setWishlisted(!!added);
+      invalidateWishlistQueries(queryClient);
       toast.success(added ? 'Added to wishlist!' : 'Removed from wishlist');
     } catch {
       toast.error('Failed to update wishlist');

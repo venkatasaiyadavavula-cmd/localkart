@@ -25,7 +25,9 @@ import { cn } from '@/lib/utils';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { wishlistApi } from '@/lib/api/wishlist';
+import { invalidateWishlistQueries } from '@/lib/wishlist-cache';
 import { getAccessToken } from '@/lib/api/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ProductDetailPage() {
   const params   = useParams();
@@ -35,6 +37,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useProduct(slug);
   const { addItem, isLoading: cartLoading } = useCartStore();
   const { startBuyNow, buyNowWelcomeDialog, isBuyNowLoading } = useBuyNowWithWelcome();
+  const queryClient = useQueryClient();
 
   const [quantity,       setQuantity]       = useState(1);
   const [selectedImage,  setSelectedImage]  = useState(0);
@@ -85,6 +88,7 @@ export default function ProductDetailPage() {
     try {
       const result = await wishlistApi.toggle(product.id);
       setIsWishlisted(result.added);
+      invalidateWishlistQueries(queryClient);
       toast.success(result.added ? '❤️ Added to wishlist!' : 'Removed from wishlist');
     } catch {
       toast.error('Failed to update wishlist');

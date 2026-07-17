@@ -37,6 +37,7 @@ export default function CartPage() {
   const shippingFee = deliveryCharge ?? 0;
   const orderTotal = totalAmount + shippingFee;
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem('accessToken')) {
@@ -68,6 +69,17 @@ export default function CartPage() {
       toast.error('Failed to remove item');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleClearCart = async () => {
+    setIsClearing(true);
+    try {
+      await clearCart();
+    } catch {
+      toast.error('Failed to clear cart');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -233,8 +245,14 @@ export default function CartPage() {
             <Button variant="outline" asChild>
               <Link href="/browse">Continue Shopping</Link>
             </Button>
-            <Button variant="ghost" onClick={clearCart} className="text-muted-foreground">
-              Clear Cart
+            <Button
+              variant="ghost"
+              onClick={handleClearCart}
+              disabled={isClearing || isLoading}
+              data-testid="clear-cart"
+              className="text-muted-foreground"
+            >
+              {isClearing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Clear Cart'}
             </Button>
           </div>
         </div>

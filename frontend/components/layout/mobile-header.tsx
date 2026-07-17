@@ -172,6 +172,8 @@ export function MobileHeader() {
                       )}
                       <button
                         onClick={() => { logout(); setShowProfileMenu(false); }}
+                        data-testid="header-menu-logout"
+                        aria-label="Logout from header menu"
                         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 border-t border-gray-50 mt-1"
                       >
                         <LogOut className="h-4 w-4" />

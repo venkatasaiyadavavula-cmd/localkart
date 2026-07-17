@@ -236,7 +236,11 @@ export default function ProfilePage() {
               {user?.role === 'admin' ? 'Admin' : user?.role === 'seller' ? 'Seller' : 'Customer'}
             </Badge>
           </div>
-          <button onClick={handleLogout} disabled={isLoggingOut}
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            data-testid="profile-logout"
+            aria-label="Logout from profile page"
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors"
             style={{ color: '#EF4444', borderColor: 'rgba(239,68,68,0.20)', background: '#FEF2F2' }}>
             {isLoggingOut ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}

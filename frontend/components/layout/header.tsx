@@ -539,6 +539,8 @@ export function Header() {
                     <div className="mx-2 pt-1" style={{ borderTop: '1px solid #F1F5F9' }}>
                       <button
                         onClick={() => { logout(); closeAll(); }}
+                        data-testid="header-menu-logout"
+                        aria-label="Logout from header menu"
                         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors mt-1"
                         style={{ color: '#EF4444' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}

@@ -35,6 +35,9 @@ interface CartStore {
   syncWithServer: () => Promise<void>;
 }
 
+/** Bumps when cart is cleared so in-flight sync cannot repopulate stale items. */
+let cartSyncGeneration = 0;
+
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -101,18 +104,23 @@ export const useCartStore = create<CartStore>()(
       },
 
       clearCart: async () => {
+        cartSyncGeneration += 1;
+        set({ items: [], totalItems: 0, totalAmount: 0, isLoading: true });
         try {
           await apiClient.delete('/cart');
         } catch {
           // ignore if not logged in or cart already empty
+        } finally {
+          set({ isLoading: false });
         }
-        set({ items: [], totalItems: 0, totalAmount: 0 });
       },
 
       syncWithServer: async () => {
+        const generation = ++cartSyncGeneration;
         set({ isLoading: true });
         try {
           const response = await apiClient.get('/cart');
+          if (generation !== cartSyncGeneration) return;
           const cart = unwrapApiData<CartResponse>(response.data);
           set({
             items: cart.items,
@@ -121,7 +129,9 @@ export const useCartStore = create<CartStore>()(
             isLoading: false,
           });
         } catch (error) {
-          set({ isLoading: false });
+          if (generation === cartSyncGeneration) {
+            set({ isLoading: false });
+          }
         }
       },
     }),
