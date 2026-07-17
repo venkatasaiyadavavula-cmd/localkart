@@ -38,6 +38,7 @@ import { formatPrice } from '@/lib/utils';
 import { ordersApi } from '@/lib/api/orders';
 import { addressesApi } from '@/lib/api/addresses';
 import { LocationPicker } from '@/components/map/location-picker';
+import { toShippingAddressPayload } from '@/lib/shipping-address';
 
 const addressSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -138,12 +139,10 @@ export default function CheckoutPage() {
       }
 
       const order = await ordersApi.createOrder({
-        shippingAddress: {
-          ...data,
-          phone: data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '').slice(-10)}`,
+        shippingAddress: toShippingAddressPayload(data, {
           latitude: location?.latitude,
           longitude: location?.longitude,
-        },
+        }),
         paymentMethod: 'cod',
         deliveryNotes,
       });
