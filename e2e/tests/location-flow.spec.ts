@@ -12,13 +12,14 @@ test('GPS detect persists localkart-location and updates Delivering to', async (
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 14.4673, longitude: 78.8242 });
 
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.removeItem('localkart-location'));
+  await page.reload({ waitUntil: 'networkidle' });
 
-  await page.reload({ waitUntil: 'domcontentloaded' });
-
-  const locBtn = page.locator('button').filter({ hasText: /delivering to|set location/i }).first();
-  await locBtn.click();
+  const setLocBtn = page.getByRole('button', { name: /set location/i }).first();
+  await expect(setLocBtn).toBeVisible({ timeout: 15_000 });
+  await setLocBtn.click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
 
   const detect = page.getByRole('button', { name: /detect my location/i });
   await expect(detect).toBeVisible({ timeout: 10_000 });
@@ -43,20 +44,26 @@ test('GPS detect persists localkart-location and updates Delivering to', async (
     await continueBtn.click();
   }
 
-  await expect(page.getByText(/delivering to/i).first()).toBeVisible();
-  await expect(page.getByText(/kadapa|andhra|14\.47/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect
+    .poll(async () => {
+      const label = await page.locator('button').filter({ hasText: /delivering to/i }).first().innerText();
+      return /kadapa|andhra/i.test(label);
+    })
+    .toBe(true);
 });
 
 test('manual pincode entry persists location and updates Delivering to', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await context.clearPermissions();
 
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.removeItem('localkart-location'));
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'networkidle' });
 
-  const locBtn = page.locator('button').filter({ hasText: /delivering to|set location/i }).first();
-  await locBtn.click();
+  const setLocBtn = page.getByRole('button', { name: /set location/i }).first();
+  await expect(setLocBtn).toBeVisible({ timeout: 15_000 });
+  await setLocBtn.click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
 
   const manualLink = page.getByRole('button', { name: /enter pincode manually/i });
   await expect(manualLink).toBeVisible({ timeout: 10_000 });
@@ -66,7 +73,7 @@ test('manual pincode entry persists location and updates Delivering to', async (
   await expect(pinInput).toBeVisible();
   await pinInput.fill('516001');
 
-  await page.getByRole('button', { name: /set location/i }).click();
+  await page.getByRole('button', { name: /^set location$/i }).click();
 
   await expect
     .poll(
@@ -87,6 +94,10 @@ test('manual pincode entry persists location and updates Delivering to', async (
     await continueBtn.click();
   }
 
-  await expect(page.getByText(/delivering to/i).first()).toBeVisible();
-  await expect(page.getByText(/kadapa|andhra|516001/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect
+    .poll(async () => {
+      const label = await page.locator('button').filter({ hasText: /delivering to/i }).first().innerText();
+      return /kadapa|andhra/i.test(label);
+    })
+    .toBe(true);
 });
