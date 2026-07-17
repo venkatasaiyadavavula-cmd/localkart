@@ -171,6 +171,14 @@ export const useLocationStore = create<LocationStore>()(
     }),
     {
       name: 'localkart-location',
+      partialize: (state) => ({
+        location: state.location,
+        recentLocations: state.recentLocations,
+        permissionStatus: state.permissionStatus,
+        isServiceable: state.isServiceable,
+        nearestShopDistance: state.nearestShopDistance,
+        deliveryCharge: state.deliveryCharge,
+      }),
     }
   )
 );

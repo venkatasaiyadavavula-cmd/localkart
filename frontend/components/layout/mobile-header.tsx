@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useCartStore } from '@/store/cart-store';
 import { useLocationStore } from '@/store/location-store';
+import { getLocationDisplayLabel } from '@/lib/geocode';
 import { useTranslation } from '@/hooks/use-translation';
 import { LocationDialog } from '@/components/location/location-dialog';
 import { useGeolocation } from '@/hooks/use-geolocation';
@@ -30,6 +31,8 @@ export function MobileHeader() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { latitude, longitude, loading: locationLoading, error: locationError, detectLocation } = useGeolocation();
+
+  const locationLabel = getLocationDisplayLabel(savedLocation, t('setLocation'));
 
   useEffect(() => {
     if (latitude && longitude && !savedLocation) {
@@ -84,7 +87,7 @@ export function MobileHeader() {
                 {t('deliveringTo')}
               </p>
               <p className="text-sm font-bold text-gray-800 truncate leading-snug flex items-center gap-0.5 mt-0.5">
-                {savedLocation ? 'Kadapa, Andhra Pradesh' : t('setLocation')}
+                {locationLabel}
                 <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
               </p>
             </div>

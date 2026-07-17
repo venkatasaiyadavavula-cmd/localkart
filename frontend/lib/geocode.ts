@@ -88,6 +88,63 @@ export function formatLocationParts(parts: {
   return '';
 }
 
+/** Forward geocode an Indian pincode to coordinates (Nominatim). */
+export async function forwardGeocodePincode(
+  pincode: string,
+): Promise<ReverseGeocodeResult & { latitude?: number; longitude?: number }> {
+  const clean = pincode.replace(/\D/g, '').slice(0, 6);
+  if (clean.length !== 6) {
+    return { displayLabel: '' };
+  }
+
+  try {
+    const url = new URL('https://nominatim.openstreetmap.org/search');
+    url.searchParams.set('postalcode', clean);
+    url.searchParams.set('country', 'India');
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('addressdetails', '1');
+    url.searchParams.set('limit', '1');
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Accept-Language': 'en',
+        'User-Agent': 'LocalKart/1.0 (hyperlocal marketplace)',
+      },
+    });
+
+    if (!response.ok) throw new Error('Pincode geocode failed');
+
+    const results = await response.json();
+    const hit = results?.[0];
+    if (!hit) {
+      return { displayLabel: '', pincode: clean };
+    }
+
+    const latitude = parseFloat(hit.lat);
+    const longitude = parseFloat(hit.lon);
+    const addr = hit.address ?? {};
+    const city =
+      addr.city ||
+      addr.town ||
+      addr.village ||
+      addr.county ||
+      addr.state_district;
+    const state = addr.state;
+
+    return {
+      latitude,
+      longitude,
+      city,
+      state,
+      pincode: clean,
+      address: hit.display_name,
+      displayLabel: formatLocationParts({ city, state, latitude, longitude }),
+    };
+  } catch {
+    return { displayLabel: '', pincode: clean };
+  }
+}
+
 export function getLocationDisplayLabel(location: {
   city?: string;
   state?: string;
