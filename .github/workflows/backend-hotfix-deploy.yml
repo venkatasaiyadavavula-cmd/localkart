@@ -1,0 +1,38 @@
+name: Backend hotfix deploy
+
+on:
+  repository_dispatch:
+    types: [backend-hotfix-deploy]
+
+concurrency:
+  group: backend-hotfix-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-backend:
+    name: Pull main and rebuild backend only
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Rebuild backend on production server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            cd "$APP_DIR"
+            git fetch origin main
+            git checkout main
+            git pull origin main
+            cd backend
+            npm ci
+            npm run build
+            pm2 restart localkart-backend --update-env
+            pm2 save
+            echo "Backend hotfix deploy complete"
