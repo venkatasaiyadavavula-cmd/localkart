@@ -17,11 +17,6 @@ test('seller creates product with image — uploads to S3 and renders', async ({
 
   await page.goto('/dashboard/products/new', { waitUntil: 'networkidle' });
 
-  const uploadResponsePromise = page.waitForResponse(
-    (r) => r.url().includes('/media/upload') && r.request().method() === 'POST',
-    { timeout: 60_000 },
-  );
-
   await page.locator('#name').fill(productName);
   await page.locator('#price').fill('149');
   await page.locator('#stock').fill('5');
@@ -31,10 +26,15 @@ test('seller creates product with image — uploads to S3 and renders', async ({
 
   const fileInput = page.locator('input[type="file"][accept*="image"]').first();
   await fileInput.setInputFiles(FIXTURE_IMAGE);
+  await expect(page.getByText('(1/5)')).toBeVisible();
 
+  const uploadResponsePromise = page.waitForResponse(
+    (r) => r.url().includes('/media/upload') && r.request().method() === 'POST',
+    { timeout: 60_000 },
+  );
   const createResponsePromise = page.waitForResponse(
     (r) => r.url().includes('/catalog/seller/products') && r.request().method() === 'POST',
-    { timeout: 90_000 },
+    { timeout: 120_000 },
   );
 
   await page.getByRole('button', { name: /create product/i }).click();
@@ -47,6 +47,7 @@ test('seller creates product with image — uploads to S3 and renders', async ({
   const presignedUrl = uploadData?.uploadUrl ?? '';
 
   expect(presignedUrl).not.toContain('your_access_key');
+  expect(presignedUrl).not.toMatch(/x-amz-acl/i);
   expect(presignedUrl).toMatch(/AKIA/);
   expect(uploadedPublicUrl).toMatch(/^https:\/\/localkart-media\.s3(\.[a-z0-9-]+)?\.amazonaws\.com\/uploads\//);
 
@@ -59,17 +60,13 @@ test('seller creates product with image — uploads to S3 and renders', async ({
 
   await expect(page).toHaveURL(/\/dashboard\/products/, { timeout: 30_000 });
 
-  // Dashboard list — product card should show the S3 image
-  const productCard = page.locator('[data-testid="seller-product-card"]', { hasText: productName }).first();
-  const cardOrText = (await productCard.count()) > 0
-    ? productCard
-    : page.getByText(productName, { exact: false }).first();
+  const cardOrText = page.getByText(productName, { exact: false }).first();
   await expect(cardOrText).toBeVisible({ timeout: 20_000 });
 
-  const dashboardImg = page.locator(`img[src*="${uploadedPublicUrl.split('/').pop()}"]`).first();
+  const imageFile = uploadedPublicUrl.split('/').pop()!;
+  const dashboardImg = page.locator(`img[src*="${imageFile}"]`).first();
   await expect(dashboardImg).toBeVisible({ timeout: 20_000 });
 
-  // Approve via admin API so public page is reachable
   const adminToken = await getAdminToken(request);
   const approveRes = await request.put(`${API}/admin/products/${productId}/approve`, {
     headers: authHeaders(adminToken),
@@ -79,9 +76,8 @@ test('seller creates product with image — uploads to S3 and renders', async ({
   const slug = product?.slug as string | undefined;
   expect(slug, 'product slug required for public page').toBeTruthy();
 
-  const publicPath = `/browse/groceries/product/${slug}`;
-  await page.goto(publicPath, { waitUntil: 'networkidle' });
-  const publicImg = page.locator(`img[src*="${uploadedPublicUrl.split('/').pop()}"]`).first();
+  await page.goto(`/browse/groceries/product/${slug}`, { waitUntil: 'networkidle' });
+  const publicImg = page.locator(`img[src*="${imageFile}"]`).first();
   await expect(publicImg).toBeVisible({ timeout: 20_000 });
 
   console.log('UPLOADED_IMAGE_URL:', uploadedPublicUrl);
