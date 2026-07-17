@@ -3,21 +3,22 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { buildLoginUrl, buildRegisterUrl, SELLER_ONBOARDING_PATH } from '@/lib/auth-routes';
+import { SITE_CONTACT } from '@/lib/site-contact';
 
 const footerLinks = {
   company: [{ label: 'About Us', href: '/about' }],
   support: [
-    { label: 'Help Center', href: 'mailto:support@localkart.com', external: true },
-    { label: 'Contact Us', href: 'mailto:support@localkart.com', external: true },
-    { label: 'Shipping Policy', href: '/terms' },
-    { label: 'Returns & Refunds', href: '/terms' },
+    { label: 'Help Center', href: `mailto:${SITE_CONTACT.email}`, external: true },
+    { label: 'Contact Us', href: SITE_CONTACT.whatsappUrl, external: true },
+    { label: 'Shipping Policy', href: '/terms#shipping-policy' },
+    { label: 'Returns & Refunds', href: '/terms#returns-refunds' },
   ],
   seller: [
     { label: 'Become a Seller', href: buildRegisterUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH }) },
@@ -30,17 +31,18 @@ const footerLinks = {
   ],
 };
 
-const socialLinks = [
-  { icon: Facebook, href: 'https://facebook.com/localkart', label: 'Facebook' },
-  { icon: Twitter, href: 'https://twitter.com/localkart', label: 'Twitter' },
-  { icon: Instagram, href: 'https://instagram.com/localkart', label: 'Instagram' },
-  { icon: Youtube, href: 'https://youtube.com/localkart', label: 'YouTube' },
-];
-
 function FooterLink({ link }: { link: { label: string; href: string; external?: boolean } }) {
   const className = 'text-sm text-muted-foreground hover:text-primary';
-  if (link.external || link.href.startsWith('mailto:')) {
-    return <a href={link.href} className={className}>{link.label}</a>;
+  if (link.external || link.href.startsWith('mailto:') || link.href.startsWith('http')) {
+    return (
+      <a
+        href={link.href}
+        className={className}
+        {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      >
+        {link.label}
+      </a>
+    );
   }
   return <Link href={link.href} className={className}>{link.label}</Link>;
 }
@@ -71,19 +73,30 @@ export function Footer() {
             </p>
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-4 w-4 shrink-0" />
                 <span>Kadapa, Andhra Pradesh, India</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <a href="mailto:support@localkart.com" className="hover:text-primary">
-                  support@localkart.com
+                <Mail className="h-4 w-4 shrink-0" />
+                <a href={`mailto:${SITE_CONTACT.email}`} className="hover:text-primary">
+                  {SITE_CONTACT.email}
                 </a>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <a href="tel:+919876543210" className="hover:text-primary">
-                  +91 98765 43210
+                <Phone className="h-4 w-4 shrink-0" />
+                <a href={`tel:+${SITE_CONTACT.phoneE164}`} className="hover:text-primary">
+                  {SITE_CONTACT.phoneDisplay}
+                </a>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MessageCircle className="h-4 w-4 shrink-0" style={{ color: '#25D366' }} />
+                <a
+                  href={SITE_CONTACT.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary font-medium"
+                >
+                  Chat on WhatsApp
                 </a>
               </div>
             </div>
@@ -138,20 +151,6 @@ export function Footer() {
           <p className="text-sm text-muted-foreground" suppressHydrationWarning>
             © {new Date().getFullYear()} LocalKart. All rights reserved.
           </p>
-          <div className="flex gap-4">
-            {socialLinks.map((social) => (
-              <a
-                key={social.label}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label={social.label}
-              >
-                <social.icon className="h-5 w-5" />
-              </a>
-            ))}
-          </div>
           <div className="flex gap-6">
             {footerLinks.legal.map((link) => (
               <Link key={link.label} href={link.href} className="text-xs text-muted-foreground hover:text-primary">
