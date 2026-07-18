@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { SellerHeader } from '@/components/seller/seller-header';
 import { SellerSidebar } from '@/components/seller/seller-sidebar';
-import { getServerSession, hasAccessTokenCookie } from '@/lib/auth';
+import { getServerSession } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: {
@@ -16,22 +16,15 @@ export default async function SellerDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const hasToken = hasAccessTokenCookie();
   const session = await getServerSession();
 
-  if (!session) {
-    if (!hasToken) {
-      redirect('/login?intent=seller&redirect=/dashboard');
-    }
-  } else {
-    if (session.user.role !== 'seller') {
-      redirect('/login?intent=seller&redirect=/dashboard');
-    }
+  if (!session || session.user.role !== 'seller') {
+    redirect('/login?intent=seller&redirect=/dashboard');
+  }
 
-    const hasShop = !!(session.user.shopId ?? (session.user as { shop?: { id?: string } }).shop?.id);
-    if (!hasShop) {
-      redirect('/seller-onboarding');
-    }
+  const hasShop = !!(session.user.shopId ?? (session.user as { shop?: { id?: string } }).shop?.id);
+  if (!hasShop) {
+    redirect('/seller-onboarding');
   }
 
   return (
