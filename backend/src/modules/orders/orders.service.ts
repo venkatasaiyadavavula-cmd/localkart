@@ -477,6 +477,12 @@ export class OrdersService {
 
     const { status, notes } = updateDto;
 
+    if (status === OrderStatus.DELIVERED) {
+      throw new BadRequestException(
+        'Delivered status can only be set via customer OTP verification. Ask the customer for their delivery OTP.',
+      );
+    }
+
     if (!this.stateMachine.canTransition(order.status, status)) {
       throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
     }
@@ -571,10 +577,22 @@ export class OrdersService {
     return { message: 'Location updated', ...payload };
   }
 
-  async adminUpdateOrderStatus(id: string, dto: any) {
+  async adminUpdateOrderStatus(id: string, dto: UpdateOrderStatusDto) {
     const order = await this.orderRepository.findOne({ where: { id } });
-    if (!order) throw new Error("Order not found");
-    order.status = dto.status || dto;
+    if (!order) throw new NotFoundException('Order not found');
+
+    const status = dto.status;
+    if (status === OrderStatus.DELIVERED) {
+      throw new BadRequestException(
+        'Delivered status can only be set via customer OTP verification.',
+      );
+    }
+
+    if (!this.stateMachine.canTransition(order.status, status)) {
+      throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
+    }
+
+    order.status = status;
     return this.orderRepository.save(order);
   }
 
