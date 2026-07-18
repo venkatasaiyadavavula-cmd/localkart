@@ -48,6 +48,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  other: {
+    'facebook-domain-verification': 'm8a4lnca6bhmqgzohc500c9it952hm',
+  },
   manifest: '/manifest.json',
   icons: {
     icon: [
