@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -233,6 +233,67 @@ describe('OrdersService.updateOrderStatusBySeller', () => {
       { status: OrderStatus.OUT_FOR_DELIVERY },
     );
     expect(result.deliveryOtp).toBeUndefined();
+  });
+
+  it('rejects delivered status — must use customer OTP verification', async () => {
+    orderRepository.findOne.mockReset();
+    shopRepository.findOne.mockResolvedValue({ id: SHOP_ID, ownerId: SELLER_ID });
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({ status: OrderStatus.OUT_FOR_DELIVERY }),
+    );
+
+    const promise = service.updateOrderStatusBySeller(
+      ORDER_ID,
+      SELLER_ID,
+      { status: OrderStatus.DELIVERED },
+    );
+
+    await expect(promise).rejects.toThrow(BadRequestException);
+    await expect(promise).rejects.toThrow(/OTP verification/i);
+    expect(orderRepository.save).not.toHaveBeenCalled();
+  });
+});
+
+describe('OrdersService.adminUpdateOrderStatus', () => {
+  let service: OrdersService;
+  const orderRepository = { findOne: jest.fn(), save: jest.fn() };
+  const stateMachine = { canTransition: jest.fn().mockReturnValue(true) };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: orderRepository },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: {} },
+        { provide: DataSource, useValue: {} },
+        { provide: OrderStateMachine, useValue: stateMachine },
+        { provide: NotificationsService, useValue: {} },
+        { provide: TrackingGateway, useValue: {} },
+        { provide: LocationService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({ status: OrderStatus.OUT_FOR_DELIVERY }),
+    );
+    orderRepository.save.mockImplementation(async (o) => o);
+    stateMachine.canTransition.mockReturnValue(true);
+  });
+
+  it('rejects delivered status — must use customer OTP verification', async () => {
+    const promise = service.adminUpdateOrderStatus(ORDER_ID, { status: OrderStatus.DELIVERED });
+
+    await expect(promise).rejects.toThrow(BadRequestException);
+    await expect(promise).rejects.toThrow(/OTP verification/i);
+    expect(orderRepository.save).not.toHaveBeenCalled();
   });
 });
 
