@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { buildLoginUrl } from '@/lib/auth-routes';
@@ -44,12 +44,31 @@ function isSellerIntentPath(pathname: string) {
     sellerRoutes.some((route) => matchesRoute(pathname, route));
 }
 
+function subscribeStaffSession(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === 'staffAccessToken' || e.key === null) onStoreChange();
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
+}
+
+function getStaffSessionSnapshot(): boolean {
+  return hasStaffBrowserSession();
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
   const [authResolved, setAuthResolved] = useState(false);
-  const [clientReady, setClientReady] = useState(false);
+
+  const staffSessionActive = useSyncExternalStore(
+    subscribeStaffSession,
+    getStaffSessionSnapshot,
+    () => false,
+  );
 
   const isWorkRoute = pathname.startsWith('/work');
   const isSellerRoute = sellerRoutes.some((route) => matchesRoute(pathname, route));
@@ -63,29 +82,42 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     matchesRoute(pathname, route),
   );
 
-  const staffOnOwnerRoute =
-    clientReady &&
-    hasStaffBrowserSession() &&
-    !isWorkRoute &&
-    (isSellerRoute || isAdminRoute);
+  const loginRedirectTarget = searchParams.get('redirect') ?? '';
+  const loginIntent = searchParams.get('intent') ?? '';
+  const staffRedirectedToOwnerLogin =
+    staffSessionActive &&
+    isAuthPage &&
+    !pathname.startsWith('/work/login') &&
+    (loginIntent === 'seller' ||
+      loginRedirectTarget.startsWith('/dashboard') ||
+      loginRedirectTarget.startsWith('/admin'));
 
-  useEffect(() => {
-    setClientReady(true);
-  }, []);
+  const staffOnOwnerRoute =
+    staffSessionActive &&
+    !isWorkRoute &&
+    (isSellerRoute || isAdminRoute || staffRedirectedToOwnerLogin);
 
   // Staff sessions must never load seller/admin shells — redirect immediately.
   useEffect(() => {
-    if (!clientReady || isWorkRoute) return;
-    if (hasStaffBrowserSession() && (isSellerRoute || isAdminRoute)) {
+    if (isWorkRoute) return;
+    if (staffSessionActive && (isSellerRoute || isAdminRoute || staffRedirectedToOwnerLogin)) {
       authTrace('guard-redirect', { pathname, reason: 'staff-on-owner-route' });
       router.replace('/work');
     }
-  }, [clientReady, isWorkRoute, isSellerRoute, isAdminRoute, pathname, router]);
+  }, [
+    staffSessionActive,
+    isWorkRoute,
+    isSellerRoute,
+    isAdminRoute,
+    staffRedirectedToOwnerLogin,
+    pathname,
+    router,
+  ]);
 
   useEffect(() => {
     if (isWorkRoute) return;
 
-    if (hasStaffBrowserSession() && (isSellerRoute || isAdminRoute)) {
+    if (staffSessionActive && (isSellerRoute || isAdminRoute || staffRedirectedToOwnerLogin)) {
       setAuthResolved(true);
       return;
     }
@@ -143,6 +175,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     pathname,
     router,
     isPublicRoute,
+    staffSessionActive,
+    staffRedirectedToOwnerLogin,
     isAuthPage,
   ]);
 

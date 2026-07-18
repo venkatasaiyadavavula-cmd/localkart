@@ -7,7 +7,8 @@ export type AuthTraceEvent =
   | 'guard-redirect'
   | 'guard-resolved'
   | 'server-session'
-  | 'admin-layout';
+  | 'admin-layout'
+  | 'seller-layout';
 
 export function authTrace(
   event: AuthTraceEvent,
