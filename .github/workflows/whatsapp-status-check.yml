@@ -1,0 +1,76 @@
+name: WhatsApp status check
+
+on:
+  repository_dispatch:
+    types: [whatsapp-status-check]
+
+concurrency:
+  group: whatsapp-status-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check WhatsApp config and recent WA logs
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Inspect production WhatsApp configuration
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            ENV_FILE="$APP_DIR/backend/.env"
+
+            check_var() {
+              VAR="$1"
+              if [ ! -f "$ENV_FILE" ]; then
+                echo "${VAR}: env_file_missing"
+              elif grep -q "^${VAR}=" "$ENV_FILE"; then
+                VAL=$(grep "^${VAR}=" "$ENV_FILE" | cut -d= -f2-)
+                if [ -z "$VAL" ] || [ "$VAL" = "your-whatsapp-token" ] || [ "$VAL" = "your_whatsapp_token" ]; then
+                  echo "${VAR}: present_but_placeholder"
+                else
+                  echo "${VAR}: present"
+                fi
+              else
+                echo "${VAR}: absent"
+              fi
+            }
+
+            echo "=== WHATSAPP env vars in backend/.env ==="
+            check_var WHATSAPP_TOKEN
+            check_var WHATSAPP_PHONE_NUMBER_ID
+            check_var WHATSAPP_BUSINESS_ACCOUNT_ID || true
+            grep -E '^WHATSAPP_' "$ENV_FILE" 2>/dev/null | cut -d= -f1 | sort -u | sed 's/^/WHATSAPP_KEYS: /' || echo "WHATSAPP_KEYS: (none)"
+
+            echo ""
+            echo "=== Recent WhatsApp log lines (last 200 backend log lines) ==="
+            pm2 logs localkart-backend --lines 200 --nostream 2>/dev/null \
+              | grep -E '\[MOCK WA\]|WhatsApp sent to|WhatsApp failed|WhatsappService' \
+              | tail -40 || echo "(no matching log lines)"
+
+            echo ""
+            echo "=== Counts in last 200 backend log lines ==="
+            MOCK_COUNT=$(pm2 logs localkart-backend --lines 200 --nostream 2>/dev/null | grep -c '\[MOCK WA\]' || true)
+            SUCCESS_COUNT=$(pm2 logs localkart-backend --lines 200 --nostream 2>/dev/null | grep -c 'WhatsApp sent to' || true)
+            FAIL_COUNT=$(pm2 logs localkart-backend --lines 200 --nostream 2>/dev/null | grep -c 'WhatsApp failed' || true)
+            echo "MOCK_WA_COUNT_IN_LAST_200=$MOCK_COUNT"
+            echo "WHATSAPP_SUCCESS_COUNT_IN_LAST_200=$SUCCESS_COUNT"
+            echo "WHATSAPP_FAIL_COUNT_IN_LAST_200=$FAIL_COUNT"
+
+            echo ""
+            echo "=== Sample [MOCK WA] lines (last 10) ==="
+            pm2 logs localkart-backend --lines 200 --nostream 2>/dev/null \
+              | grep '\[MOCK WA\]' | tail -10 || echo "(none in last 200 lines)"
+
+            echo ""
+            echo "=== Sample successful WhatsApp lines (last 10) ==="
+            pm2 logs localkart-backend --lines 200 --nostream 2>/dev/null \
+              | grep 'WhatsApp sent to' | tail -10 || echo "(none in last 200 lines)"
