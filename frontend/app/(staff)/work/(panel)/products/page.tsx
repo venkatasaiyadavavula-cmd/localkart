@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Plus, Package, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useStaffAuth } from '@/hooks/use-staff-auth';
+import { useStaffRouteGuard } from '@/hooks/use-staff-route-guard';
 import { staffWorkApi } from '@/lib/api/staff-work';
 import { formatPrice, normalizeList } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function WorkProductsPage() {
+  const { hasPermission } = useStaffAuth();
+  useStaffRouteGuard('products:read');
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [stockVal, setStockVal] = useState('');
@@ -46,9 +50,11 @@ export default function WorkProductsPage() {
           <h1 className="text-xl font-black text-gray-900">Products</h1>
           <p className="text-xs text-gray-500">Add products & restock when low</p>
         </div>
-        <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-          <Link href="/work/products/new"><Plus className="mr-1 h-4 w-4" /> Add</Link>
-        </Button>
+        {hasPermission('products:write') && (
+          <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+            <Link href="/work/products/new"><Plus className="mr-1 h-4 w-4" /> Add</Link>
+          </Button>
+        )}
       </div>
 
       <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -59,7 +65,9 @@ export default function WorkProductsPage() {
         <div className="py-16 text-center text-gray-400">
           <Package className="mx-auto h-12 w-12 mb-2 opacity-30" />
           <p className="font-semibold">No products yet</p>
-          <Button asChild className="mt-4"><Link href="/work/products/new">Add first product</Link></Button>
+          {hasPermission('products:write') && (
+            <Button asChild className="mt-4"><Link href="/work/products/new">Add first product</Link></Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

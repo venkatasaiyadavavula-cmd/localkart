@@ -26,6 +26,15 @@ const sellerPublicRoutes: string[] = [];
 const sellerRoutes = ['/seller', '/dashboard'];
 const adminRoutes = ['/admin'];
 
+function hasStaffBrowserSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return !!localStorage.getItem('staffAccessToken');
+  } catch {
+    return false;
+  }
+}
+
 function matchesRoute(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(route + '/');
 }
@@ -40,8 +49,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
   const [authResolved, setAuthResolved] = useState(false);
+  const [staffSessionActive, setStaffSessionActive] = useState(false);
 
   const isWorkRoute = pathname.startsWith('/work');
+  const isSellerRoute = sellerRoutes.some((route) => matchesRoute(pathname, route));
+  const isAdminRoute = adminRoutes.some((route) => matchesRoute(pathname, route));
+  const isStaffOnOwnerRoute =
+    staffSessionActive && !isWorkRoute && (isSellerRoute || isAdminRoute);
+
+  useEffect(() => {
+    setStaffSessionActive(hasStaffBrowserSession());
+  }, [pathname]);
 
   const isPublicRoute =
     publicRoutes.some((route) => matchesRoute(pathname, route)) ||
@@ -65,8 +83,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const isSellerRoute = sellerRoutes.some((route) => matchesRoute(pathname, route));
-    const isAdminRoute = adminRoutes.some((route) => matchesRoute(pathname, route));
+    if (hasStaffBrowserSession() && (isSellerRoute || isAdminRoute)) {
+      authTrace('guard-redirect', { pathname, reason: 'staff-on-owner-route' });
+      router.replace('/work');
+      setAuthResolved(true);
+      return;
+    }
 
     authTrace('guard-effect', {
       pathname,
@@ -99,11 +121,31 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     authTrace('guard-resolved', { pathname, isAuthenticated, role: user?.role ?? null });
     setAuthResolved(true);
-  }, [isWorkRoute, _hasHydrated, isLoading, isAuthenticated, user, pathname, router, isPublicRoute, isAuthPage]);
+  }, [
+    isWorkRoute,
+    isSellerRoute,
+    isAdminRoute,
+    _hasHydrated,
+    isLoading,
+    isAuthenticated,
+    user,
+    pathname,
+    router,
+    isPublicRoute,
+    isAuthPage,
+  ]);
 
   // Staff /work routes use a separate auth system (useStaffAuth) — skip main guard entirely.
   if (isWorkRoute) {
     return <>{children}</>;
+  }
+
+  if (isStaffOnOwnerRoute) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const awaitingAuth = !_hasHydrated || isLoading || !authResolved;

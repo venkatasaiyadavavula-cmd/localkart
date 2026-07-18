@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { staffWorkApi } from '@/lib/api/staff-work';
+import { useStaffRouteGuard } from '@/hooks/use-staff-route-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ const CATEGORIES = [
 
 export default function WorkNewProductPage() {
   const router = useRouter();
+  useStaffRouteGuard('products:write');
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
