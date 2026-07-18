@@ -2,7 +2,8 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { SellerHeader } from '@/components/seller/seller-header';
 import { SellerSidebar } from '@/components/seller/seller-sidebar';
-import { getServerSession } from '@/lib/auth';
+import { getServerSession, hasAccessTokenCookie } from '@/lib/auth';
+import { authTrace } from '@/lib/auth-trace';
 
 export const metadata: Metadata = {
   title: {
@@ -16,15 +17,26 @@ export default async function SellerDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const hasToken = hasAccessTokenCookie();
   const session = await getServerSession();
 
-  if (!session || session.user.role !== 'seller') {
+  if (!session) {
+    if (!hasToken) {
+      authTrace('seller-layout', { action: 'redirect-login', reason: 'no-token' });
+      redirect('/login?intent=seller&redirect=/dashboard');
+    }
+    // Cookie present but profile could not be validated (transient API failure).
+    // Defer to client AuthGuard instead of falsely redirecting a logged-in seller.
+    authTrace('seller-layout', { action: 'defer-client', reason: 'session-unresolved' });
+  } else if (session.user.role !== 'seller') {
+    authTrace('seller-layout', { action: 'redirect-login', role: session.user.role });
     redirect('/login?intent=seller&redirect=/dashboard');
-  }
-
-  const hasShop = !!(session.user.shopId ?? (session.user as { shop?: { id?: string } }).shop?.id);
-  if (!hasShop) {
-    redirect('/seller-onboarding');
+  } else {
+    const hasShop = !!(session.user.shopId ?? (session.user as { shop?: { id?: string } }).shop?.id);
+    if (!hasShop) {
+      authTrace('seller-layout', { action: 'redirect-onboarding' });
+      redirect('/seller-onboarding');
+    }
   }
 
   return (
