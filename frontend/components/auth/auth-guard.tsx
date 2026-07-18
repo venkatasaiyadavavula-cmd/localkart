@@ -49,17 +49,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
   const [authResolved, setAuthResolved] = useState(false);
-  const [staffSessionActive, setStaffSessionActive] = useState(false);
+  const [clientReady, setClientReady] = useState(false);
 
   const isWorkRoute = pathname.startsWith('/work');
   const isSellerRoute = sellerRoutes.some((route) => matchesRoute(pathname, route));
   const isAdminRoute = adminRoutes.some((route) => matchesRoute(pathname, route));
-  const isStaffOnOwnerRoute =
-    staffSessionActive && !isWorkRoute && (isSellerRoute || isAdminRoute);
-
-  useEffect(() => {
-    setStaffSessionActive(hasStaffBrowserSession());
-  }, [pathname]);
 
   const isPublicRoute =
     publicRoutes.some((route) => matchesRoute(pathname, route)) ||
@@ -69,8 +63,32 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     matchesRoute(pathname, route),
   );
 
+  const staffOnOwnerRoute =
+    clientReady &&
+    hasStaffBrowserSession() &&
+    !isWorkRoute &&
+    (isSellerRoute || isAdminRoute);
+
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
+
+  // Staff sessions must never load seller/admin shells — redirect immediately.
+  useEffect(() => {
+    if (!clientReady || isWorkRoute) return;
+    if (hasStaffBrowserSession() && (isSellerRoute || isAdminRoute)) {
+      authTrace('guard-redirect', { pathname, reason: 'staff-on-owner-route' });
+      router.replace('/work');
+    }
+  }, [clientReady, isWorkRoute, isSellerRoute, isAdminRoute, pathname, router]);
+
   useEffect(() => {
     if (isWorkRoute) return;
+
+    if (hasStaffBrowserSession() && (isSellerRoute || isAdminRoute)) {
+      setAuthResolved(true);
+      return;
+    }
 
     if (!_hasHydrated || isLoading) {
       authTrace('guard-effect', {
@@ -80,13 +98,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         isLoading,
       });
       setAuthResolved(false);
-      return;
-    }
-
-    if (hasStaffBrowserSession() && (isSellerRoute || isAdminRoute)) {
-      authTrace('guard-redirect', { pathname, reason: 'staff-on-owner-route' });
-      router.replace('/work');
-      setAuthResolved(true);
       return;
     }
 
@@ -135,12 +146,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     isAuthPage,
   ]);
 
-  // Staff /work routes use a separate auth system (useStaffAuth) — skip main guard entirely.
   if (isWorkRoute) {
     return <>{children}</>;
   }
 
-  if (isStaffOnOwnerRoute) {
+  if (staffOnOwnerRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
