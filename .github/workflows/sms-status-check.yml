@@ -1,0 +1,68 @@
+name: SMS status check
+
+on:
+  repository_dispatch:
+    types: [sms-status-check]
+
+concurrency:
+  group: sms-status-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check Fast2SMS config and recent SMS logs
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Inspect production SMS configuration
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            ENV_FILE="$APP_DIR/backend/.env"
+
+            echo "=== FAST2SMS_API_KEY in backend/.env ==="
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "STATUS: env_file_missing"
+            elif grep -q '^FAST2SMS_API_KEY=' "$ENV_FILE"; then
+              VAL=$(grep '^FAST2SMS_API_KEY=' "$ENV_FILE" | cut -d= -f2-)
+              if [ -z "$VAL" ] || [ "$VAL" = "your-fast2sms-api-key" ] || [ "$VAL" = "your_fast2sms_api_key" ]; then
+                echo "STATUS: present_but_placeholder"
+              else
+                echo "STATUS: present"
+              fi
+            else
+              echo "STATUS: absent"
+            fi
+
+            echo ""
+            echo "=== Backend startup SMS config lines (pm2 logs) ==="
+            pm2 logs localkart-backend --lines 300 --nostream 2>/dev/null \
+              | grep -E 'Fast2SMS|MOCK SMS|SMS sent to|Fast2SMS error' \
+              | tail -30 || echo "(no matching log lines)"
+
+            echo ""
+            echo "=== Recent [MOCK SMS] entries (last 100 backend log lines) ==="
+            MOCK_COUNT=$(pm2 logs localkart-backend --lines 100 --nostream 2>/dev/null | grep -c '\[MOCK SMS\]' || true)
+            echo "MOCK_SMS_COUNT_IN_LAST_100=$MOCK_COUNT"
+            pm2 logs localkart-backend --lines 100 --nostream 2>/dev/null \
+              | grep '\[MOCK SMS\]' | tail -10 || echo "(none in last 100 lines)"
+
+            echo ""
+            echo "=== Recent real SMS success lines (last 100 backend log lines) ==="
+            REAL_COUNT=$(pm2 logs localkart-backend --lines 100 --nostream 2>/dev/null | grep -c 'SMS sent to' || true)
+            echo "REAL_SMS_COUNT_IN_LAST_100=$REAL_COUNT"
+            pm2 logs localkart-backend --lines 100 --nostream 2>/dev/null \
+              | grep 'SMS sent to' | tail -10 || echo "(none in last 100 lines)"
+
+            echo ""
+            echo "=== Recent Fast2SMS errors (last 100 backend log lines) ==="
+            pm2 logs localkart-backend --lines 100 --nostream 2>/dev/null \
+              | grep 'Fast2SMS error' | tail -10 || echo "(none in last 100 lines)"
