@@ -18,8 +18,17 @@ async function fillStaffLogin(
   await idEl.pressSequentially(staffId, { delay: 15 });
   await passEl.click();
   await passEl.pressSequentially(password, { delay: 15 });
-  await page.getByRole('button', { name: /start working/i }).click();
-  await page.waitForURL(/\/work/, { timeout: 30_000 });
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes('/seller/staff/login') && r.request().method() === 'POST',
+      { timeout: 40_000 },
+    ),
+    page.getByRole('button', { name: /start working/i }).click(),
+  ]);
+  if (!response.ok()) {
+    throw new Error(`Staff login failed (${response.status()}): ${(await response.text()).slice(0, 200)}`);
+  }
+  await page.waitForURL(/\/work\/?$/, { timeout: 30_000 });
 }
 
 test.describe.configure({ mode: 'serial', timeout: 180_000 });

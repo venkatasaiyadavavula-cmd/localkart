@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { buildLoginUrl } from '@/lib/auth-routes';
@@ -57,10 +57,25 @@ function getStaffSessionSnapshot(): boolean {
   return hasStaffBrowserSession();
 }
 
+function isStaffOwnerLoginRedirect(pathname: string, staffActive: boolean): boolean {
+  if (!staffActive || typeof window === 'undefined') return false;
+  const isAuthPage = ['/login', '/register', '/forgot-password'].some((route) =>
+    matchesRoute(pathname, route),
+  );
+  if (!isAuthPage || pathname.startsWith('/work/login')) return false;
+  const params = new URLSearchParams(window.location.search);
+  const loginRedirectTarget = params.get('redirect') ?? '';
+  const loginIntent = params.get('intent') ?? '';
+  return (
+    loginIntent === 'seller' ||
+    loginRedirectTarget.startsWith('/dashboard') ||
+    loginRedirectTarget.startsWith('/admin')
+  );
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
   const [authResolved, setAuthResolved] = useState(false);
 
@@ -82,15 +97,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     matchesRoute(pathname, route),
   );
 
-  const loginRedirectTarget = searchParams.get('redirect') ?? '';
-  const loginIntent = searchParams.get('intent') ?? '';
-  const staffRedirectedToOwnerLogin =
-    staffSessionActive &&
-    isAuthPage &&
-    !pathname.startsWith('/work/login') &&
-    (loginIntent === 'seller' ||
-      loginRedirectTarget.startsWith('/dashboard') ||
-      loginRedirectTarget.startsWith('/admin'));
+  const staffRedirectedToOwnerLogin = isStaffOwnerLoginRedirect(pathname, staffSessionActive);
 
   const staffOnOwnerRoute =
     staffSessionActive &&
