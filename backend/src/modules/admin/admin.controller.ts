@@ -78,6 +78,11 @@ export class AdminController {
     return this.moderationService.suspendShop(id, reason);
   }
 
+  @Put('shops/:id/unsuspend')
+  async unsuspendShop(@Param('id') id: string) {
+    return this.moderationService.unsuspendShop(id);
+  }
+
   // Product Moderation
   @Get('products/pending')
   async getPendingProducts(@Query('page') page?: string, @Query('limit') limit?: string) {

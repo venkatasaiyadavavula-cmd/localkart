@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, CheckCircle, XCircle, Eye, MoreHorizontal } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Eye, MoreHorizontal, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ export default function AdminSellersPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const { data, isLoading, approveShop, rejectShop, suspendShop } = useAdminShops({
+  const { data, isLoading, approveShop, rejectShop, suspendShop, unsuspendShop } = useAdminShops({
     status: activeTab !== 'all' ? activeTab : undefined,
     search: searchQuery,
   });
@@ -91,6 +91,15 @@ export default function AdminSellersPage() {
     }
   };
 
+  const handleUnsuspend = async (shopId: string) => {
+    try {
+      await unsuspendShop(shopId);
+      toast.success('Shop restored');
+    } catch (error) {
+      toast.error('Failed to restore shop');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -104,6 +113,7 @@ export default function AdminSellersPage() {
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="suspended">Suspended</TabsTrigger>
             <TabsTrigger value="all">All</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -199,6 +209,11 @@ export default function AdminSellersPage() {
                           {shop.status === 'approved' && (
                             <DropdownMenuItem onClick={() => handleSuspend(shop.id)}>
                               <XCircle className="mr-2 h-4 w-4 text-orange-600" /> Suspend
+                            </DropdownMenuItem>
+                          )}
+                          {shop.status === 'suspended' && (
+                            <DropdownMenuItem onClick={() => handleUnsuspend(shop.id)}>
+                              <RotateCcw className="mr-2 h-4 w-4 text-green-600" /> Restore shop
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>

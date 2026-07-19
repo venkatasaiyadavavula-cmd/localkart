@@ -55,6 +55,15 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
     },
   });
 
+  const unsuspendMutation = useMutation({
+    mutationFn: async (shopId: string) => {
+      return apiClient.put(`/admin/shops/${shopId}/unsuspend`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'shops'] });
+    },
+  });
+
   return {
     data: query.data,
     isLoading: query.isLoading,
@@ -63,5 +72,6 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
       rejectMutation.mutateAsync({ shopId, reason }),
     suspendShop: (shopId: string, reason: string) =>
       suspendMutation.mutateAsync({ shopId, reason }),
+    unsuspendShop: (shopId: string) => unsuspendMutation.mutateAsync(shopId),
   };
 }

@@ -121,6 +121,33 @@ export class ModerationService {
     return shop;
   }
 
+  async unsuspendShop(id: string) {
+    const shop = await this.shopRepository.findOne({
+      where: { id },
+      relations: ['owner'],
+    });
+
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    if (shop.status !== ShopStatus.SUSPENDED) {
+      throw new BadRequestException('Only suspended shops can be unsuspended');
+    }
+
+    shop.status = ShopStatus.APPROVED;
+    await this.shopRepository.save(shop);
+
+    await this.notificationsService.sendSellerNotification(
+      shop.ownerId,
+      'Shop Restored',
+      'Your shop has been reactivated and is live on LocalKart again.',
+    );
+
+    delete shop.owner?.password;
+    return shop;
+  }
+
   async getPendingProducts(page: number, limit: number) {
     const skip = (page - 1) * limit;
     const [products, total] = await this.productRepository.findAndCount({

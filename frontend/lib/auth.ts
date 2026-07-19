@@ -9,6 +9,9 @@ export interface SessionUser {
   email?: string;
   role: 'customer' | 'seller' | 'admin';
   shopId?: string;
+  shopName?: string | null;
+  shopStatus?: string | null;
+  shop?: { id?: string; name?: string; status?: string };
 }
 
 const TRANSIENT_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -43,6 +46,8 @@ async function fetchProfile(
     user: {
       ...user,
       shopId: user.shop?.id ?? user.shopId,
+      shopName: user.shop?.name ?? null,
+      shopStatus: user.shop?.status ?? null,
     },
   };
 }
