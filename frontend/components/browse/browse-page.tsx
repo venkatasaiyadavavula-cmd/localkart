@@ -10,6 +10,7 @@ import { useProducts } from '@/hooks/use-products';
 import { useLocationStore } from '@/store/location-store';
 import { normalizeList } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import type { ProductWithOffer } from '@/types/api';
 import { API_URL } from '@/lib/api-config';
 
@@ -55,7 +56,7 @@ export function BrowsePage({ initialCategory = '' }: { initialCategory?: string 
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
 
-  const { data, isLoading } = useProducts({
+  const { data, isLoading, isError, refetch } = useProducts({
     categoryType: isSaleView ? undefined : activeCategory,
     minPrice,
     maxPrice,
@@ -66,7 +67,7 @@ export function BrowsePage({ initialCategory = '' }: { initialCategory?: string 
     query: initialQuery,
   });
 
-  const { data: offerProducts, isLoading: offersLoading } = useQuery<ProductWithOffer[]>({
+  const { data: offerProducts, isLoading: offersLoading, isError: offersError, refetch: refetchOffers } = useQuery<ProductWithOffer[]>({
     queryKey: ['browse-today-offers', location?.latitude, location?.longitude],
     queryFn: async () => {
       const { data: res } = await axios.get(`${API_URL}/catalog/today-offers`, {
@@ -95,6 +96,8 @@ export function BrowsePage({ initialCategory = '' }: { initialCategory?: string 
     : rawProducts;
 
   const loading = isSaleView ? offersLoading : isLoading;
+  const fetchError = isSaleView ? offersError : isError;
+  const retryFetch = isSaleView ? refetchOffers : refetch;
 
   const handleSort = (val: string) => {
     const [by, order] = val.split('-');
@@ -177,8 +180,8 @@ export function BrowsePage({ initialCategory = '' }: { initialCategory?: string 
       )}
 
       <div className="grid grid-cols-2 gap-0.5 md:grid-cols-3 lg:grid-cols-4 px-4 pb-24">
-        {loading
-          ? Array.from({ length: 8 }).map((_, i) => (
+        {loading ? (
+          Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white">
                 <Skeleton className="aspect-square w-full" />
                 <div className="p-2 space-y-1.5">
@@ -187,12 +190,18 @@ export function BrowsePage({ initialCategory = '' }: { initialCategory?: string 
                 </div>
               </div>
             ))
-          : products.map((product) => (
+        ) : fetchError ? (
+          <div className="col-span-full">
+            <ErrorState onRetry={() => retryFetch()} />
+          </div>
+        ) : (
+          products.map((product) => (
               <ProductCard key={product.id} product={product} />
-            ))}
+            ))
+        )}
       </div>
 
-      {!loading && products.length === 0 && (
+      {!loading && !fetchError && products.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <p className="text-4xl mb-3">🔍</p>
           <p className="text-sm font-medium">No products found</p>

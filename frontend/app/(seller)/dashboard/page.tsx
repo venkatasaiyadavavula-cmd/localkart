@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { useSellerDashboard } from '@/hooks/use-seller-dashboard';
 import { useShop } from '@/hooks/use-shop';
 import { SalesChart } from '@/components/seller/sales-chart';
@@ -23,7 +24,7 @@ import { WeeklyEarningsPopup } from '@/components/seller/weekly-earnings-popup';
 
 export default function SellerDashboardPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
-  const { data, isLoading } = useSellerDashboard(period);
+  const { data, isLoading, isError, refetch } = useSellerDashboard(period);
   const { data: shop, toggleShop, isToggling } = useShop(undefined, { sellerShop: true });
 
   const pendingOrders = data?.pendingOrders || 0;
@@ -229,7 +230,13 @@ export default function SellerDashboardPage() {
             ? Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-28 rounded-2xl" />
               ))
-            : stats.map((stat) => (
+            : isError
+              ? (
+                <div className="col-span-2">
+                  <ErrorState onRetry={() => refetch()} />
+                </div>
+              )
+              : stats.map((stat) => (
                 <div key={stat.title} className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <div className={`${stat.bg} p-2 rounded-xl`}>
@@ -279,7 +286,9 @@ export default function SellerDashboardPage() {
           </div>
           {isLoading
             ? <Skeleton className="h-48 w-full rounded-xl" />
-            : <SalesChart data={data?.salesChart || []} />
+            : isError
+              ? <ErrorState compact onRetry={() => refetch()} />
+              : <SalesChart data={data?.salesChart || []} />
           }
         </div>
 
@@ -294,7 +303,9 @@ export default function SellerDashboardPage() {
             ? <div className="px-4 pb-4 space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
               </div>
-            : <div className="px-4 pb-4">
+            : isError
+              ? <div className="px-4 pb-4"><ErrorState compact onRetry={() => refetch()} /></div>
+              : <div className="px-4 pb-4">
                 <RecentOrders orders={data?.recentOrders || []} />
               </div>
           }
@@ -311,7 +322,9 @@ export default function SellerDashboardPage() {
             ? <div className="px-4 pb-4 space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
               </div>
-            : <div className="px-4 pb-4">
+            : isError
+              ? <div className="px-4 pb-4"><ErrorState compact onRetry={() => refetch()} /></div>
+              : <div className="px-4 pb-4">
                 <TopProducts products={data?.topProducts || []} />
               </div>
           }

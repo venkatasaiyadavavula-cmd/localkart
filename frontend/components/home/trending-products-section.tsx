@@ -9,6 +9,7 @@ import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { API_URL } from '@/lib/api-config';
+import { ErrorState } from '@/components/ui/error-state';
 
 function ProductSkeleton() {
   return (
@@ -39,7 +40,7 @@ function ProductSkeleton() {
 
 export function TrendingProductsSection() {
   const { addItem } = useCartStore();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['trending-products'],
     queryFn: async () => {
       const { data } = await axios.get(`${API_URL}/catalog/products`, {
@@ -50,6 +51,13 @@ export function TrendingProductsSection() {
   });
 
   if (isLoading) return <ProductSkeleton />;
+  if (isError) {
+    return (
+      <div className="px-4">
+        <ErrorState compact onRetry={() => refetch()} />
+      </div>
+    );
+  }
   if (!data?.length) return null;
 
   return (

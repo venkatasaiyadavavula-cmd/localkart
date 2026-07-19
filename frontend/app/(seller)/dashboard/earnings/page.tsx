@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, ArrowDownRight, Package } from 'lucide-react';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { apiClient } from '@/lib/api/client';
+import { ErrorState } from '@/components/ui/error-state';
 
 import type { WeeklyEarningsData } from '@/types/api';
 
@@ -16,7 +17,7 @@ interface WeekData {
 }
 
 export default function EarningsPage() {
-  const { data, isLoading } = useQuery<WeeklyEarningsData>({
+  const { data, isLoading, isError, refetch } = useQuery<WeeklyEarningsData>({
     queryKey: ['weekly-earnings'],
     queryFn: async () => {
       const { data: res } = await apiClient.get('/seller/earnings/weekly');
@@ -35,6 +36,14 @@ export default function EarningsPage() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-24 rounded-2xl skeleton-shimmer" />
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-4">
+        <ErrorState onRetry={() => refetch()} />
       </div>
     );
   }

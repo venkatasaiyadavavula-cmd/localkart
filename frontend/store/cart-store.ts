@@ -128,9 +128,18 @@ export const useCartStore = create<CartStore>()(
             totalAmount: cart.totalAmount,
             isLoading: false,
           });
-        } catch (error) {
+        } catch {
           if (generation === cartSyncGeneration) {
             set({ isLoading: false });
+            toast.error('Your cart may be out of date', {
+              description: "We couldn't sync with the server. Your saved items might not match what's in stock.",
+              action: {
+                label: 'Retry',
+                onClick: () => {
+                  void get().syncWithServer();
+                },
+              },
+            });
           }
         }
       },

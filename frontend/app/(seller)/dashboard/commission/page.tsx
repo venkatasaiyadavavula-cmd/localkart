@@ -6,6 +6,7 @@ import axios from 'axios';
 import { AlertCircle, CheckCircle2, Clock, IndianRupee, TrendingUp, Calendar, CreditCard, ChevronRight } from 'lucide-react';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ErrorState } from '@/components/ui/error-state';
 
 import type { CommissionBillsData } from '@/types/api';
 
@@ -50,7 +51,7 @@ declare global { interface Window { Razorpay: any; } }
 export default function CommissionPage() {
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery<CommissionBillsData>({
+  const { data, isLoading, isError, refetch } = useQuery<CommissionBillsData>({
     queryKey: ['commission-bills'],
     queryFn: async () => {
       const { data: res } = await axios.get(`${API}/commission/my-bills`, {
@@ -124,6 +125,14 @@ export default function CommissionPage() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="h-20 rounded-2xl skeleton-shimmer" />
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-4">
+        <ErrorState onRetry={() => refetch()} />
       </div>
     );
   }

@@ -14,6 +14,7 @@ import { useLocationStore } from '@/store/location-store';
 import { useTranslation } from '@/hooks/use-translation';
 import type { ProductWithOffer } from '@/types/api';
 import { API_URL } from '@/lib/api-config';
+import { ErrorState } from '@/components/ui/error-state';
 
 interface TodayOffersSectionProps {
   showHeader?: boolean;
@@ -23,7 +24,7 @@ export function TodayOffersSection({ showHeader = true }: TodayOffersSectionProp
   const { location } = useLocationStore();
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery<ProductWithOffer[]>({
+  const { data, isLoading, isError, refetch } = useQuery<ProductWithOffer[]>({
     queryKey: ['today-offers', location?.latitude, location?.longitude],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -34,6 +35,14 @@ export function TodayOffersSection({ showHeader = true }: TodayOffersSectionProp
     },
     refetchInterval: 60_000,
   });
+
+  if (isError) {
+    return (
+      <section className="px-4 py-5">
+        <ErrorState compact onRetry={() => refetch()} />
+      </section>
+    );
+  }
 
   if (!isLoading && (!data || data.length === 0)) return null;
 

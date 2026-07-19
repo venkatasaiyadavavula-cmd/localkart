@@ -71,6 +71,8 @@ export function useShop(slugOrId?: string, options?: { sellerShop?: boolean }) {
   return {
     data: query.data,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     updateShop: updateMutation.mutateAsync,
     updateHours: updateHoursMutation.mutateAsync,
     toggleShop: toggleMutation.mutateAsync,

@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { useOrders } from '@/hooks/use-orders';
 import { formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { OrderStatus } from '@/types/order';
 import { canTrackLive } from '@/lib/order-tracking';
 
@@ -50,7 +51,7 @@ export default function OrdersPage() {
     if (isLiveView) setActiveTab('confirmed');
   }, [isLiveView]);
 
-  const { data, isLoading } = useOrders({
+  const { data, isLoading, isError, refetch } = useOrders({
     status: activeTab !== 'all' && activeTab !== 'active' ? activeTab : undefined,
   });
 
@@ -116,6 +117,8 @@ export default function OrdersPage() {
               </CardContent>
             </Card>
           ))
+        ) : isError ? (
+          <ErrorState onRetry={() => refetch()} />
         ) : filteredOrders?.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

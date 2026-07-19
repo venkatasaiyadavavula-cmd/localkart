@@ -8,6 +8,7 @@ import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice, unwrapApiData, getProductUrl } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 import type { WishlistItem } from '@/types/api';
 import type { Product } from '@/types/product';
@@ -18,7 +19,7 @@ const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken
 export default function WishlistPage() {
   const queryClient = useQueryClient();
 
-  const { data: items = [], isLoading } = useQuery<WishlistItem[]>({
+  const { data: items = [], isLoading, isError, refetch } = useQuery<WishlistItem[]>({
     queryKey: ['wishlist'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/wishlist`, { headers: auth() });
@@ -57,6 +58,8 @@ export default function WishlistPage() {
               <Skeleton key={i} className="h-64 rounded-2xl" />
             ))}
           </div>
+        ) : isError ? (
+          <ErrorState onRetry={() => refetch()} />
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Heart className="h-16 w-16 text-gray-200 mb-4" />

@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { formatDistance, normalizeList } from '@/lib/utils';
+import { ErrorState } from '@/components/ui/error-state';
 
 import { API_URL } from '@/lib/api-config';
 
@@ -18,7 +19,7 @@ interface NearbyShopsSectionProps {
 }
 
 export function NearbyShopsSection({ latitude, longitude }: NearbyShopsSectionProps) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['nearby-shops', latitude, longitude],
     queryFn: async () => {
       const { data } = await axios.get(`${API_URL}/location/nearby-shops`, {
@@ -38,6 +39,15 @@ export function NearbyShopsSection({ latitude, longitude }: NearbyShopsSectionPr
             <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-4">
+        <h2 className="font-heading text-xl font-bold">Nearby Shops</h2>
+        <ErrorState compact onRetry={() => refetch()} />
       </div>
     );
   }

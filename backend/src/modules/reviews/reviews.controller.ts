@@ -3,6 +3,7 @@ import {
   Param, Query, UseGuards, ParseIntPipe,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
+import { CreateReviewDto } from './dto/create-review.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Public } from '../../core/decorators/public.decorator';
@@ -15,7 +16,7 @@ export class ReviewsController {
   @Post()
   async createReview(
     @CurrentUser() user: any,
-    @Body() dto: { productId: string; orderId: string; rating: number; comment?: string },
+    @Body() dto: CreateReviewDto,
   ) {
     return this.reviewsService.createReview(user.id, dto);
   }

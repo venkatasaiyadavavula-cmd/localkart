@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useShop } from '@/hooks/use-shop';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { WeeklyHoursEditor } from '@/components/shop/weekly-hours-editor';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { DEFAULT_OPERATING_HOURS, type OperatingHours } from '@/types/shop-hours';
@@ -34,7 +35,7 @@ const shopSchema = z.object({
 type ShopFormData = z.infer<typeof shopSchema>;
 
 export default function ShopSettingsPage() {
-  const { data: shop, isLoading, updateShop, updateHours, isSavingHours } = useShop(undefined, { sellerShop: true });
+  const { data: shop, isLoading, isError, refetch, updateShop, updateHours, isSavingHours } = useShop(undefined, { sellerShop: true });
   const [isUpdating, setIsUpdating] = useState(false);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>(DEFAULT_OPERATING_HOURS);
   const [hoursDirty, setHoursDirty] = useState(false);
@@ -109,6 +110,10 @@ export default function ShopSettingsPage() {
         </Card>
       </div>
     );
+  }
+
+  if (isError) {
+    return <ErrorState onRetry={() => refetch()} />;
   }
 
   return (
