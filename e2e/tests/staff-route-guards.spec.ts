@@ -56,7 +56,7 @@ test('delivery_staff cannot access product routes or Add button', async ({ page,
     headers: authHeaders(sellerToken),
     data: {
       name: 'Guard Delivery',
-      phone: `+9198762${suffix}`,
+      phone: `+919876${suffix}`,
       role: 'delivery_staff',
       staffId,
       password,
