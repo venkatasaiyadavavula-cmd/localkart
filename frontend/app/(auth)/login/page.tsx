@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { loginFormSchema, type LoginFormWithRememberValues } from '@/lib/validators/auth.schema';
 import { Eye, EyeOff, Phone, Lock, ArrowRight, Loader2, Store, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -20,13 +20,7 @@ import {
   preserveAuthQuery,
 } from '@/lib/auth-routes';
 
-const loginSchema = z.object({
-  phone: z.string().min(10, 'Phone number must be 10 digits').max(10),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  rememberMe: z.boolean().optional(),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = LoginFormWithRememberValues;
 
 function LoginForm() {
   const router = useRouter();
@@ -44,7 +38,7 @@ function LoginForm() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: { phone: '', password: '', rememberMe: false },
   });
 

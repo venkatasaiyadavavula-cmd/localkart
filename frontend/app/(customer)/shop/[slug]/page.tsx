@@ -13,7 +13,7 @@ import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { useShop } from '@/hooks/use-shop';
 import { useProducts } from '@/hooks/use-products';
-import { formatDistance } from '@/lib/utils';
+import { formatDistance, formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/error-state';
 
@@ -151,7 +151,7 @@ export default function ShopPage() {
                   )}
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4 text-primary" />
-                    Delivery: ₹{shop.deliveryCharge} | Free above ₹{shop.freeDeliveryAbove}
+                    Delivery: {formatPrice(shop.deliveryCharge)} | Free above {formatPrice(shop.freeDeliveryAbove)}
                   </div>
                 </div>
               </div>

@@ -177,7 +177,7 @@ export default function EarningsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-800">{w.weekLabel}</p>
-                  <p className="text-xs text-gray-400">{w.orderCount} orders · Commission ₹{w.commission.toFixed(0)}</p>
+                  <p className="text-xs text-gray-400">{w.orderCount} orders · Commission {formatPrice(w.commission)}</p>
                 </div>
               </div>
               <div className="text-right">

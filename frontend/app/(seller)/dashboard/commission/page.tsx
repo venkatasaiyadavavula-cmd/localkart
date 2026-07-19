@@ -222,11 +222,11 @@ export default function CommissionPage() {
                         )}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {bill.orderCount} orders · ₹{Number(bill.totalOrderValue).toLocaleString('en-IN')} revenue
+                        {bill.orderCount} orders · {formatPrice(bill.totalOrderValue)} revenue
                       </p>
                       {bill.fineAmount > 0 && (
                         <p className="text-[11px] font-semibold text-red-500 mt-0.5">
-                          Commission ₹{Number(bill.commissionAmount).toFixed(0)} + Fine ₹{Number(bill.fineAmount).toFixed(0)}
+                          Commission {formatPrice(bill.commissionAmount)} + Fine {formatPrice(bill.fineAmount)}
                         </p>
                       )}
                     </div>

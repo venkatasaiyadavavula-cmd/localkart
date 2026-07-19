@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { shippingAddressSchema, type ShippingAddressFormValues } from '@/lib/validators/address.schema';
 import { motion } from 'framer-motion';
 import {
   MapPin,
@@ -40,18 +40,7 @@ import { addressesApi } from '@/lib/api/addresses';
 import { LocationPicker } from '@/components/map/location-picker';
 import { toShippingAddressPayload } from '@/lib/shipping-address';
 
-const addressSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  phone: z.string().min(10, 'Valid phone number required'),
-  address: z.string().min(5, 'Address is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  pincode: z.string().min(6, 'Valid pincode required'),
-  type: z.enum(['home', 'work', 'other']).optional(),
-  saveAddress: z.boolean().optional(),
-});
-
-type AddressFormData = z.infer<typeof addressSchema>;
+type AddressFormData = ShippingAddressFormValues;
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -94,7 +83,7 @@ export default function CheckoutPage() {
     setValue,
     formState: { errors },
   } = useForm<AddressFormData>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(shippingAddressSchema),
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',

@@ -6,7 +6,7 @@ import {
   calculateDeliveryCharge,
   DELIVERY_CHARGES,
 } from '@/lib/delivery-pricing';
-import { unwrapApiData } from '@/lib/utils';
+import { unwrapApiData, formatDeliveryChargeMessage } from '@/lib/utils';
 import { API_URL } from '@/lib/api-config';
 
 export { MAX_DELIVERY_RADIUS_KM, DELIVERY_CHARGES, calculateDeliveryCharge };
@@ -38,7 +38,7 @@ export const getDeliveryInfo = (distanceInKm: number): { serviceable: boolean; c
   return {
     serviceable: true,
     charge,
-    message: charge === 0 ? 'Free delivery' : `Delivery charge: ₹${charge}`,
+    message: formatDeliveryChargeMessage(charge),
   };
 };
 

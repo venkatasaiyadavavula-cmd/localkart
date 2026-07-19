@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { registerWithConfirmSchema, type RegisterWithConfirmFormValues } from '@/lib/validators/auth.schema';
 import { Eye, EyeOff, User, Phone, Mail, Lock, ArrowRight, Loader2, Store, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -20,20 +20,7 @@ import {
   preserveAuthQuery,
 } from '@/lib/auth-routes';
 
-const registerSchema = z
-  .object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    phone: z.string().min(10, 'Phone number must be 10 digits').max(10),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    confirmPassword: z.string().min(6),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
-
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = RegisterWithConfirmFormValues;
 
 function RegisterForm() {
   const router = useRouter();
@@ -50,7 +37,7 @@ function RegisterForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerWithConfirmSchema),
     defaultValues: { name: '', phone: '', email: '', password: '', confirmPassword: '' },
   });
 

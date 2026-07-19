@@ -210,7 +210,7 @@ export default function ProductDetailPage() {
               <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide border-t bg-white">
                 {(product.images ?? []).map((img: string, i: number) => (
                   <button key={i} onClick={() => setSelectedImage(i)} className={cn('relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all', selectedImage === i ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100')}>
-                    <Image src={img} alt="" fill className="object-cover" />
+                    <Image src={img} alt="" fill className="object-cover" sizes="64px" />
                   </button>
                 ))}
               </div>

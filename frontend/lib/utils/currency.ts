@@ -20,6 +20,18 @@ export function formatNumber(num: number): string {
   return num.toString();
 }
 
+/** Compact INR for chart axes (Indian K / L / Cr). */
+export function formatCompactPrice(amount: number): string {
+  if (Math.abs(amount) < 1000) {
+    return formatPrice(amount);
+  }
+  return `₹${formatNumber(amount)}`;
+}
+
+export function formatDeliveryChargeMessage(charge: number): string {
+  return charge === 0 ? 'Free delivery' : `Delivery charge: ${formatPrice(charge)}`;
+}
+
 export function calculateDiscount(mrp: number, price: number): number {
   if (!mrp || mrp <= price) return 0;
   return Math.round(((mrp - price) / mrp) * 100);

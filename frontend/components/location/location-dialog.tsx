@@ -16,6 +16,7 @@ import { forwardGeocodePincode, reverseGeocode } from '@/lib/geocode';
 import { useGeolocation } from '@/lib/hooks/use-geolocation';
 import { useLocationStore, MAX_DELIVERY_RADIUS_KM } from '@/lib/store/location-store';
 import { getDeliveryPricingSummary } from '@/lib/delivery-pricing';
+import { formatPrice } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type LocationStep = 'detect' | 'manual' | 'checking' | 'result' | 'blocked';
@@ -276,7 +277,7 @@ export function LocationDialog({
                   <span>Distance to nearest shop: <strong>{nearestShopDistance.toFixed(1)} km</strong></span>
                 </div>
                 <div className="mt-2 text-xl font-bold text-primary">
-                  {deliveryCharge === 0 ? 'Free Delivery' : `Delivery Charge: ₹${deliveryCharge}`}
+                  {deliveryCharge === 0 ? 'Free Delivery' : `Delivery Charge: ${formatPrice(deliveryCharge ?? 0)}`}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   ({getDeliveryPricingSummary()})

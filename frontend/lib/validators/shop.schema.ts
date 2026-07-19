@@ -18,4 +18,16 @@ export const shopSchema = z.object({
   panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, 'Invalid PAN number').optional(),
 });
 
+/** Seller onboarding — shop fields without hours/delivery tuning. */
+export const shopOnboardingSchema = shopSchema.omit({
+  openingTime: true,
+  closingTime: true,
+  deliveryCharge: true,
+  freeDeliveryAbove: true,
+  panCard: true,
+}).extend({
+  gstNumber: z.string().optional(),
+});
+
 export type ShopFormValues = z.infer<typeof shopSchema>;
+export type ShopOnboardingFormValues = z.infer<typeof shopOnboardingSchema>;

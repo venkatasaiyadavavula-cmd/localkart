@@ -84,7 +84,7 @@ export default function WishlistPage() {
                   <Link href={getProductUrl(product)}>
                     <div className="relative aspect-square bg-gray-100">
                       {product.images?.[0] ? (
-                        <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                        <Image src={product.images[0]} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 200px" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <ShoppingBag className="h-10 w-10 text-gray-300" />

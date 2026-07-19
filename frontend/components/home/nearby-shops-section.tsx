@@ -68,7 +68,7 @@ export function NearbyShopsSection({ latitude, longitude }: NearbyShopsSectionPr
             <Card className="overflow-hidden hover:shadow-soft transition-shadow h-full">
               <div className="relative h-24 bg-muted">
                 {shop.logoImage ? (
-                  <Image src={shop.logoImage} alt={shop.name} fill className="object-cover" />
+                  <Image src={shop.logoImage} alt={shop.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
                 ) : (
                   <Store className="absolute inset-0 m-auto h-8 w-8 text-muted-foreground" />
                 )}

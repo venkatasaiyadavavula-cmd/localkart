@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Play, ChevronRight, Sparkles, Clock } from 'lucide-react';
 import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import { LazyVideo } from '@/components/home/lazy-video';
 import type { FeaturedVideo, VideoPreviewItem } from '@/types/api';
 import type { Product } from '@/types/product';
 
@@ -113,13 +114,9 @@ export function VideoPreviewSection() {
             className="snap-start flex-shrink-0 w-28"
           >
             <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-gray-900 shadow-md">
-              <video
+              <LazyVideo
                 src={item.videoUrl}
                 className="absolute inset-0 w-full h-full object-cover"
-                muted
-                playsInline
-                loop
-                autoPlay
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               {item.isFeatured && item.expiresAt && (

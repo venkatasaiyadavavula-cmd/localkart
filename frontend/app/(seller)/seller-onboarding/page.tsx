@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { shopOnboardingSchema, type ShopOnboardingFormValues } from '@/lib/validators/shop.schema';
 import { motion } from 'framer-motion';
 import { Store, MapPin, Phone, Mail, Upload, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,20 +18,7 @@ import { useCreateShop } from '@/hooks/use-create-shop';
 import { LocationPicker } from '@/components/map/location-picker';
 import { Progress } from '@/components/ui/progress';
 
-const shopSchema = z.object({
-  name: z.string().min(2, 'Shop name is required').max(150),
-  description: z.string().optional(),
-  address: z.string().min(5, 'Address is required'),
-  city: z.string().min(1, 'City is required').default('Kadapa'),
-  state: z.string().min(1, 'State is required').default('Andhra Pradesh'),
-  pincode: z.string().min(6, 'Valid pincode required'),
-  contactPhone: z.string().min(10, 'Valid phone required'),
-  contactEmail: z.string().email().optional().or(z.literal('')),
-  fssaiLicense: z.string().optional(),
-  gstNumber: z.string().optional(),
-});
-
-type ShopFormData = z.infer<typeof shopSchema>;
+type ShopFormData = ShopOnboardingFormValues;
 
 const steps = ['Shop Details', 'Address', 'Documents', 'Review'];
 
@@ -50,7 +37,7 @@ export default function SellerOnboardingPage() {
     trigger,
     formState: { errors },
   } = useForm<ShopFormData>({
-    resolver: zodResolver(shopSchema),
+    resolver: zodResolver(shopOnboardingSchema),
     defaultValues: {
       city: 'Kadapa',
       state: 'Andhra Pradesh',

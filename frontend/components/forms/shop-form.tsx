@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { shopSchema, type ShopFormValues } from '@/lib/validators/shop.schema';
 import { MapPin, Phone, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,24 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocationPicker } from '@/components/map/location-picker';
 
-const shopSchema = z.object({
-  name: z.string().min(2, 'Shop name is required').max(150),
-  description: z.string().optional(),
-  address: z.string().min(5, 'Address is required'),
-  city: z.string().min(1, 'City is required').default('Kadapa'),
-  state: z.string().min(1, 'State is required').default('Andhra Pradesh'),
-  pincode: z.string().min(6, 'Valid pincode required'),
-  contactPhone: z.string().min(10, 'Valid phone required'),
-  contactEmail: z.string().email().optional().or(z.literal('')),
-  openingTime: z.string().optional(),
-  closingTime: z.string().optional(),
-  deliveryCharge: z.coerce.number().min(0).default(0),
-  freeDeliveryAbove: z.coerce.number().min(0).default(0),
-  fssaiLicense: z.string().optional(),
-  gstNumber: z.string().optional(),
-});
-
-export type ShopFormData = z.infer<typeof shopSchema>;
+export type ShopFormData = ShopFormValues;
 
 interface ShopFormProps {
   initialData?: Partial<ShopFormData>;

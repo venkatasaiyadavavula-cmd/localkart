@@ -1,7 +1,7 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatCompactPrice } from '@/lib/utils';
 
 interface RevenueChartProps {
   data: { date: string; revenue: number; commission: number }[];
@@ -25,7 +25,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
           axisLine={false}
           tickMargin={10}
           className="text-xs fill-muted-foreground"
-          tickFormatter={(value) => `₹${value / 1000}k`}
+          tickFormatter={(value) => formatCompactPrice(value)}
         />
         <Tooltip
           contentStyle={{

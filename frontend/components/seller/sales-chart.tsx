@@ -1,7 +1,7 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatCompactPrice } from '@/lib/utils';
 
 interface SalesChartProps {
   data: { date: string; sales: number; orders: number }[];
@@ -25,7 +25,7 @@ export function SalesChart({ data }: SalesChartProps) {
           axisLine={false}
           tickMargin={10}
           className="text-xs fill-muted-foreground"
-          tickFormatter={(value) => `₹${value}`}
+          tickFormatter={(value) => formatCompactPrice(value)}
         />
         <Tooltip
           contentStyle={{
