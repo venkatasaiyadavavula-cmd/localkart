@@ -17,7 +17,8 @@ import {
   Copy,
   Loader2,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatPrice } from '@/lib/utils';
+import { formatOrderDetailDateTime } from '@/lib/utils/date';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { useOrder } from '@/hooks/use-order';
 import { useCancelOrder } from '@/hooks/use-cancel-order';
 import { ordersApi } from '@/lib/api/orders';
-import { formatPrice } from '@/lib/utils';
 import { OrderProgress } from '@/components/orders/order-progress';
 import { canTrackLive } from '@/lib/order-tracking';
 import { OrderStatus, statusColors, statusLabels } from '@/types/order';
@@ -124,7 +124,7 @@ export default function OrderDetailPage() {
               </button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Placed on {format(new Date(order.createdAt), 'dd MMM yyyy, hh:mm a')}
+              Placed on {formatOrderDetailDateTime(order.createdAt)}
             </p>
           </div>
         </div>

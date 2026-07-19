@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { unwrapApiData } from '@/lib/utils';
+import { unwrapApiData, fetchApiDataOrNull } from '@/lib/utils';
 import type { ManualOverride, OperatingHours } from '@/types/shop-hours';
 import type { ShopData } from '@/types/api';
 
@@ -12,7 +12,7 @@ export function useShop(slugOrId?: string, options?: { sellerShop?: boolean }) {
   const queryClient = useQueryClient();
   const isSellerShop = options?.sellerShop === true;
 
-  const query = useQuery<ShopData>({
+  const query = useQuery<ShopData | null>({
     queryKey: isSellerShop ? ['seller', 'shop'] : isUuid(slugOrId!) ? ['shop', 'id', slugOrId] : ['shop', slugOrId],
     queryFn: async () => {
       if (isSellerShop) {
@@ -22,8 +22,7 @@ export function useShop(slugOrId?: string, options?: { sellerShop?: boolean }) {
       const endpoint = isUuid(slugOrId!)
         ? `/seller/shop/id/${slugOrId}`
         : `/seller/shop/slug/${slugOrId}`;
-      const { data } = await apiClient.get(endpoint);
-      return unwrapApiData<ShopData>(data);
+      return fetchApiDataOrNull<ShopData>(endpoint);
     },
     enabled: isSellerShop
       ? typeof window !== 'undefined' && !!localStorage.getItem('accessToken')

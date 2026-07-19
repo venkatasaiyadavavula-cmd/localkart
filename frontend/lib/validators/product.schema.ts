@@ -14,7 +14,7 @@ export const productSchema = z.object({
   description: z.string().max(2000).optional(),
   price: z.coerce.number().min(0, 'Price must be positive'),
   mrp: z.coerce.number().min(0).optional(),
-  stock: z.coerce.number().min(0, 'Stock must be positive').default(0),
+  stock: z.coerce.number().int('Stock must be a whole number').min(0, 'Stock must be positive').default(0),
   sku: z.string().max(50).optional(),
   brand: z.string().max(100).optional(),
   categoryType: ProductCategoryType,

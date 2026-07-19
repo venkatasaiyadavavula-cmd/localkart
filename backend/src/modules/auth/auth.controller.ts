@@ -4,8 +4,8 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  UseGuards,
   Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -13,7 +13,6 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Public } from '../../core/decorators/public.decorator';
 
 @Controller('auth')
@@ -29,11 +28,14 @@ export class AuthController {
 
   @Public()
   @Throttle({ auth: { limit: 10, ttl: 60000 } })
-  @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Request() req) {
-    return this.authService.login(req.user);
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(loginDto.phone, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.authService.login(user);
   }
 
   @Public()

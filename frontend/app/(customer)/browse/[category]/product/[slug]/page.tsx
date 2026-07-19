@@ -21,6 +21,7 @@ import { useCartStore } from '@/store/cart-store';
 import { useBuyNowWithWelcome } from '@/hooks/use-buy-now-with-welcome';
 import { formatPrice, formatDistance } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { cn } from '@/lib/utils';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { ShopStatusBanner } from '@/components/shop/shop-status-banner';
@@ -34,7 +35,7 @@ export default function ProductDetailPage() {
   const router   = useRouter();
   const slug     = params.slug as string;
 
-  const { data: product, isLoading } = useProduct(slug);
+  const { data: product, isLoading, isError, refetch } = useProduct(slug);
   const { addItem, isLoading: cartLoading } = useCartStore();
   const { startBuyNow, buyNowWelcomeDialog, isBuyNowLoading } = useBuyNowWithWelcome();
   const queryClient = useQueryClient();
@@ -109,6 +110,14 @@ export default function ProductDetailPage() {
   };
 
   if (isLoading) return <ProductDetailSkeleton />;
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (!product) {
     return (

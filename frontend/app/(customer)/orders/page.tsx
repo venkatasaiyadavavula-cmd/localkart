@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Package, ChevronRight, Search, Navigation, Radio } from 'lucide-react';
-import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useOrders } from '@/hooks/use-orders';
 import { formatPrice } from '@/lib/utils';
+import { formatOrderListDate } from '@/lib/utils/date';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/error-state';
 import { OrderStatus } from '@/types/order';
@@ -164,7 +164,7 @@ export default function OrdersPage() {
                           )}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(order.createdAt), 'dd MMM yyyy')}
+                          {formatOrderListDate(order.createdAt)}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">

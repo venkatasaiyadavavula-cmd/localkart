@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Search, Package, Truck, CheckCircle, Phone, MapPin,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatOrderDateTime } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -179,7 +179,7 @@ export default function SellerOrdersPage() {
                     <div>
                       <p className="font-bold text-gray-900 text-sm">#{order.orderNumber}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {format(new Date(order.createdAt), 'dd MMM · hh:mm a')}
+                        {formatOrderDateTime(order.createdAt)}
                       </p>
                     </div>
                     <span className="text-lg font-black text-gray-900">{formatPrice(order.totalAmount)}</span>

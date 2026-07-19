@@ -22,7 +22,10 @@ const syne = Syne({
   preload: true,
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://localkart.store';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'LocalKart — Shop Local, Delivered Fast',
     template: '%s | LocalKart',
@@ -38,11 +41,20 @@ export const metadata: Metadata = {
     siteName: 'LocalKart',
     title: 'LocalKart — Shop Local, Delivered Fast',
     description: 'Discover products from local shops in your city.',
+    images: [
+      {
+        url: '/icons/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'LocalKart — Shop Local, Delivered Fast',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'LocalKart — Shop Local, Delivered Fast',
     description: 'Discover products from local shops in your city.',
+    images: ['/icons/icon-512.png'],
   },
   robots: {
     index: true,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { formatOrderDateTime } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import { Package, Truck, CheckCircle } from 'lucide-react';
 import { staffWorkApi } from '@/lib/api/staff-work';
@@ -112,7 +112,7 @@ export default function WorkOrdersPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-bold text-gray-900">#{order.orderNumber}</p>
-                    <p className="text-xs text-gray-500">{format(new Date(order.createdAt), 'dd MMM · hh:mm a')}</p>
+                    <p className="text-xs text-gray-500">{formatOrderDateTime(order.createdAt)}</p>
                   </div>
                   <p className="font-black text-gray-900">{formatPrice(order.totalAmount)}</p>
                 </div>

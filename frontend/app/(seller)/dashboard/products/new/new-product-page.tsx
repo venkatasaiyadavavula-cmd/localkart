@@ -34,7 +34,7 @@ const productSchema = z.object({
   description:  z.string().optional(),
   price:        z.coerce.number().min(0, 'Price must be positive'),
   mrp:          z.coerce.number().min(0).optional(),
-  stock:        z.coerce.number().min(0, 'Stock must be positive'),
+  stock:        z.coerce.number().int('Stock must be a whole number').min(0, 'Stock must be positive'),
   sku:          z.string().optional(),
   brand:        z.string().optional(),
   categoryType: z.nativeEnum(ProductCategoryType),
@@ -222,7 +222,7 @@ export default function NewProductPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="stock" className="text-xs font-bold text-gray-600">Stock Quantity *</Label>
-              <Input id="stock" type="number" {...register('stock')} placeholder="0" />
+              <Input id="stock" type="number" step="1" min="0" {...register('stock')} placeholder="0" />
               {errors.stock && <p className="text-xs text-red-500">{errors.stock.message}</p>}
             </div>
             <div className="space-y-1.5">

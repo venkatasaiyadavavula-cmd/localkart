@@ -15,12 +15,13 @@ import { useShop } from '@/hooks/use-shop';
 import { useProducts } from '@/hooks/use-products';
 import { formatDistance } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function ShopPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const { data: shop, isLoading: shopLoading } = useShop(slug);
+  const { data: shop, isLoading: shopLoading, isError, refetch } = useShop(slug);
   const { data: productsData, isLoading: productsLoading } = useProducts({
     shopId: shop?.id,
     limit: 20,
@@ -34,6 +35,14 @@ export default function ShopPage() {
 
   if (shopLoading) {
     return <ShopSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="container py-16">
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
   }
 
   if (!shop) {

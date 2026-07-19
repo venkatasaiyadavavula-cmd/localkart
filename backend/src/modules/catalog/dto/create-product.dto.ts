@@ -6,9 +6,11 @@ import {
   IsEnum,
   IsArray,
   IsObject,
+  IsInt,
   Min,
   MaxLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ProductCategoryType } from '../../../core/entities/product.entity';
 
 export class CreateProductDto {
@@ -31,7 +33,8 @@ export class CreateProductDto {
   @Min(0)
   mrp?: number;
 
-  @IsNumber()
+  @Type(() => Number)
+  @IsInt({ message: 'Stock must be a whole number' })
   @Min(0)
   stock: number;
 

@@ -1,3 +1,6 @@
+import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
+
 /** Unwrap API responses whether backend returns raw data or { success, data }. */
 export function unwrapApiData<T = unknown>(payload: unknown): T {
   if (payload && typeof payload === 'object' && 'data' in payload) {
@@ -15,6 +18,22 @@ export function normalizeList<T>(payload: unknown): T[] {
     if (Array.isArray(obj.data)) return obj.data;
   }
   return [];
+}
+
+/** GET helper that returns null on 404 instead of throwing. */
+export async function fetchApiDataOrNull<T>(
+  url: string,
+  notFoundStatus = 404,
+): Promise<T | null> {
+  try {
+    const { data } = await apiClient.get(url);
+    return unwrapApiData<T>(data);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === notFoundStatus) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /** Format delivery address whether stored as string or object. */

@@ -5,6 +5,7 @@ import type { Product } from '@/types/product';
 export function useProduct(slug: string) {
   return useApiQuery<Product>(['product', slug], `/catalog/products/${slug}`, {
     enabled: !!slug,
+    notFoundAsNull: true,
   });
 }
 

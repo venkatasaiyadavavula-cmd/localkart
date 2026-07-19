@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { AlertCircle, CheckCircle2, Clock, IndianRupee, TrendingUp, Calendar, CreditCard, ChevronRight } from 'lucide-react';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
+import { formatCalendarDate, formatCalendarDateWeekday } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import { ErrorState } from '@/components/ui/error-state';
 
@@ -32,12 +33,9 @@ interface CommissionBill {
 function formatBillWeek(bill: CommissionBill): string {
   if (bill.weekLabel) return bill.weekLabel;
   if (bill.weekStartDate) {
-    const start = new Date(bill.weekStartDate);
-    const end = new Date(bill.billDate);
-    const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    return `${fmt(start)} – ${fmt(end)}`;
+    return `${formatCalendarDate(bill.weekStartDate)} – ${formatCalendarDate(bill.billDate)}`;
   }
-  return new Date(bill.billDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  return formatCalendarDate(bill.billDate);
 }
 
 const STATUS_CONFIG = {
@@ -212,7 +210,7 @@ export default function CommissionPage() {
                           {formatBillWeek(bill)}
                         </p>
                         <p className="text-[10px] text-gray-400">
-                          Due {new Date(bill.billDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          Due {formatCalendarDateWeekday(bill.billDate)}
                         </p>
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
                           {cfg.label}
