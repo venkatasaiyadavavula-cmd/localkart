@@ -13,7 +13,7 @@ import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { User, UserRole } from '../../core/entities/user.entity';
-import { Transaction } from '../../core/entities/transaction.entity';
+import { Transaction, TransactionStatus, TransactionType } from '../../core/entities/transaction.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { UpdateDeliveryLocationDto } from './dto/update-delivery-location.dto';
@@ -702,16 +702,38 @@ export class OrdersService {
   }
 
   async updateRazorpayOrderId(internalOrderId: string, razorpayOrderId: string) {
+    const order = await this.orderRepository.findOne({ where: { id: internalOrderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.razorpayOrderId === razorpayOrderId) {
+      const existingTxn = await this.transactionRepository.findOne({
+        where: {
+          orderId: internalOrderId,
+          razorpayOrderId,
+          status: TransactionStatus.PENDING,
+        },
+      });
+      if (existingTxn) {
+        return;
+      }
+    }
+
     await this.orderRepository.update(
       { id: internalOrderId },
-      { paymentStatus: PaymentStatus.PENDING } as any,
+      {
+        paymentStatus: PaymentStatus.PENDING,
+        razorpayOrderId,
+      },
     );
-    const transaction = this.transactionRepository.create({} as any); Object.assign(transaction, {
+
+    const transaction = this.transactionRepository.create({
       orderId: internalOrderId,
       razorpayOrderId,
-      type: 'payment',
-      status: 'pending',
-      amount: 0,
+      type: TransactionType.PAYMENT,
+      status: TransactionStatus.PENDING,
+      amount: order.totalAmount,
       currency: 'INR',
     });
     await this.transactionRepository.save(transaction);

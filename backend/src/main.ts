@@ -27,7 +27,7 @@ async function bootstrap() {
     }
   }
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  const app = await NestFactory.create(AppModule, { httpsOptions, rawBody: true });
   
   app.use(helmet({
     contentSecurityPolicy: false, // API-only; CSP set by frontend

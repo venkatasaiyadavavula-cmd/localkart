@@ -2,18 +2,19 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
-  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
+import { Cron } from '@nestjs/schedule';
 import * as crypto from 'crypto';
 import razorpayInstance from '../../config/razorpay.config';
-import { Order, PaymentMethod, PaymentStatus } from '../../core/entities/order.entity';
+import { Order, OrderStatus, PaymentMethod, PaymentStatus } from '../../core/entities/order.entity';
 import { Transaction, TransactionStatus, TransactionType } from '../../core/entities/transaction.entity';
 import { OrdersService } from '../orders/orders.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
+import { RAZORPAY_ORDER_TTL_MS } from './payments.config';
 
 @Injectable()
 export class PaymentsService {
@@ -46,7 +47,11 @@ export class PaymentsService {
       throw new BadRequestException('Order is already paid');
     }
 
-    // Create Razorpay order
+    const reusable = await this.getReusableRazorpayOrder(order);
+    if (reusable) {
+      return reusable;
+    }
+
     const amountInPaise = Math.round(order.totalAmount * 100);
     const options = {
       amount: amountInPaise,
@@ -62,7 +67,6 @@ export class PaymentsService {
     try {
       const razorpayOrder = await razorpayInstance.orders.create(options);
 
-      // Save Razorpay order ID
       await this.ordersService.updateRazorpayOrderId(order.id, razorpayOrder.id);
 
       return {
@@ -75,6 +79,38 @@ export class PaymentsService {
       this.logger.error(`Razorpay order creation failed: ${error.message}`);
       throw new BadRequestException('Failed to create payment order: ' + error.message);
     }
+  }
+
+  /** Reuse a non-expired pending Razorpay order instead of creating duplicates. */
+  private async getReusableRazorpayOrder(order: Order) {
+    if (!order.razorpayOrderId) {
+      return null;
+    }
+
+    const pendingTxn = await this.transactionRepository.findOne({
+      where: {
+        orderId: order.id,
+        razorpayOrderId: order.razorpayOrderId,
+        status: TransactionStatus.PENDING,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!pendingTxn) {
+      return null;
+    }
+
+    const ageMs = Date.now() - new Date(pendingTxn.createdAt).getTime();
+    if (ageMs >= RAZORPAY_ORDER_TTL_MS) {
+      return null;
+    }
+
+    return {
+      orderId: order.razorpayOrderId,
+      amount: Math.round(order.totalAmount * 100),
+      currency: 'INR',
+      key: process.env.RAZORPAY_KEY_ID,
+    };
   }
 
   async verifyPayment(userId: string, verifyPaymentDto: VerifyPaymentDto) {
@@ -93,7 +129,6 @@ export class PaymentsService {
       throw new NotFoundException('Order not found');
     }
 
-    // Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
@@ -101,7 +136,6 @@ export class PaymentsService {
       .digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
-      // Update transaction as failed
       await this.updateTransactionStatus(
         razorpay_payment_id,
         TransactionStatus.FAILED,
@@ -110,7 +144,6 @@ export class PaymentsService {
       return false;
     }
 
-    // Update order and transaction
     await this.ordersService.confirmPaidOrder(internalOrderId, razorpay_payment_id);
 
     await this.updateTransactionStatus(
@@ -136,9 +169,6 @@ export class PaymentsService {
       throw new BadRequestException('This order is not set for COD');
     }
 
-    // For COD, we just need to trigger OTP sending (already done in order creation)
-    // This endpoint is for confirming COD after OTP verification? Actually OTP is separate.
-
     return { message: 'COD order confirmed. OTP sent to registered mobile.' };
   }
 
@@ -159,26 +189,36 @@ export class PaymentsService {
   }
 
   private async handlePaymentCaptured(payment: any) {
-    const orderId = payment.notes?.orderId || payment.order_id; // Depending on note
     const razorpayPaymentId = payment.id;
+    const razorpayOrderId = payment.order_id;
 
-    const transaction = await this.transactionRepository.findOne({
+    let transaction = await this.transactionRepository.findOne({
       where: { razorpayPaymentId },
     });
 
+    if (!transaction && razorpayOrderId) {
+      transaction = await this.transactionRepository.findOne({
+        where: { razorpayOrderId, status: TransactionStatus.PENDING },
+      });
+    }
+
     if (transaction) {
       transaction.status = TransactionStatus.SUCCESS;
+      transaction.razorpayPaymentId = razorpayPaymentId;
       transaction.metadata = payment;
       await this.transactionRepository.save(transaction);
     }
 
-    // Find order by razorpay_order_id
     const order = await this.orderRepository.findOne({
-      where: { id: payment.order_id }, // receipt = internal order id
+      where: { razorpayOrderId },
     });
 
     if (order) {
       await this.ordersService.confirmPaidOrder(order.id, razorpayPaymentId);
+    } else {
+      this.logger.warn(
+        `payment.captured: no order found for razorpayOrderId=${razorpayOrderId}`,
+      );
     }
   }
 
@@ -192,14 +232,12 @@ export class PaymentsService {
   }
 
   private async handleRefundProcessed(refund: any) {
-    // Update transaction for refund
     const paymentId = refund.payment_id;
     const transaction = await this.transactionRepository.findOne({
       where: { razorpayPaymentId: paymentId },
     });
 
     if (transaction) {
-      // Create refund transaction
       const refundTransaction = this.transactionRepository.create({
         orderId: transaction.orderId,
         type: TransactionType.REFUND,
@@ -211,11 +249,57 @@ export class PaymentsService {
       });
       await this.transactionRepository.save(refundTransaction);
 
-      // Update order payment status
       await this.orderRepository.update(
         { id: transaction.orderId },
         { paymentStatus: PaymentStatus.REFUNDED },
       );
+    }
+  }
+
+  /** Expire Razorpay orders stuck in pending_otp + payment pending after 30 minutes. */
+  @Cron('*/5 * * * *', { timeZone: 'Asia/Kolkata' })
+  async expireAbandonedRazorpayOrders() {
+    const cutoff = new Date(Date.now() - RAZORPAY_ORDER_TTL_MS);
+
+    const staleOrders = await this.orderRepository.find({
+      where: {
+        paymentMethod: PaymentMethod.RAZORPAY,
+        status: OrderStatus.PENDING_OTP,
+        paymentStatus: PaymentStatus.PENDING,
+        createdAt: LessThan(cutoff),
+      },
+    });
+
+    if (staleOrders.length === 0) {
+      return;
+    }
+
+    this.logger.log(`Expiring ${staleOrders.length} abandoned Razorpay order(s)`);
+
+    for (const order of staleOrders) {
+      await this.orderRepository.update(
+        { id: order.id },
+        {
+          status: OrderStatus.CANCELLED,
+          paymentStatus: PaymentStatus.FAILED,
+          cancellationReason: 'Payment abandoned — auto-expired after 30 minutes',
+          cancelledAt: new Date(),
+        },
+      );
+
+      if (order.razorpayOrderId) {
+        await this.transactionRepository.update(
+          {
+            orderId: order.id,
+            razorpayOrderId: order.razorpayOrderId,
+            status: TransactionStatus.PENDING,
+          },
+          {
+            status: TransactionStatus.FAILED,
+            failureReason: 'Payment abandoned — auto-expired',
+          },
+        );
+      }
     }
   }
 

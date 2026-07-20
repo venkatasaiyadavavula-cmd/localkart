@@ -15,6 +15,7 @@ import {
   getWeekStartSaturday,
   toIstDateString,
 } from './commission-week.util';
+import { RAZORPAY_ORDER_TTL_MS } from './payments.config';
 
 const FINE_PER_DAY = 25;
 
@@ -180,10 +181,33 @@ export class CommissionService {
     if (bill.status === CommissionBillStatus.PAID) throw new BadRequestException('Bill already paid');
 
     const totalDue = Number(bill.commissionAmount) + Number(bill.fineAmount);
-    const amountPaise = Math.round(totalDue * 100);
     const weekLabel = bill.weekStartDate
       ? formatWeekLabel(bill.weekStartDate, bill.billDate)
       : bill.billDate;
+
+    if (bill.razorpayOrderId) {
+      const ageMs = Date.now() - new Date(bill.updatedAt).getTime();
+      if (ageMs < RAZORPAY_ORDER_TTL_MS) {
+        return {
+          razorpayOrderId: bill.razorpayOrderId,
+          amount: Math.round(totalDue * 100),
+          currency: 'INR',
+          key: process.env.RAZORPAY_KEY_ID,
+          billDetails: {
+            billDate: bill.billDate,
+            weekStartDate: bill.weekStartDate,
+            weekLabel,
+            orderCount: bill.orderCount,
+            commissionAmount: bill.commissionAmount,
+            fineAmount: bill.fineAmount,
+            totalDue,
+            daysOverdue: bill.daysOverdue,
+          },
+        };
+      }
+    }
+
+    const amountPaise = Math.round(totalDue * 100);
 
     const rzpOrder = await razorpayInstance.orders.create({
       amount: amountPaise,
@@ -228,6 +252,14 @@ export class CommissionService {
     razorpayOrderId: string,
     razorpaySignature: string,
   ) {
+    const bill = await this.billRepo.findOne({ where: { id: billId, shopId } });
+    if (!bill) {
+      throw new NotFoundException('Commission bill not found');
+    }
+    if (bill.status === CommissionBillStatus.PAID) {
+      return { success: true, message: 'Commission payment already confirmed' };
+    }
+
     const crypto = require('crypto');
     const expectedSig = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
@@ -236,14 +268,6 @@ export class CommissionService {
 
     if (expectedSig !== razorpaySignature) {
       throw new BadRequestException('Invalid payment signature');
-    }
-
-    const bill = await this.billRepo.findOne({ where: { id: billId, shopId } });
-    if (!bill) {
-      throw new NotFoundException('Commission bill not found');
-    }
-    if (bill.status === CommissionBillStatus.PAID) {
-      return { success: true, message: 'Commission payment already confirmed' };
     }
 
     await this.billRepo.update(

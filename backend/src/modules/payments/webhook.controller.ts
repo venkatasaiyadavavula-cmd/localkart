@@ -5,6 +5,8 @@ import { PaymentsService } from './payments.service';
 import { Public } from '../../core/decorators/public.decorator';
 import { isPaymentsEnabled } from './payments.config';
 
+type RawBodyRequest = Request & { rawBody?: Buffer };
+
 @Controller('webhooks')
 export class WebhookController {
   constructor(private readonly paymentsService: PaymentsService) {}
@@ -14,7 +16,7 @@ export class WebhookController {
   @HttpCode(HttpStatus.OK)
   async handleRazorpayWebhook(
     @Headers('x-razorpay-signature') signature: string,
-    @Req() req: Request,
+    @Req() req: RawBodyRequest,
     @Res() res: Response,
   ) {
     if (!isPaymentsEnabled()) {
@@ -27,22 +29,30 @@ export class WebhookController {
       return res.status(500).json({ error: 'Webhook secret not configured' });
     }
 
-    // Verify signature
-    const payload = JSON.stringify(req.body);
+    const rawBody = req.rawBody;
+    if (!rawBody || rawBody.length === 0) {
+      return res.status(400).json({ error: 'Missing raw request body' });
+    }
+
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
-      .update(payload)
+      .update(rawBody)
       .digest('hex');
 
     if (signature !== expectedSignature) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
-    // Process webhook asynchronously (acknowledge receipt immediately)
+    let event: unknown;
+    try {
+      event = JSON.parse(rawBody.toString('utf8'));
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+
     res.status(200).json({ received: true });
 
-    // Process in background
-    this.paymentsService.processRazorpayWebhook(req.body).catch((err) => {
+    this.paymentsService.processRazorpayWebhook(event).catch((err) => {
       console.error('Webhook processing error:', err);
     });
   }
