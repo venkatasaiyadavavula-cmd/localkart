@@ -6,6 +6,32 @@
 
 ---
 
+## 🔧 Production Fixes (Jul 2026)
+
+### A. `frontend/.env.local` committed — overrides production API URL on every deploy
+**Symptom:** After `git pull` on the server, the frontend called `http://localhost:3001/api/v1` instead of production API.
+**Cause:** `frontend/.env.local` was tracked in git. Next.js loads `.env.local` with higher priority than `.env.production`.
+**Fix:** `git rm --cached frontend/.env.local`, root `.gitignore` + `frontend/.gitignore` entries for `**/.env.local`. Keep local overrides only on developer machines.
+**Prevention:** Never `git add` any `.env.local` file; use `.env.local.example` for documentation.
+
+### B. `commission_bills.amount` legacy column — weekly cron INSERT failures
+**Symptom:** Weekly commission bill generation could fail with NOT NULL violation on `amount`.
+**Cause:** Production DB had a legacy `amount numeric(10,2) NOT NULL` column from an early schema. The TypeORM entity (`commission-bill.entity.ts`) uses `commissionAmount` only; `generateWeeklyBillForShop` never sets `amount`.
+**Fix:** Migration `015_drop_commission_bills_legacy_amount.ts` drops the unused `amount` column.
+**Note:** No other entity/schema mismatches were found in migrations vs entities for `commission_bills`; this column was orphaned from pre-migration TypeORM sync.
+
+### C. Razorpay webhook signature — timing-unsafe comparison
+**Symptom:** Security audit: webhook HMAC verified with `signature === expectedSignature`.
+**Cause:** Plain string equality short-circuits on first differing byte (timing side channel).
+**Fix:** `webhook.controller.ts` uses `crypto.timingSafeEqual` on equal-length UTF-8 buffers, with an explicit length guard before compare.
+
+### D. `NEXT_PUBLIC_RAZORPAY_KEY_ID` missing at frontend build time
+**Symptom:** Seller Commission page showed "Razorpay setup pending" instead of Pay Now.
+**Cause:** `NEXT_PUBLIC_*` vars are inlined at `npm run build`, not read at runtime. `.env.production` lacked the key and deploy did not export it before build.
+**Fix:** Document build-time requirement in `.env.production`, sync `RAZORPAY_KEY_ID` from `backend/.env` in `.github/workflows/deploy.yml`, Commission page falls back to `key` from `POST /commission/pay/:billId`.
+
+---
+
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)
 
 ### 1. **Missing LoginDto File**
