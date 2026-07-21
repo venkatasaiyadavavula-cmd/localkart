@@ -7,6 +7,16 @@ import { isPaymentsEnabled } from './payments.config';
 
 type RawBodyRequest = Request & { rawBody?: Buffer };
 
+/** Constant-time compare for hex HMAC digests; returns false on length mismatch. */
+function timingSafeEqualHex(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, 'utf8');
+  const bBuf = Buffer.from(b, 'utf8');
+  if (aBuf.length !== bBuf.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
 @Controller('webhooks')
 export class WebhookController {
   constructor(private readonly paymentsService: PaymentsService) {}
@@ -39,7 +49,7 @@ export class WebhookController {
       .update(rawBody)
       .digest('hex');
 
-    if (signature !== expectedSignature) {
+    if (!signature || !timingSafeEqualHex(signature, expectedSignature)) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
