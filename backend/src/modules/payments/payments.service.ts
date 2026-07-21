@@ -15,6 +15,7 @@ import { OrdersService } from '../orders/orders.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
 import { RAZORPAY_ORDER_TTL_MS } from './payments.config';
+import { razorpayReceipt } from './razorpay-receipt.util';
 
 @Injectable()
 export class PaymentsService {
@@ -56,7 +57,7 @@ export class PaymentsService {
     const options = {
       amount: amountInPaise,
       currency: 'INR',
-      receipt: order.id,
+      receipt: razorpayReceipt('', order.id),
       payment_capture: 1,
       notes: {
         orderNumber: order.orderNumber,

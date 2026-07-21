@@ -77,16 +77,23 @@ describe('CommissionService payment idempotency', () => {
 
   it('creates new Razorpay order when existing razorpayOrderId is expired', async () => {
     const expiredUpdate = new Date(Date.now() - RAZORPAY_ORDER_TTL_MS - 1000);
+    const billUuid = '550e8400-e29b-41d4-a716-446655440000';
     const { service, billRepo } = buildService({
+      id: billUuid,
       razorpayOrderId: 'order_expired_comm',
       updatedAt: expiredUpdate,
     });
 
-    const result = await service.createCommissionPaymentOrder(shopId, billId);
+    const result = await service.createCommissionPaymentOrder(shopId, billUuid);
 
-    expect(razorpayInstance.orders.create).toHaveBeenCalled();
+    expect(razorpayInstance.orders.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        receipt: 'comm_550e8400e29b41d4a716446655440000',
+        notes: expect.objectContaining({ billId: billUuid }),
+      }),
+    );
     expect(result.razorpayOrderId).toBe('order_new_commission');
-    expect(billRepo.update).toHaveBeenCalledWith(billId, { razorpayOrderId: 'order_new_commission' });
+    expect(billRepo.update).toHaveBeenCalledWith(billUuid, { razorpayOrderId: 'order_new_commission' });
   });
 
   it('verifyCommissionPayment returns early when bill is already PAID', async () => {
