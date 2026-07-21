@@ -1,1 +1,5 @@
+# Local env overrides — never commit (Next.js loads .env.local over .env.production)
+**/.env.local
 frontend/.env.local
+backend/.env.local
+

@@ -10,6 +10,7 @@ build/
 dist/
 
 # Environment files
+# .env.local overrides .env.production on deploy — must stay untracked (see root .gitignore)
 .env
 .env.local
 .env.development.local

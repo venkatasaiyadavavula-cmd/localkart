@@ -12,6 +12,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import type { CommissionBillsData } from '@/types/api';
 
 import { API_URL as API } from '@/lib/api-config';
+// NEXT_PUBLIC_RAZORPAY_KEY_ID is inlined at `npm run build` (see frontend/.env.production). Checkout also accepts key from POST /commission/pay.
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
 type BillStatus = 'pending' | 'paid' | 'overdue';
@@ -97,8 +98,13 @@ export default function CommissionPage() {
   };
 
   const launchRazorpay = (orderData: any) => {
+    const checkoutKey = RAZORPAY_KEY || orderData.key;
+    if (!checkoutKey) {
+      toast.error('Razorpay is not configured. Contact support.');
+      return;
+    }
     const rzp = new window.Razorpay({
-      key:         RAZORPAY_KEY,
+      key:         checkoutKey,
       amount:      orderData.amount,
       currency:    orderData.currency,
       order_id:    orderData.razorpayOrderId,
@@ -235,19 +241,15 @@ export default function CommissionPage() {
                     <p className="text-base font-extrabold text-gray-900">
                       {formatPrice(total)}
                     </p>
-                    {RAZORPAY_KEY ? (
-                      <button
-                        onClick={() => payMutation.mutate(bill.id)}
-                        disabled={payMutation.isPending}
-                        className="flex items-center gap-1 text-xs font-extrabold text-white px-3 py-1.5 rounded-xl active:scale-95 transition-all"
-                        style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 2px 10px rgba(61,90,241,0.30)' }}
-                      >
-                        <CreditCard className="h-3 w-3" />
-                        Pay Now
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-gray-400 text-right">Razorpay setup pending</span>
-                    )}
+                    <button
+                      onClick={() => payMutation.mutate(bill.id)}
+                      disabled={payMutation.isPending}
+                      className="flex items-center gap-1 text-xs font-extrabold text-white px-3 py-1.5 rounded-xl active:scale-95 transition-all"
+                      style={{ background: 'linear-gradient(135deg,#3D5AF1,#6D28D9)', boxShadow: '0 2px 10px rgba(61,90,241,0.30)' }}
+                    >
+                      <CreditCard className="h-3 w-3" />
+                      Pay Now
+                    </button>
                   </div>
                 </div>
               );
