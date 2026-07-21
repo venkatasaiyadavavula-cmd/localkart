@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException } from '@nestjs/common';
 import { SellerService } from './seller.service';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { User } from '../../core/entities/user.entity';
@@ -94,12 +93,17 @@ describe('SellerService shop location', () => {
     expect(execute).toHaveBeenCalled();
   });
 
-  it('createShop rejects duplicate shop', async () => {
-    shopRepository.findOne.mockResolvedValue({ id: 'existing' });
+  it('createShop appends numeric suffix when base slug is taken', async () => {
+    shopRepository.findOne
+      .mockResolvedValueOnce(null) // no existing shop for owner
+      .mockResolvedValueOnce({ id: 'other-shop', slug: 'test-shop' }) // base slug taken
+      .mockResolvedValueOnce(null); // test-shop-2 free
+    userRepository.findOne.mockResolvedValue({ id: 'owner-1', role: 'seller' });
 
-    await expect(service.createShop('owner-1', profile as any)).rejects.toThrow(
-      BadRequestException,
+    await service.createShop('owner-1', profile as any);
+
+    expect(shopRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: 'test-shop-2' }),
     );
-    expect(shopRepository.createQueryBuilder).not.toHaveBeenCalled();
   });
 });

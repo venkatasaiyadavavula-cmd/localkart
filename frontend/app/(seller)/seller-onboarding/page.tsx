@@ -78,11 +78,8 @@ export default function SellerOnboardingPage() {
       });
       toast.success('Shop registered successfully! Awaiting approval.');
       router.push('/dashboard');
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string | string[] } } };
-      const raw = err.response?.data?.message;
-      const message = Array.isArray(raw) ? raw[0] : raw;
-      toast.error(message || 'Failed to register shop');
+    } catch {
+      // apiClient interceptor already surfaces the backend error message
     }
   };
 

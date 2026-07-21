@@ -89,11 +89,7 @@ export class SellerService {
       throw new NotFoundException('User not found');
     }
 
-    const slug = slugify(shopProfileDto.name, { lower: true, strict: true });
-    const existingSlug = await this.shopRepository.findOne({ where: { slug } });
-    if (existingSlug) {
-      throw new BadRequestException('Shop name already taken');
-    }
+    const slug = await this.allocateUniqueSlug(shopProfileDto.name);
 
     const shop = this.shopRepository.create({
       ...shopProfileDto,
@@ -127,7 +123,7 @@ export class SellerService {
     }
 
     if (shopProfileDto.name) {
-      shop.slug = slugify(shopProfileDto.name, { lower: true, strict: true });
+      shop.slug = await this.allocateUniqueSlug(shopProfileDto.name, shop.id);
     }
 
     Object.assign(shop, shopProfileDto);
@@ -276,6 +272,22 @@ export class SellerService {
       })),
       topProducts,
     };
+  }
+
+  /** Unique URL slug; appends -2, -3, … when the base slug is already taken. */
+  private async allocateUniqueSlug(name: string, excludeShopId?: string): Promise<string> {
+    const base = slugify(name, { lower: true, strict: true });
+    let candidate = base;
+    let suffix = 2;
+
+    while (true) {
+      const existing = await this.shopRepository.findOne({ where: { slug: candidate } });
+      if (!existing || existing.id === excludeShopId) {
+        return candidate;
+      }
+      candidate = `${base}-${suffix}`;
+      suffix++;
+    }
   }
 
   /** PostGIS geography column — must use raw SQL via query builder, not repository.save(). */
