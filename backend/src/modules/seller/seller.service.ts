@@ -103,10 +103,13 @@ export class SellerService {
       operatingHours: createDefaultOperatingHours(),
       manualOverride: ManualOverride.FORCE_CLOSED,
       manualOverrideSetAt: new Date(),
-      location: `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)` as any,
     });
 
-    await this.shopRepository.save(shop);
+    const savedShop = await this.shopRepository.save(shop);
+
+    if (shopProfileDto.latitude != null && shopProfileDto.longitude != null) {
+      await this.setShopLocation(savedShop.id, shopProfileDto.latitude, shopProfileDto.longitude);
+    }
 
     // Update user role to seller if not already
     if (user.role !== 'seller') {
@@ -114,7 +117,7 @@ export class SellerService {
       await this.userRepository.save(user);
     }
 
-    return enrichShopWithHoursStatus(shop);
+    return enrichShopWithHoursStatus(savedShop);
   }
 
   async updateShop(ownerId: string, shopProfileDto: ShopProfileDto) {
@@ -127,14 +130,15 @@ export class SellerService {
       shop.slug = slugify(shopProfileDto.name, { lower: true, strict: true });
     }
 
-    if (shopProfileDto.latitude && shopProfileDto.longitude) {
-      (shop as any).location = `ST_SetSRID(ST_MakePoint(${shopProfileDto.longitude}, ${shopProfileDto.latitude}), 4326)`;
-    }
-
     Object.assign(shop, shopProfileDto);
     shop.status = ShopStatus.PENDING; // Require re-approval after significant changes
 
     await this.shopRepository.save(shop);
+
+    if (shopProfileDto.latitude != null && shopProfileDto.longitude != null) {
+      await this.setShopLocation(shop.id, shopProfileDto.latitude, shopProfileDto.longitude);
+    }
+
     return enrichShopWithHoursStatus(shop);
   }
 
@@ -272,6 +276,20 @@ export class SellerService {
       })),
       topProducts,
     };
+  }
+
+  /** PostGIS geography column — must use raw SQL via query builder, not repository.save(). */
+  private async setShopLocation(shopId: string, latitude: number, longitude: number) {
+    await this.shopRepository
+      .createQueryBuilder()
+      .update(Shop)
+      .set({
+        latitude,
+        longitude,
+        location: () => `ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`,
+      })
+      .where('id = :id', { id: shopId })
+      .execute();
   }
 
   async getSalesChart(ownerId: string, period: string) {
