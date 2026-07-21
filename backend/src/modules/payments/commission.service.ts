@@ -16,6 +16,7 @@ import {
   toIstDateString,
 } from './commission-week.util';
 import { RAZORPAY_ORDER_TTL_MS } from './payments.config';
+import { razorpayReceipt } from './razorpay-receipt.util';
 
 const FINE_PER_DAY = 25;
 
@@ -212,7 +213,7 @@ export class CommissionService {
     const rzpOrder = await razorpayInstance.orders.create({
       amount: amountPaise,
       currency: 'INR',
-      receipt: `comm_${bill.id}`,
+      receipt: razorpayReceipt('comm_', bill.id),
       payment_capture: true,
       notes: {
         type: 'commission',
