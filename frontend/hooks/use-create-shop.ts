@@ -9,7 +9,7 @@ export function useCreateShop() {
   const mutation = useMutation({
     mutationFn: async (shopData: Record<string, unknown>) => {
       const { data } = await apiClient.post('/seller/shop', shopData);
-      return data.data;
+      return data?.data ?? data;
     },
     onSuccess: (shop) => {
       const { user, setUser } = useAuthStore.getState();
