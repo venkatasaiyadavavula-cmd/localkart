@@ -3,11 +3,15 @@ import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
 import type { Shop } from '@/types/product';
 
+function adminShopsQueryKey(params: { status?: string; search?: string }) {
+  return ['admin', 'shops', params.status ?? 'all', params.search ?? ''] as const;
+}
+
 export function useAdminShops(params: { status?: string; search?: string } = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery<Shop[]>({
-    queryKey: ['admin', 'shops', params],
+    queryKey: adminShopsQueryKey(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);

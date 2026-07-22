@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, XCircle, Eye, MoreHorizontal } from 'lucide-react';
@@ -49,9 +49,14 @@ export default function AdminDisputesPage() {
   const [selectedDispute, setSelectedDispute] = useState<any>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const { data, isLoading, resolveDispute } = useAdminDisputes({
-    status: activeTab !== 'all' ? activeTab : undefined,
-  });
+  const disputeQueryParams = useMemo(
+    () => ({
+      status: activeTab !== 'all' ? activeTab : undefined,
+    }),
+    [activeTab],
+  );
+
+  const { data, isLoading, resolveDispute } = useAdminDisputes(disputeQueryParams);
 
   const handleResolve = async (disputeId: string, action: 'approve' | 'reject' | 'refund') => {
     try {
@@ -119,7 +124,9 @@ export default function AdminDisputesPage() {
                     <TableCell className="font-medium">{dispute.order?.orderNumber}</TableCell>
                     <TableCell>{dispute.customer?.name}</TableCell>
                     <TableCell>{dispute.order?.shop?.name}</TableCell>
-                    <TableCell className="capitalize">{dispute.reason.replace(/_/g, ' ')}</TableCell>
+                    <TableCell className="capitalize">
+                      {dispute.reason?.replace(/_/g, ' ') ?? '—'}
+                    </TableCell>
                     <TableCell>{formatPrice(dispute.refundAmount)}</TableCell>
                     <TableCell>
                       <Badge className={statusColors[dispute.status]}>
@@ -193,7 +200,7 @@ export default function AdminDisputesPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Reason</p>
-                  <p className="capitalize">{selectedDispute.reason.replace(/_/g, ' ')}</p>
+                  <p className="capitalize">{selectedDispute.reason?.replace(/_/g, ' ') ?? '—'}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm font-medium">Description</p>
