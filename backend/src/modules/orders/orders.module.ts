@@ -14,6 +14,7 @@ import { ReturnRequest } from '../../core/entities/return-request.entity';
 import { CartModule } from '../cart/cart.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LocationModule } from '../location/location.module';
+import { CommissionRatesModule } from '../catalog/commission-rates.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { LocationModule } from '../location/location.module';
     CartModule,
     NotificationsModule,
     LocationModule,
+    CommissionRatesModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, TrackingGateway, OrderStateMachine],

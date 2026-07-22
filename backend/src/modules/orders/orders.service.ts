@@ -22,6 +22,9 @@ import { TrackingGateway } from './tracking.gateway';
 import { CartService } from '../cart/cart.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LocationService } from '../location/location.service';
+import { CommissionRatesService } from '../catalog/commission-rates.service';
+import { ProductCategoryType } from '../../core/entities/product.entity';
+import { FALLBACK_COMMISSION_RATE } from '../../core/constants/commission-rates.constant';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
 import { isShopCurrentlyOpen, getShopHoursStatus } from '../../core/utils/shop-hours.util';
 import { assertScopedResourceAccess } from '../../core/utils/scoped-access.util';
@@ -51,6 +54,7 @@ export class OrdersService {
     private readonly notificationsService: NotificationsService,
     private readonly trackingGateway: TrackingGateway,
     private readonly locationService: LocationService,
+    private readonly commissionRatesService: CommissionRatesService,
   ) {}
 
   private formatOrderResponse(order: Order) {
@@ -104,7 +108,8 @@ export class OrdersService {
     );
     const totalAmount = subtotal + deliveryCharge;
 
-    const commissionRate = this.calculateCommissionRate(products);
+    const ratesMap = await this.commissionRatesService.getRatesMap();
+    const commissionRate = this.calculateCommissionRate(products, ratesMap);
     const commissionAmount = (subtotal * commissionRate) / 100;
 
     const orderNumber = generateOrderNumber();
@@ -153,6 +158,7 @@ export class OrdersService {
           );
         }
 
+        const itemCommissionRate = this.getProductCommissionRate(lockedProduct, ratesMap);
         const orderItem = this.orderItemRepository.create({
           orderId: savedOrder.id,
           productId: item.productId,
@@ -161,8 +167,8 @@ export class OrdersService {
           quantity: item.quantity,
           pricePerUnit: item.price,
           totalPrice: item.price * item.quantity,
-          commissionRate: this.getProductCommissionRate(lockedProduct),
-          commissionAmount: (item.price * item.quantity * this.getProductCommissionRate(lockedProduct)) / 100,
+          commissionRate: itemCommissionRate,
+          commissionAmount: (item.price * item.quantity * itemCommissionRate) / 100,
         });
         await queryRunner.manager.save(orderItem);
 
@@ -246,21 +252,19 @@ export class OrdersService {
     }
   }
 
-  private calculateCommissionRate(products: Product[]): number {
-    const rates = products.map((p) => this.getProductCommissionRate(p));
-    return Math.max(...rates);
+  private calculateCommissionRate(
+    products: Product[],
+    ratesMap: Record<ProductCategoryType, number>,
+  ): number {
+    const rates = products.map((p) => this.getProductCommissionRate(p, ratesMap));
+    return rates.length ? Math.max(...rates) : FALLBACK_COMMISSION_RATE;
   }
 
-  private getProductCommissionRate(product: Product): number {
-    const rates = {
-      groceries: 2,
-      fashion: 4,
-      electronics: 3,
-      home_essentials: 4,
-      beauty: 5,
-      accessories: 5,
-    };
-    return rates[product.categoryType] || 0;
+  private getProductCommissionRate(
+    product: Product,
+    ratesMap: Record<ProductCategoryType, number>,
+  ): number {
+    return ratesMap[product.categoryType] ?? FALLBACK_COMMISSION_RATE;
   }
 
   async verifyDeliveryOtp(orderId: string, otp: string, currentUser: any) {
