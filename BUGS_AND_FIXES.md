@@ -46,6 +46,12 @@
 **Fix:** `CommissionRatesService` reads/writes `categories.commissionRate` (slug `home-essentials` ↔ `home_essentials`). Orders load rates once per `createOrder` via `getRatesMap()`. Admin UI restored under **Settings → Commission rates** (`GET/PUT /admin/commissions/rates|category/:type`).
 **Migration:** `017_sync_category_commission_rates.ts` seeds default rates for all six top-level categories when missing or zero.
 
+### H. Admin dashboard wired to stub data (Jul 2026)
+**Symptom:** `/admin` showed hardcoded zeros for trends, empty revenue chart, “No recent activity”, and open disputes always 0; period tabs had no effect; “Active Shops” counted all shops.
+**Cause:** `use-admin-dashboard.ts` only called `GET /admin/dashboard` and zeroed chart/trends/activity; backend `getDashboardStats()` ignored `period` and chart grouped by `order.createdAt` while stats summed delivered orders.
+**Fix:** Backend period-scoped stats with trend % (current vs previous rolling window), `deliveredAt` for revenue/orders/chart, approved-only active shops, pending `return_requests` for open disputes, merged recent-activity feed (orders/shops/products/returns). Frontend hook fetches both dashboard and revenue-chart endpoints.
+**Tests:** `admin-dashboard.util.spec.ts`, `admin.service.spec.ts`.
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)

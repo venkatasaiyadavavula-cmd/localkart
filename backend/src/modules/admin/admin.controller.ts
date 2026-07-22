@@ -32,8 +32,8 @@ export class AdminController {
 
   // Dashboard
   @Get('dashboard')
-  async getDashboardStats() {
-    return this.adminService.getDashboardStats();
+  async getDashboardStats(@Query('period') period?: string) {
+    return this.adminService.getDashboardStats(period);
   }
 
   @Get('dashboard/revenue-chart')
