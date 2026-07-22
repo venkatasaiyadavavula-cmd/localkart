@@ -34,6 +34,12 @@
 **Location:** `PUT /admin/products/:id/approve|reject` (moderation.service — notifications + `totalProducts` bump) vs `PUT /catalog/admin/products/:id/approve|reject` (catalog.service — weaker).
 **Status:** Admin panel uses `/admin/products/*`. Catalog routes are legacy duplicates; do not use for moderation until consolidated.
 
+### F. Admin Commissions page disconnected from weekly `CommissionBill` billing (Jul 2026)
+**Symptom:** `/admin/commissions` showed seller payout “settlements” (`/admin/commissions/*`, `TransactionType.SETTLEMENT`) while sellers pay commission via weekly Razorpay bills (`/commission/my-bills`, `CommissionBill` entity).
+**Cause:** Two parallel systems: (1) legacy admin settlement ledger with in-memory rate config and no real payouts; (2) live weekly billing in `payments/commission.service.ts`.
+**Fix:** Admin Commissions UI rebuilt on `/commission/admin/*` (bills list, summary, mark-paid, generate bills, apply fines). Legacy settlement endpoints remain in `admin/commission.service.ts` for a future seller-payout feature but are no longer called from the frontend.
+**Migration:** `016_commission_bill_admin_fields.ts` adds `adminPaymentRef` and `adminNote` on `commission_bills` for manual reconciliation.
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)

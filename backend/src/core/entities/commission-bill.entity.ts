@@ -72,6 +72,13 @@ export class CommissionBill {
   @Column({ nullable: true, type: 'timestamp' })
   reminderSentAt: Date;
 
+  /** Offline / manual reconciliation reference (admin mark-paid). */
+  @Column({ nullable: true })
+  adminPaymentRef: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  adminNote: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

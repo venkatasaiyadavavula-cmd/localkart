@@ -83,6 +83,65 @@ export class CommissionController {
     return this.commissionService.getOverdueShops();
   }
 
+  // Admin: paginated bills
+  @Get('admin/bills')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
+  async getAdminBills(
+    @Query('status') status?: string,
+    @Query('shopId') shopId?: string,
+    @Query('week') week?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+  ) {
+    return this.commissionService.getAdminBills({
+      status,
+      shopId,
+      week,
+      page: +page,
+      limit: +limit,
+    });
+  }
+
+  // Admin: platform summary
+  @Get('admin/summary')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
+  async getAdminSummary() {
+    return this.commissionService.getAdminSummary();
+  }
+
+  // Admin: per-shop bill history
+  @Get('admin/shops/:shopId/bills')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
+  async getAdminShopBills(
+    @Param('shopId') shopId: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '30',
+  ) {
+    return this.commissionService.getAdminShopBills(shopId, +page, +limit);
+  }
+
+  // Admin: manually mark bill paid
+  @Post('admin/bills/:billId/mark-paid')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
+  async markBillPaid(
+    @Param('billId') billId: string,
+    @Body() body: { paymentRef?: string; note?: string },
+  ) {
+    return this.commissionService.markBillPaidAdmin(billId, body.paymentRef, body.note);
+  }
+
+  // Admin: trigger overdue fines job
+  @Post('admin/apply-fines')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
+  async applyFines() {
+    return this.commissionService.applyFinesAdmin();
+  }
+
   // Admin: manually trigger weekly bill generation (for testing)
   @Post('admin/generate-today')
   @Roles(UserRole.ADMIN)
