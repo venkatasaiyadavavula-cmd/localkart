@@ -149,11 +149,25 @@ export class ModerationService {
   }
 
   async getPendingProducts(page: number, limit: number) {
+    return this.getAllProducts(page, limit, ProductStatus.PENDING);
+  }
+
+  async getAllProducts(page: number, limit: number, status: string = 'all') {
     const skip = (page - 1) * limit;
+    const where: { status?: ProductStatus } = {};
+
+    if (status && status !== 'all') {
+      const validStatuses = Object.values(ProductStatus);
+      if (!validStatuses.includes(status as ProductStatus)) {
+        throw new BadRequestException(`Invalid product status: ${status}`);
+      }
+      where.status = status as ProductStatus;
+    }
+
     const [products, total] = await this.productRepository.findAndCount({
-      where: { status: ProductStatus.PENDING },
+      where,
       relations: ['shop'],
-      order: { createdAt: 'ASC' },
+      order: { createdAt: status === ProductStatus.PENDING ? 'ASC' : 'DESC' },
       skip,
       take: limit,
     });

@@ -84,6 +84,19 @@ export class AdminController {
   }
 
   // Product Moderation
+  @Get('products')
+  async getAllProducts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.moderationService.getAllProducts(
+      parseInt(page || '1'),
+      parseInt(limit || '20'),
+      status || 'all',
+    );
+  }
+
   @Get('products/pending')
   async getPendingProducts(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.moderationService.getPendingProducts(
