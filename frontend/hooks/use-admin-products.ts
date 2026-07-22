@@ -17,21 +17,17 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
     queryKey: ['admin', 'products', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) searchParams.append(key, String(value));
-      });
-      const endpoint =
-        !params.status || params.status === 'pending'
-          ? `/admin/products/pending?${searchParams.toString()}`
-          : `/admin/products/pending?limit=0`;
-      const { data } = await apiClient.get(endpoint);
-      const products = normalizeList<Product>(data);
-      if (params.status && params.status !== 'pending' && params.status !== 'all') {
-        return products.filter((p) => p.status === params.status);
-      }
+      const status = params.status && params.status !== 'all' ? params.status : 'all';
+      searchParams.set('status', status);
+      if (params.page !== undefined) searchParams.set('page', String(params.page));
+      if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+
+      const { data } = await apiClient.get(`/admin/products?${searchParams.toString()}`);
+      let products = normalizeList<Product>(data);
+
       if (params.search) {
         const q = params.search.toLowerCase();
-        return products.filter((p) => p.name?.toLowerCase().includes(q));
+        products = products.filter((p) => p.name?.toLowerCase().includes(q));
       }
       return products;
     },

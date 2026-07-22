@@ -4,11 +4,12 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  BadGatewayException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ReturnRequest, ReturnStatus, ReturnReason } from '../../core/entities/return-request.entity';
-import { Order, OrderStatus, PaymentStatus } from '../../core/entities/order.entity';
+import { Order, OrderStatus, PaymentStatus, PaymentMethod } from '../../core/entities/order.entity';
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
@@ -17,6 +18,9 @@ import { CreateReturnRequestDto, UpdateReturnStatusDto } from './dto/return-requ
 import { NotificationsService } from '../notifications/notifications.service';
 import { getSignedUploadUrl, BUCKET_NAME } from '../../config/storage.config';
 import { assertScopedResourceAccess } from '../../core/utils/scoped-access.util';
+import razorpayInstance from '../../config/razorpay.config';
+
+const REFUNDABLE_STATUSES: ReturnStatus[] = [ReturnStatus.APPROVED, ReturnStatus.PICKED_UP];
 
 @Injectable()
 export class ReturnsService {
@@ -392,24 +396,36 @@ export class ReturnsService {
 
   async processRefund(id: string) {
     const request = await this.returnRepository.findOne({
-      where: { id, status: ReturnStatus.PICKED_UP },
+      where: { id },
       relations: ['order'],
     });
 
     if (!request) {
-      throw new BadRequestException('Return request not ready for refund');
+      throw new NotFoundException('Return request not found');
+    }
+
+    if (!REFUNDABLE_STATUSES.includes(request.status)) {
+      throw new BadRequestException(
+        'Return request not ready for refund (must be approved or picked up)',
+      );
     }
 
     const order = request.order;
 
-    // If payment was online, initiate Razorpay refund
-    if (order.paymentMethod === 'razorpay' && order.paymentStatus === PaymentStatus.PAID) {
-      // Call Razorpay refund API
-      // This would be handled via payments module
-      this.logger.log(`Initiating refund for order ${order.orderNumber}, amount: ${request.refundAmount}`);
+    if (
+      order.paymentMethod === PaymentMethod.RAZORPAY &&
+      order.paymentStatus === PaymentStatus.PAID
+    ) {
+      if (!order.razorpayPaymentId) {
+        throw new BadRequestException('Order has no Razorpay payment ID for refund');
+      }
+      await this.initiateRazorpayRefund(order.razorpayPaymentId, request.refundAmount, {
+        returnRequestId: request.id,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+      });
     }
 
-    // Update order status
     order.status = OrderStatus.RETURNED;
     order.paymentStatus = PaymentStatus.REFUNDED;
     await this.orderRepository.save(order);
@@ -418,7 +434,6 @@ export class ReturnsService {
     request.resolvedAt = new Date();
     await this.returnRepository.save(request);
 
-    // Notify customer
     await this.notificationsService.sendCustomerNotification(
       request.customerId,
       'Refund Processed',
@@ -426,6 +441,24 @@ export class ReturnsService {
     );
 
     return { message: 'Refund processed successfully' };
+  }
+
+  private async initiateRazorpayRefund(
+    razorpayPaymentId: string,
+    amountRupees: number,
+    notes: Record<string, string>,
+  ): Promise<void> {
+    const amountPaise = Math.round(Number(amountRupees) * 100);
+    try {
+      await razorpayInstance.payments.refund(razorpayPaymentId, {
+        amount: amountPaise,
+        notes,
+      });
+    } catch (error: any) {
+      const description = error?.error?.description || error?.message || 'Unknown error';
+      this.logger.error(`Razorpay refund failed for ${razorpayPaymentId}: ${description}`);
+      throw new BadGatewayException(`Razorpay refund failed: ${description}`);
+    }
   }
 
   private async getShopIdByOwner(ownerId: string): Promise<string> {

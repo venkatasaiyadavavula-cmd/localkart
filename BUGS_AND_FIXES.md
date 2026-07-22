@@ -30,6 +30,10 @@
 **Cause:** `NEXT_PUBLIC_*` vars are inlined at `npm run build`, not read at runtime. `.env.production` lacked the key and deploy did not export it before build.
 **Fix:** Document build-time requirement in `.env.production`, sync `RAZORPAY_KEY_ID` from `backend/.env` in `.github/workflows/deploy.yml`, Commission page falls back to `key` from `POST /commission/pay/:billId`.
 
+### E. Duplicate admin product approve/reject routes (known — reconcile separately)
+**Location:** `PUT /admin/products/:id/approve|reject` (moderation.service — notifications + `totalProducts` bump) vs `PUT /catalog/admin/products/:id/approve|reject` (catalog.service — weaker).
+**Status:** Admin panel uses `/admin/products/*`. Catalog routes are legacy duplicates; do not use for moderation until consolidated.
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)
