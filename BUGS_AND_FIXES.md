@@ -40,6 +40,12 @@
 **Fix:** Admin Commissions UI rebuilt on `/commission/admin/*` (bills list, summary, mark-paid, generate bills, apply fines). Legacy settlement endpoints remain in `admin/commission.service.ts` for a future seller-payout feature but are no longer called from the frontend.
 **Migration:** `016_commission_bill_admin_fields.ts` adds `adminPaymentRef` and `adminNote` on `commission_bills` for manual reconciliation.
 
+### G. Commission rates in-memory / hardcoded — not persisted (Jul 2026)
+**Symptom:** Admin “Configure Rates” updated an in-memory map (lost on restart); `orders.service.ts` used a separate hardcoded copy at checkout. `Category.commissionRate` in DB was unused.
+**Cause:** `admin/commission.service.ts` and `orders.service.ts` each maintained their own rate table; both matched (2/4/3/4/5/5 %) but neither read `categories.commissionRate`.
+**Fix:** `CommissionRatesService` reads/writes `categories.commissionRate` (slug `home-essentials` ↔ `home_essentials`). Orders load rates once per `createOrder` via `getRatesMap()`. Admin UI restored under **Settings → Commission rates** (`GET/PUT /admin/commissions/rates|category/:type`).
+**Migration:** `017_sync_category_commission_rates.ts` seeds default rates for all six top-level categories when missing or zero.
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)
