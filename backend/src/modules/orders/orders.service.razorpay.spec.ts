@@ -14,6 +14,7 @@ import { OrderStateMachine } from './workflows/order-state-machine';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TrackingGateway } from './tracking.gateway';
 import { LocationService } from '../location/location.service';
+import { CommissionRatesService } from '../catalog/commission-rates.service';
 
 const ORDER_ID = '05e3815a-ffea-4dfa-9428-e86562276a80';
 const RAZORPAY_ORDER_ID = 'order_MxTestRzpOrderId123';
@@ -47,6 +48,19 @@ describe('OrdersService.updateRazorpayOrderId', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: {} },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 

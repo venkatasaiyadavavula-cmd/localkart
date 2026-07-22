@@ -14,6 +14,7 @@ import { ReturnRequest } from '../../core/entities/return-request.entity';
 import { Subscription } from '../../core/entities/subscription.entity';
 import { Category } from '../../core/entities/category.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { CommissionRatesModule } from '../catalog/commission-rates.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Category,
     ]),
     NotificationsModule,
+    CommissionRatesModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, ModerationService, CommissionService, FraudDetectionService],

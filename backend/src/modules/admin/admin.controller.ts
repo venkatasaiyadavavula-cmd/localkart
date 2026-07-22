@@ -132,6 +132,11 @@ export class AdminController {
     );
   }
 
+  @Get('commissions/rates')
+  async getCategoryCommissionRates() {
+    return this.commissionService.getCategoryCommissionRates();
+  }
+
   @Put('commissions/category/:categoryType')
   async updateCategoryCommission(
     @Param('categoryType') categoryType: string,

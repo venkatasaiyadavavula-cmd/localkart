@@ -4,22 +4,12 @@ import { Repository } from 'typeorm';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../../core/entities/transaction.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
-import { Category } from '../../core/entities/category.entity';
 import { ProductCategoryType } from '../../core/entities/product.entity';
 import { applyUnsettledOrderFilter } from '../payments/settlement-query.util';
+import { CommissionRatesService } from '../catalog/commission-rates.service';
 
 @Injectable()
 export class CommissionService {
-  // Default commission rates
-  private commissionRates: Record<ProductCategoryType, number> = {
-    [ProductCategoryType.GROCERIES]: 2,
-    [ProductCategoryType.FASHION]: 4,
-    [ProductCategoryType.ELECTRONICS]: 3,
-    [ProductCategoryType.HOME_ESSENTIALS]: 4,
-    [ProductCategoryType.BEAUTY]: 5,
-    [ProductCategoryType.ACCESSORIES]: 5,
-  };
-
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -27,8 +17,7 @@ export class CommissionService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
+    private readonly commissionRatesService: CommissionRatesService,
   ) {}
 
   /** Delivered orders not yet included in a settlement transaction. */
@@ -69,7 +58,7 @@ export class CommissionService {
       totalRevenue: Number(summary?.totalRevenue || 0),
       orderCount: Number(summary?.orderCount || 0),
       pendingSettlements: Number(pendingSettlements?.pending || 0),
-      currentRates: this.commissionRates,
+      currentRates: await this.commissionRatesService.getRatesMap(),
       shopEarnings: await this.getShopEarningsList(),
     };
   }
@@ -121,12 +110,18 @@ export class CommissionService {
     };
   }
 
+  async getCategoryCommissionRates() {
+    return this.commissionRatesService.listCategoryRates();
+  }
+
   async updateCategoryCommission(categoryType: string, rate: number) {
     if (!Object.values(ProductCategoryType).includes(categoryType as ProductCategoryType)) {
       throw new NotFoundException('Invalid category type');
     }
-    this.commissionRates[categoryType as ProductCategoryType] = rate;
-    return { message: 'Commission rate updated', rates: this.commissionRates };
+    return this.commissionRatesService.updateCategoryRate(
+      categoryType as ProductCategoryType,
+      rate,
+    );
   }
 
   async settleShopEarnings(shopId: string) {
@@ -146,21 +141,17 @@ export class CommissionService {
       return { message: 'No pending settlements' };
     }
 
-    // Create settlement transaction
     const settlement = this.transactionRepository.create({
       type: TransactionType.SETTLEMENT,
       status: TransactionStatus.SUCCESS,
       amount: totalSettlement,
       currency: 'INR',
-      metadata: { shopId, orderIds: unsettledOrders.map(o => o.id) },
+      metadata: { shopId, orderIds: unsettledOrders.map((o) => o.id) },
     });
     await this.transactionRepository.save(settlement);
 
-    // Update shop total earnings
     shop.totalEarnings += totalSettlement;
     await this.shopRepository.save(shop);
-
-    // In production, trigger payout via Razorpay or bank transfer
 
     return { message: 'Settlement processed', amount: totalSettlement };
   }

@@ -15,6 +15,7 @@ import { OrderStateMachine } from './workflows/order-state-machine';
 import { TrackingGateway } from './tracking.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LocationService } from '../location/location.service';
+import { CommissionRatesService } from '../catalog/commission-rates.service';
 import { OrderStatus } from '../../core/entities/order.entity';
 import { PaymentStatus } from '../../core/entities/order.entity';
 
@@ -63,6 +64,19 @@ describe('OrdersService.getOrderById', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: {} },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -129,6 +143,19 @@ describe('OrdersService.getUserOrders', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: {} },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -166,6 +193,19 @@ describe('OrdersService.verifyDeliveryOtp', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: trackingGateway },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -211,6 +251,19 @@ describe('OrdersService.updateOrderStatusBySeller', () => {
         { provide: NotificationsService, useValue: { sendOrderStatusWhatsApp: jest.fn().mockResolvedValue(undefined) } },
         { provide: TrackingGateway, useValue: trackingGateway },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -276,6 +329,19 @@ describe('OrdersService.adminUpdateOrderStatus', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: {} },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -329,6 +395,19 @@ describe('OrdersService.cancelOrder', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: trackingGateway },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -381,6 +460,19 @@ describe('OrdersService.confirmPaidOrder', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: TrackingGateway, useValue: {} },
         { provide: LocationService, useValue: {} },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
       ],
     }).compile();
 
