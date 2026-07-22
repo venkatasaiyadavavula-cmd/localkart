@@ -136,7 +136,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         _hasHydrated,
         isLoading,
       });
-      setAuthResolved(false);
+      // Do not reset authResolved here — flipping false unmounts the entire route tree
+      // (admin layout + page) and can trigger React hook-order errors (#310) on remount.
       return;
     }
 
@@ -199,9 +200,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const awaitingAuth = !_hasHydrated || isLoading || !authResolved;
+  const awaitingAuth =
+    !isPublicRoute &&
+    !isAuthPage &&
+    !authResolved &&
+    (!_hasHydrated || isLoading);
 
-  if (awaitingAuth && !isPublicRoute && !isAuthPage) {
+  if (awaitingAuth) {
     authTrace('guard-await', {
       pathname,
       _hasHydrated,
