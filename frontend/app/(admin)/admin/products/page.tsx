@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Search, CheckCircle, XCircle, Eye, MoreHorizontal } from 'lucide-react';
@@ -54,10 +54,15 @@ export default function AdminProductsPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const { data, isLoading, approveProduct, rejectProduct } = useAdminProducts({
-    status: activeTab !== 'all' ? activeTab : undefined,
-    search: searchQuery,
-  });
+  const productQueryParams = useMemo(
+    () => ({
+      status: activeTab !== 'all' ? activeTab : undefined,
+      search: searchQuery,
+    }),
+    [activeTab, searchQuery],
+  );
+
+  const { data, isLoading, approveProduct, rejectProduct } = useAdminProducts(productQueryParams);
 
   const handleApprove = async (productId: string) => {
     try {

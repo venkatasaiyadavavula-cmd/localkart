@@ -3,11 +3,15 @@ import { apiClient } from '@/lib/api/client';
 import { normalizeList } from '@/lib/utils';
 import type { ReturnRequest } from '@/types/order';
 
+function adminDisputesQueryKey(status?: string) {
+  return ['admin', 'disputes', status && status !== 'all' ? status : 'all'] as const;
+}
+
 export function useAdminDisputes(params: { status?: string } = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery<ReturnRequest[]>({
-    queryKey: ['admin', 'disputes', params],
+    queryKey: adminDisputesQueryKey(params.status),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params.status) searchParams.append('status', params.status);

@@ -10,11 +10,23 @@ interface AdminProductsParams {
   limit?: number;
 }
 
+function adminProductsQueryKey(params: AdminProductsParams) {
+  const status = params.status && params.status !== 'all' ? params.status : 'all';
+  return [
+    'admin',
+    'products',
+    status,
+    params.search ?? '',
+    params.page ?? null,
+    params.limit ?? null,
+  ] as const;
+}
+
 export function useAdminProducts(params: AdminProductsParams = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery<Product[]>({
-    queryKey: ['admin', 'products', params],
+    queryKey: adminProductsQueryKey(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       const status = params.status && params.status !== 'all' ? params.status : 'all';
