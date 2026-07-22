@@ -53,6 +53,38 @@ export interface AdminCommissionsSummary {
   pendingSettlements: number;
 }
 
+/** @deprecated Legacy settlement summary — admin UI now uses AdminCommissionSummary */
+export interface AdminCommissionBill {
+  id: string;
+  shopId: string;
+  shop: { id: string; name: string } | null;
+  billDate: string;
+  weekStartDate?: string | null;
+  weekLabel: string;
+  orderCount: number;
+  totalOrderValue: number;
+  commissionAmount: number;
+  fineAmount: number;
+  totalDue: number;
+  daysOverdue: number;
+  status: 'pending' | 'paid' | 'overdue';
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
+  adminPaymentRef?: string | null;
+  adminNote?: string | null;
+  paidAt?: string | null;
+}
+
+export interface AdminCommissionSummary {
+  totalOutstanding: number;
+  overdueBillCount: number;
+  overdueShopCount: number;
+  collectedThisWeek: number;
+  collectedThisMonth: number;
+  billsGeneratedThisWeek: number;
+  currentWeekEndingFriday: string;
+}
+
 export interface Review {
   id: string;
   rating: number;

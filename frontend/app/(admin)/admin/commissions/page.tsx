@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertTriangle, CalendarClock, IndianRupee, RefreshCw, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -23,213 +25,291 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatPrice, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAdminCommissions } from '@/hooks/use-admin-commissions';
+import { ErrorState } from '@/components/ui/error-state';
+import {
+  useAdminCommissions,
+  type AdminBillStatusFilter,
+} from '@/hooks/use-admin-commissions';
+import { formatPrice, formatDate } from '@/lib/utils';
+import type { AdminCommissionBill } from '@/types/api';
 
-const categoryOptions = [
-  { value: 'groceries', label: 'Groceries' },
-  { value: 'fashion', label: 'Fashion' },
-  { value: 'electronics', label: 'Electronics' },
-  { value: 'home_essentials', label: 'Home Essentials' },
-  { value: 'beauty', label: 'Beauty' },
-  { value: 'accessories', label: 'Accessories' },
-];
+const statusColors: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  overdue: 'bg-red-100 text-red-800',
+  paid: 'bg-green-100 text-green-800',
+};
 
 export default function AdminCommissionsPage() {
-  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [newRate, setNewRate] = useState<string>('');
-  const [showRateDialog, setShowRateDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<AdminBillStatusFilter>('all');
+  const [selectedBill, setSelectedBill] = useState<AdminCommissionBill | null>(null);
+  const [paymentRef, setPaymentRef] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
+  const [showMarkPaidDialog, setShowMarkPaidDialog] = useState(false);
+  const [confirmGenerate, setConfirmGenerate] = useState(false);
+  const [confirmFines, setConfirmFines] = useState(false);
 
-  const { data, isLoading, updateCommissionRate, settleShopEarnings } = useAdminCommissions(period);
+  const billParams = useMemo(
+    () => ({ status: statusFilter, page: 1, limit: 50 }),
+    [statusFilter],
+  );
 
-  const handleUpdateRate = async () => {
-    if (!selectedCategory || !newRate) return;
+  const {
+    summary,
+    bills,
+    isLoading,
+    isError,
+    refetch,
+    markBillPaid,
+    generateWeeklyBills,
+    applyOverdueFines,
+    isMarkingPaid,
+    isGeneratingBills,
+    isApplyingFines,
+  } = useAdminCommissions(billParams);
+
+  const openMarkPaid = (bill: AdminCommissionBill) => {
+    setSelectedBill(bill);
+    setPaymentRef('');
+    setPaymentNote('');
+    setShowMarkPaidDialog(true);
+  };
+
+  const handleMarkPaid = async () => {
+    if (!selectedBill) return;
     try {
-      await updateCommissionRate(selectedCategory, Number(newRate));
-      toast.success('Commission rate updated');
-      setShowRateDialog(false);
-      setSelectedCategory('');
-      setNewRate('');
+      await markBillPaid(selectedBill.id, paymentRef || undefined, paymentNote || undefined);
+      toast.success('Bill marked as paid');
+      setShowMarkPaidDialog(false);
+      setSelectedBill(null);
     } catch {
-      toast.error('Failed to update commission rate');
+      toast.error('Failed to mark bill as paid');
     }
   };
 
-  const handleSettle = async (shopId: string) => {
+  const handleGenerateBills = async () => {
     try {
-      await settleShopEarnings(shopId);
-      toast.success('Settlement processed');
+      await generateWeeklyBills();
+      toast.success('Weekly bills generated for the current Sat–Fri week');
+      setConfirmGenerate(false);
     } catch {
-      toast.error('Failed to settle earnings');
+      toast.error('Failed to generate weekly bills');
     }
   };
 
-  const currentRates: Record<string, number> = data?.currentRates ?? {};
-  const shopEarnings = data?.shopEarnings ?? [];
+  const handleApplyFines = async () => {
+    try {
+      const result = await applyOverdueFines();
+      toast.success(
+        `Overdue fines applied (${(result as { overdueBillCount?: number })?.overdueBillCount ?? 0} overdue bills)`,
+      );
+      setConfirmFines(false);
+    } catch {
+      toast.error('Failed to apply overdue fines');
+    }
+  };
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Commission Billing</h1>
+          <p className="text-muted-foreground">
+            Weekly Sat–Fri commission bills · Due Friday · ₹25/day fine from Saturday
+          </p>
+        </div>
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Commission Management</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Commission Billing</h1>
           <p className="text-muted-foreground">
-            Platform commissions · Sellers billed weekly (Sat–Fri), due Friday, ₹25/day fine from Saturday
+            Weekly Sat–Fri commission bills · Due Friday · ₹25/day fine from Saturday
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as 'week' | 'month' | 'year')}>
-            <TabsList>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
-              <TabsTrigger value="year">Year</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <Dialog open={showRateDialog} onOpenChange={setShowRateDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="mr-2 h-4 w-4" />
-                Configure Rates
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Update Commission Rates</DialogTitle>
-                <DialogDescription>
-                  Set commission percentage for each category.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label} ({currentRates[cat.value] ?? 0}%)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>New Rate (%)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={newRate}
-                    onChange={(e) => setNewRate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowRateDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateRate} disabled={!selectedCategory || !newRate}>
-                  Update Rate
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmGenerate(true)}
+            disabled={isGeneratingBills}
+          >
+            <CalendarClock className="mr-2 h-4 w-4" />
+            {isGeneratingBills ? 'Generating…' : 'Generate bills'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmFines(true)}
+            disabled={isApplyingFines}
+          >
+            <Wrench className="mr-2 h-4 w-4" />
+            {isApplyingFines ? 'Running…' : 'Apply fines'}
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
         ) : (
           <>
             <Card>
-              <CardHeader><CardTitle>Total Commission</CardTitle></CardHeader>
-              <CardContent>{formatPrice(Number(data?.totalCommission ?? 0))}</CardContent>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total outstanding
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-2 text-2xl font-bold">
+                <IndianRupee className="h-5 w-5 text-red-600" />
+                {formatPrice(summary?.totalOutstanding ?? 0)}
+              </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>Total Revenue</CardTitle></CardHeader>
-              <CardContent>{formatPrice(Number(data?.totalRevenue ?? 0))}</CardContent>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Overdue (shops / bills)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-2 text-2xl font-bold">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                {summary?.overdueShopCount ?? 0} / {summary?.overdueBillCount ?? 0}
+              </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>Pending Settlements</CardTitle></CardHeader>
-              <CardContent>{formatPrice(Number(data?.pendingSettlements ?? 0))}</CardContent>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Collected (week / month)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-lg font-bold leading-tight">
+                {formatPrice(summary?.collectedThisWeek ?? 0)}
+                <span className="mx-1 text-muted-foreground">/</span>
+                {formatPrice(summary?.collectedThisMonth ?? 0)}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Bills this week
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-2xl font-bold">
+                {summary?.billsGeneratedThisWeek ?? 0}
+              </CardContent>
             </Card>
           </>
         )}
       </div>
 
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Tabs
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as AdminBillStatusFilter)}
+        >
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="overdue">Overdue</TabsTrigger>
+            <TabsTrigger value="paid">Paid</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Shop Earnings</CardTitle>
+          <CardTitle>Weekly commission bills</CardTitle>
         </CardHeader>
-
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Shop</TableHead>
-                <TableHead>Total Earnings</TableHead>
-                <TableHead>Pending</TableHead>
-                <TableHead>Last Settlement</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead>Week</TableHead>
+                <TableHead className="text-right">Orders</TableHead>
+                <TableHead className="text-right">Commission</TableHead>
+                <TableHead className="text-right">Fine</TableHead>
+                <TableHead className="text-right">Total due</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Due date</TableHead>
+                <TableHead>Paid at</TableHead>
+                <TableHead>Payment ID</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-
             <TableBody>
               {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
+                Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
+                    <TableCell colSpan={11}>
+                      <Skeleton className="h-8 w-full" />
+                    </TableCell>
                   </TableRow>
                 ))
-              ) : shopEarnings.length === 0 ? (
+              ) : bills.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    No shop earnings data yet
+                  <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
+                    No commission bills found for this filter
                   </TableCell>
                 </TableRow>
               ) : (
-                shopEarnings.map((shop: {
-                  id: string;
-                  name: string;
-                  totalEarnings: number;
-                  pendingSettlement: number;
-                  lastSettlement: string | null;
-                }) => (
-                  <TableRow key={shop.id}>
-                    <TableCell>{shop.name}</TableCell>
-                    <TableCell>{formatPrice(Number(shop.totalEarnings))}</TableCell>
-                    <TableCell>{formatPrice(Number(shop.pendingSettlement))}</TableCell>
-                    <TableCell>
-                      {shop.lastSettlement ? formatDate(shop.lastSettlement) : 'Never'}
+                bills.map((bill) => (
+                  <TableRow key={bill.id}>
+                    <TableCell className="font-medium">{bill.shop?.name ?? '—'}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm">{bill.weekLabel}</TableCell>
+                    <TableCell className="text-right">{bill.orderCount}</TableCell>
+                    <TableCell className="text-right">{formatPrice(bill.commissionAmount)}</TableCell>
+                    <TableCell className="text-right">
+                      {bill.fineAmount > 0 ? formatPrice(bill.fineAmount) : '—'}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {bill.status === 'paid' ? '—' : formatPrice(bill.totalDue)}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        disabled={Number(shop.pendingSettlement) <= 0}
-                        onClick={() => handleSettle(shop.id)}
-                      >
-                        Settle
-                      </Button>
+                      <Badge className={statusColors[bill.status] ?? ''}>{bill.status}</Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-sm">
+                      {formatDate(bill.billDate)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-sm">
+                      {bill.paidAt ? formatDate(bill.paidAt) : '—'}
+                    </TableCell>
+                    <TableCell className="max-w-[140px] truncate text-xs text-muted-foreground">
+                      {bill.razorpayPaymentId || bill.adminPaymentRef || '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {bill.status !== 'paid' && (
+                        <Button size="sm" variant="outline" onClick={() => openMarkPaid(bill)}>
+                          Mark paid
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -238,6 +318,84 @@ export default function AdminCommissionsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={showMarkPaidDialog} onOpenChange={setShowMarkPaidDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark bill as paid</DialogTitle>
+            <DialogDescription>
+              Record manual reconciliation for{' '}
+              <strong>{selectedBill?.shop?.name}</strong> ({selectedBill?.weekLabel}). Total due:{' '}
+              {formatPrice(selectedBill?.totalDue ?? 0)}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="paymentRef">Payment reference (optional)</Label>
+              <Input
+                id="paymentRef"
+                placeholder="UPI ref, Razorpay pay_…, bank txn id"
+                value={paymentRef}
+                onChange={(e) => setPaymentRef(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentNote">Note (optional)</Label>
+              <Textarea
+                id="paymentNote"
+                placeholder="How/when payment was received"
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMarkPaidDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleMarkPaid} disabled={isMarkingPaid}>
+              {isMarkingPaid ? 'Saving…' : 'Confirm paid'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmGenerate} onOpenChange={setConfirmGenerate}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate weekly bills?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This runs the same job as the Friday 10 PM cron: one bill per shop with delivered
+              orders in the current Sat–Fri week. Existing bills for this week are not duplicated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGenerateBills} disabled={isGeneratingBills}>
+              {isGeneratingBills ? 'Generating…' : 'Generate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmFines} onOpenChange={setConfirmFines}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply overdue fines now?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This runs the daily fines job: unpaid bills past Friday due date get ₹25/day added and
+              move to overdue status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleApplyFines} disabled={isApplyingFines}>
+              {isApplyingFines ? 'Running…' : 'Apply fines'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
