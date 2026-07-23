@@ -23,6 +23,7 @@ import { CartService } from '../cart/cart.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LocationService } from '../location/location.service';
 import { CommissionRatesService } from '../catalog/commission-rates.service';
+import { markOrderDelivered } from './order-delivery.util';
 import { ProductCategoryType } from '../../core/entities/product.entity';
 import { FALLBACK_COMMISSION_RATE } from '../../core/constants/commission-rates.constant';
 import { generateOrderNumber, generateOtp } from '../../core/utils/helpers';
@@ -294,10 +295,7 @@ export class OrdersService {
         order.confirmedAt = new Date();
         order.deliveryOtp = null;
       } else if (order.status === OrderStatus.OUT_FOR_DELIVERY) {
-        order.status = OrderStatus.DELIVERED;
-        order.deliveredAt = new Date();
-        order.paymentStatus = PaymentStatus.PAID;
-        order.deliveryOtp = null;
+        markOrderDelivered(order);
       } else {
         throw new BadRequestException('Order is not ready for OTP verification');
       }
