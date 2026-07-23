@@ -41,6 +41,28 @@ export class AdminController {
     return this.adminService.getRevenueChart(period);
   }
 
+  @Get('customers')
+  async listCustomers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    const activeFilter =
+      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+
+    return this.adminService.listCustomers({
+      page: parseInt(page || '1'),
+      limit: parseInt(limit || '20'),
+      search,
+      isActive: activeFilter,
+      dateFrom,
+      dateTo,
+    });
+  }
+
   // Shop Moderation
   @Get('shops/pending')
   async getPendingShops(@Query('page') page?: string, @Query('limit') limit?: string) {

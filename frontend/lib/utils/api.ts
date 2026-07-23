@@ -10,6 +10,32 @@ export function unwrapApiData<T = unknown>(payload: unknown): T {
 }
 
 /** Normalize paginated API payloads: { data: T[], meta } or bare array. */
+export function unwrapPaginated<T>(payload: unknown): {
+  data: T[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+} {
+  const inner = unwrapApiData(payload);
+  if (inner && typeof inner === 'object' && 'data' in inner && 'meta' in inner) {
+    const obj = inner as {
+      data: T[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    };
+    return { data: obj.data ?? [], meta: obj.meta };
+  }
+  if (Array.isArray(inner)) {
+    return {
+      data: inner,
+      meta: {
+        total: inner.length,
+        page: 1,
+        limit: inner.length || 20,
+        totalPages: 1,
+      },
+    };
+  }
+  return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+}
+
 export function normalizeList<T>(payload: unknown): T[] {
   const inner = unwrapApiData(payload);
   if (Array.isArray(inner)) return inner;

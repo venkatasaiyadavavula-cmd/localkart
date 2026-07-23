@@ -58,6 +58,11 @@
 **Fix:** Centralized `markOrderDelivered` / `restoreDeliveredStatus` helpers; migration `018_backfill_order_delivered_at.ts` backfills `delivered`, `return_requested`, and `returned` rows using `COALESCE(updatedAt, createdAt)`.
 **Tests:** `order-delivery.util.spec.ts`, `orders.service.spec.ts` (OTP delivery sets `deliveredAt`).
 
+### J. Admin Orders & Customers pages missing (Jul 2026)
+**Symptom:** No `/admin/orders` route; `/admin/customers` was a placeholder stub; no admin customer list API.
+**Fix:** `GET /orders/admin/all` extended with date/shop/customer filters + pagination; new `GET /admin/customers` with search, active filter, signup date range, order count & total spent. Frontend pages with filters, pagination, order detail dialog, admin status updates (state-machine rules; `delivered` blocked — OTP only), customer order history dialog.
+**Tests:** `orders.admin-list.spec.ts`, `admin-customers.service.spec.ts`.
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)
