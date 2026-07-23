@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { unwrapApiData } from '@/lib/utils';
+import { unwrapApiData, unwrapPaginated } from '@/lib/utils';
 import type { AdminCommissionBill, AdminCommissionSummary } from '@/types/api';
 
 export type AdminBillStatusFilter = 'all' | 'pending' | 'overdue' | 'paid';
@@ -57,14 +57,7 @@ export function useAdminCommissions(params: AdminBillsParams = {}) {
       const { data } = await apiClient.get(
         `/commission/admin/bills${qs ? `?${qs}` : ''}`,
       );
-      const payload = unwrapApiData<AdminCommissionBill[] | AdminBillsResponse>(data);
-      if (Array.isArray(payload)) {
-        return {
-          data: payload,
-          meta: { total: payload.length, page: 1, limit: payload.length, totalPages: 1 },
-        };
-      }
-      return payload;
+      return unwrapPaginated<AdminCommissionBill>(data);
     },
   });
 

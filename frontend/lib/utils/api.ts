@@ -1,6 +1,13 @@
 import axios from 'axios';
 import { apiClient } from '@/lib/api/client';
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 /** Unwrap API responses whether backend returns raw data or { success, data }. */
 export function unwrapApiData<T = unknown>(payload: unknown): T {
   if (payload && typeof payload === 'object' && 'data' in payload) {
@@ -9,19 +16,57 @@ export function unwrapApiData<T = unknown>(payload: unknown): T {
   return payload as T;
 }
 
-/** Normalize paginated API payloads: { data: T[], meta } or bare array. */
+function isPaginatedPayload<T>(
+  value: unknown,
+): value is { data: T[]; meta: PaginationMeta } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'data' in value &&
+    'meta' in value &&
+    Array.isArray((value as { data: unknown }).data)
+  );
+}
+
+export function normalizePaginationMeta(meta: unknown): PaginationMeta {
+  if (!meta || typeof meta !== 'object') {
+    return { total: 0, page: 1, limit: 20, totalPages: 0 };
+  }
+
+  const raw = meta as Record<string, unknown>;
+  const total = Number(raw.total) || 0;
+  const page = Number(raw.page) || 1;
+  const limit = Number(raw.limit) || 20;
+  const totalPages =
+    Number(raw.totalPages) || (limit > 0 ? Math.ceil(total / limit) : 0);
+
+  return { total, page, limit, totalPages };
+}
+
+/**
+ * Normalize paginated API payloads.
+ * Handles both `{ data, meta }` (direct Nest response) and
+ * `{ success, data: { data, meta } }` (transform-wrapped response).
+ */
 export function unwrapPaginated<T>(payload: unknown): {
   data: T[];
-  meta: { total: number; page: number; limit: number; totalPages: number };
+  meta: PaginationMeta;
 } {
-  const inner = unwrapApiData(payload);
-  if (inner && typeof inner === 'object' && 'data' in inner && 'meta' in inner) {
-    const obj = inner as {
-      data: T[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
+  if (isPaginatedPayload<T>(payload)) {
+    return {
+      data: payload.data,
+      meta: normalizePaginationMeta(payload.meta),
     };
-    return { data: obj.data ?? [], meta: obj.meta };
   }
+
+  const inner = unwrapApiData(payload);
+  if (isPaginatedPayload<T>(inner)) {
+    return {
+      data: inner.data,
+      meta: normalizePaginationMeta(inner.meta),
+    };
+  }
+
   if (Array.isArray(inner)) {
     return {
       data: inner,
@@ -33,12 +78,20 @@ export function unwrapPaginated<T>(payload: unknown): {
       },
     };
   }
+
   return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
 }
 
 export function normalizeList<T>(payload: unknown): T[] {
+  if (isPaginatedPayload<T>(payload)) {
+    return payload.data;
+  }
+
   const inner = unwrapApiData(payload);
   if (Array.isArray(inner)) return inner;
+  if (isPaginatedPayload<T>(inner)) {
+    return inner.data;
+  }
   if (inner && typeof inner === 'object') {
     const obj = inner as { data?: T[] };
     if (Array.isArray(obj.data)) return obj.data;

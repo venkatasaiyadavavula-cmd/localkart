@@ -17,10 +17,16 @@ export function AdminPagination({
   limit,
   onPageChange,
 }: AdminPaginationProps) {
-  if (totalPages <= 1) return null;
+  const effectiveLimit = limit > 0 ? limit : 20;
+  const effectiveTotalPages =
+    totalPages > 1 ? totalPages : Math.max(1, Math.ceil(total / effectiveLimit));
 
-  const start = (page - 1) * limit + 1;
-  const end = Math.min(page * limit, total);
+  if (total <= effectiveLimit && effectiveTotalPages <= 1) {
+    return null;
+  }
+
+  const start = (page - 1) * effectiveLimit + 1;
+  const end = Math.min(page * effectiveLimit, total);
 
   return (
     <div className="flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -37,12 +43,12 @@ export function AdminPagination({
           Previous
         </Button>
         <span className="text-sm text-muted-foreground">
-          Page {page} of {totalPages}
+          Page {page} of {effectiveTotalPages}
         </span>
         <Button
           variant="outline"
           size="sm"
-          disabled={page >= totalPages}
+          disabled={page >= effectiveTotalPages}
           onClick={() => onPageChange(page + 1)}
         >
           Next
