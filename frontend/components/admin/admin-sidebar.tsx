@@ -1,34 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Store,
-  Package,
-  ShoppingBag,
-  DollarSign,
-  AlertTriangle,
-  Users,
-  Settings,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import Image from 'next/image';
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-  { icon: Store, label: 'Sellers', href: '/admin/sellers' },
-  { icon: Package, label: 'Products', href: '/admin/products' },
-  { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
-  { icon: DollarSign, label: 'Commissions', href: '/admin/commissions' },
-  { icon: AlertTriangle, label: 'Disputes', href: '/admin/disputes' },
-  { icon: Users, label: 'Customers', href: '/admin/customers' },
-  { icon: Settings, label: 'Settings', href: '/admin/settings' },
-];
+import { AdminNavLinks } from '@/components/admin/admin-nav-links';
 
 export function AdminSidebar() {
-  const pathname = usePathname();
-
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-card lg:block">
       <div className="flex h-16 items-center border-b px-4">
@@ -39,27 +15,7 @@ export function AdminSidebar() {
           </span>
         </Link>
       </div>
-
-      <nav className="flex flex-col gap-1 p-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      <AdminNavLinks />
     </aside>
   );
 }

@@ -63,6 +63,10 @@
 **Fix:** `GET /orders/admin/all` extended with date/shop/customer filters + pagination; new `GET /admin/customers` with search, active filter, signup date range, order count & total spent. Frontend pages with filters, pagination, order detail dialog, admin status updates (state-machine rules; `delivered` blocked — OTP only), customer order history dialog.
 **Tests:** `orders.admin-list.spec.ts`, `admin-customers.service.spec.ts`.
 
+### K. Admin mobile nav, error states, pagination (Jul 2026)
+**Symptom:** Admin sidebar hidden on mobile with non-functional hamburger; list pages showed empty tables on API failure; sellers/products/disputes lacked pagination UI despite backend `meta`.
+**Fix:** `AdminShell` + left `Sheet` drawer wired to header menu; shared `admin-nav.ts` / `AdminNavLinks`; `ErrorState` + retry on dashboard/sellers/products/disputes; `AdminPagination` on sellers/products/disputes/commissions (orders/customers already had both from PR #64).
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)

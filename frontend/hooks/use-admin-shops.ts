@@ -1,34 +1,57 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { normalizeList } from '@/lib/utils';
+import { unwrapPaginated } from '@/lib/utils/api';
 import type { Shop } from '@/types/product';
 
-function adminShopsQueryKey(params: { status?: string; search?: string }) {
-  return ['admin', 'shops', params.status ?? 'all', params.search ?? ''] as const;
+interface AdminShopsParams {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function useAdminShops(params: { status?: string; search?: string } = {}) {
+function adminShopsQueryKey(params: AdminShopsParams) {
+  return [
+    'admin',
+    'shops',
+    params.status ?? 'all',
+    params.search ?? '',
+    params.page ?? 1,
+    params.limit ?? 20,
+  ] as const;
+}
+
+export function useAdminShops(params: AdminShopsParams = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<Shop[]>({
+  const query = useQuery({
     queryKey: adminShopsQueryKey(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      if (params.status) searchParams.append('status', params.status);
-      if (params.search) searchParams.append('search', params.search);
+      searchParams.set('page', String(params.page ?? 1));
+      searchParams.set('limit', String(params.limit ?? 20));
+      if (params.status && params.status !== 'all') {
+        searchParams.append('status', params.status);
+      }
+
       const endpoint =
         params.status === 'pending'
           ? `/admin/shops/pending?${searchParams.toString()}`
           : `/admin/shops?${searchParams.toString()}`;
+
       const { data } = await apiClient.get(endpoint);
-      let shops = normalizeList<Shop>(data);
+      const result = unwrapPaginated<Shop>(data);
+
       if (params.search) {
         const q = params.search.toLowerCase();
-        shops = shops.filter(
-          (s) => s.name?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q),
+        result.data = result.data.filter(
+          (s) =>
+            s.name?.toLowerCase().includes(q) ||
+            s.city?.toLowerCase().includes(q),
         );
       }
-      return shops;
+
+      return result;
     },
   });
 
@@ -69,8 +92,11 @@ export function useAdminShops(params: { status?: string; search?: string } = {})
   });
 
   return {
-    data: query.data,
+    data: query.data?.data ?? [],
+    meta: query.data?.meta,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     approveShop: (shopId: string) => approveMutation.mutateAsync(shopId),
     rejectShop: (shopId: string, reason: string) =>
       rejectMutation.mutateAsync({ shopId, reason }),

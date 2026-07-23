@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { normalizeList } from '@/lib/utils';
+import { unwrapPaginated } from '@/lib/utils/api';
 import type { Product } from '@/types/product';
 
 interface AdminProductsParams {
@@ -17,31 +17,32 @@ function adminProductsQueryKey(params: AdminProductsParams) {
     'products',
     status,
     params.search ?? '',
-    params.page ?? null,
-    params.limit ?? null,
+    params.page ?? 1,
+    params.limit ?? 20,
   ] as const;
 }
 
 export function useAdminProducts(params: AdminProductsParams = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<Product[]>({
+  const query = useQuery({
     queryKey: adminProductsQueryKey(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       const status = params.status && params.status !== 'all' ? params.status : 'all';
       searchParams.set('status', status);
-      if (params.page !== undefined) searchParams.set('page', String(params.page));
-      if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+      searchParams.set('page', String(params.page ?? 1));
+      searchParams.set('limit', String(params.limit ?? 20));
 
       const { data } = await apiClient.get(`/admin/products?${searchParams.toString()}`);
-      let products = normalizeList<Product>(data);
+      const result = unwrapPaginated<Product>(data);
 
       if (params.search) {
         const q = params.search.toLowerCase();
-        products = products.filter((p) => p.name?.toLowerCase().includes(q));
+        result.data = result.data.filter((p) => p.name?.toLowerCase().includes(q));
       }
-      return products;
+
+      return result;
     },
   });
 
@@ -64,8 +65,11 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
   });
 
   return {
-    data: query.data,
+    data: query.data?.data ?? [],
+    meta: query.data?.meta,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     approveProduct: (productId: string) => approveMutation.mutateAsync(productId),
     rejectProduct: (productId: string, reason: string) =>
       rejectMutation.mutateAsync({ productId, reason }),

@@ -24,10 +24,11 @@ import { RevenueChart } from '@/components/admin/revenue-chart';
 import { RecentActivity } from '@/components/admin/recent-activity';
 import { formatPrice, formatNumber } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
-  const { data, isLoading } = useAdminDashboard(period);
+  const { data, isLoading, isError, refetch } = useAdminDashboard(period);
 
   const stats = [
     {
@@ -87,6 +88,20 @@ export default function AdminDashboardPage() {
       color: 'text-red-600',
     },
   ];
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground">Platform overview and key metrics</p>
+        </div>
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
