@@ -36,6 +36,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDisputes } from '@/hooks/use-admin-disputes';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
+import { AdminPagination } from '@/components/admin/admin-pagination';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -46,17 +48,21 @@ const statusColors: Record<string, string> = {
 
 export default function AdminDisputesPage() {
   const [activeTab, setActiveTab] = useState('pending');
+  const [page, setPage] = useState(1);
   const [selectedDispute, setSelectedDispute] = useState<any>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const disputeQueryParams = useMemo(
     () => ({
       status: activeTab !== 'all' ? activeTab : undefined,
+      page,
+      limit: 20,
     }),
-    [activeTab],
+    [activeTab, page],
   );
 
-  const { data, isLoading, resolveDispute } = useAdminDisputes(disputeQueryParams);
+  const { data, meta, isLoading, isError, refetch, resolveDispute } =
+    useAdminDisputes(disputeQueryParams);
 
   const handleResolve = async (disputeId: string, action: 'approve' | 'reject' | 'refund') => {
     try {
@@ -67,6 +73,18 @@ export default function AdminDisputesPage() {
     }
   };
 
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Dispute Resolution</h1>
+          <p className="text-muted-foreground">Manage customer return and refund disputes</p>
+        </div>
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -74,7 +92,13 @@ export default function AdminDisputesPage() {
         <p className="text-muted-foreground">Manage customer return and refund disputes</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value);
+          setPage(1);
+        }}
+      >
         <TabsList>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
@@ -174,6 +198,15 @@ export default function AdminDisputesPage() {
               )}
             </TableBody>
           </Table>
+          {meta && (
+            <AdminPagination
+              page={meta.page}
+              totalPages={meta.totalPages}
+              total={meta.total}
+              limit={meta.limit}
+              onPageChange={setPage}
+            />
+          )}
         </CardContent>
       </Card>
 

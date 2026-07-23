@@ -39,6 +39,8 @@ import { Label } from '@/components/ui/label';
 import { useAdminProducts } from '@/hooks/use-admin-products';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
+import { AdminPagination } from '@/components/admin/admin-pagination';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -48,6 +50,7 @@ const statusColors: Record<string, string> = {
 
 export default function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState('pending');
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -58,11 +61,14 @@ export default function AdminProductsPage() {
     () => ({
       status: activeTab !== 'all' ? activeTab : undefined,
       search: searchQuery,
+      page,
+      limit: 20,
     }),
-    [activeTab, searchQuery],
+    [activeTab, searchQuery, page],
   );
 
-  const { data, isLoading, approveProduct, rejectProduct } = useAdminProducts(productQueryParams);
+  const { data, meta, isLoading, isError, refetch, approveProduct, rejectProduct } =
+    useAdminProducts(productQueryParams);
 
   const handleApprove = async (productId: string) => {
     try {
@@ -86,6 +92,18 @@ export default function AdminProductsPage() {
     }
   };
 
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Product Moderation</h1>
+          <p className="text-muted-foreground">Review and approve product listings</p>
+        </div>
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -94,7 +112,13 @@ export default function AdminProductsPage() {
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            setPage(1);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
@@ -217,6 +241,15 @@ export default function AdminProductsPage() {
               )}
             </TableBody>
           </Table>
+          {meta && (
+            <AdminPagination
+              page={meta.page}
+              totalPages={meta.totalPages}
+              total={meta.total}
+              limit={meta.limit}
+              onPageChange={setPage}
+            />
+          )}
         </CardContent>
       </Card>
 

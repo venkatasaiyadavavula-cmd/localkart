@@ -38,6 +38,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAdminShops } from '@/hooks/use-admin-shops';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
+import { AdminPagination } from '@/components/admin/admin-pagination';
 import { formatDate } from '@/lib/utils';
 
 const statusColors: Record<string, string> = {
@@ -49,16 +51,20 @@ const statusColors: Record<string, string> = {
 
 export default function AdminSellersPage() {
   const [activeTab, setActiveTab] = useState('pending');
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedShop, setSelectedShop] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const { data, isLoading, approveShop, rejectShop, suspendShop, unsuspendShop } = useAdminShops({
-    status: activeTab !== 'all' ? activeTab : undefined,
-    search: searchQuery,
-  });
+  const { data, meta, isLoading, isError, refetch, approveShop, rejectShop, suspendShop, unsuspendShop } =
+    useAdminShops({
+      status: activeTab !== 'all' ? activeTab : undefined,
+      search: searchQuery,
+      page,
+      limit: 20,
+    });
 
   const handleApprove = async (shopId: string) => {
     try {
@@ -100,6 +106,18 @@ export default function AdminSellersPage() {
     }
   };
 
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Seller Management</h1>
+          <p className="text-muted-foreground">Review and manage shop registrations</p>
+        </div>
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -108,7 +126,13 @@ export default function AdminSellersPage() {
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            setPage(1);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
@@ -224,6 +248,15 @@ export default function AdminSellersPage() {
               )}
             </TableBody>
           </Table>
+          {meta && (
+            <AdminPagination
+              page={meta.page}
+              totalPages={meta.totalPages}
+              total={meta.total}
+              limit={meta.limit}
+              onPageChange={setPage}
+            />
+          )}
         </CardContent>
       </Card>
 

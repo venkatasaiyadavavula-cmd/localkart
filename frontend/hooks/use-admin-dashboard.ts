@@ -47,7 +47,7 @@ interface AdminDashboardApiResponse {
 }
 
 export function useAdminDashboard(period: 'week' | 'month' | 'year' = 'week') {
-  return useQuery<AdminDashboardData>({
+  const query = useQuery<AdminDashboardData>({
     queryKey: ['admin', 'dashboard', period],
     queryFn: async () => {
       const [dashboardRes, chartRes] = await Promise.all([
@@ -82,4 +82,11 @@ export function useAdminDashboard(period: 'week' | 'month' | 'year' = 'week') {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
 }

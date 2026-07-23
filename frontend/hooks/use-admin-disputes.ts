@@ -1,22 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { normalizeList } from '@/lib/utils';
+import { unwrapPaginated } from '@/lib/utils/api';
 import type { ReturnRequest } from '@/types/order';
 
-function adminDisputesQueryKey(status?: string) {
-  return ['admin', 'disputes', status && status !== 'all' ? status : 'all'] as const;
+interface AdminDisputesParams {
+  status?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function useAdminDisputes(params: { status?: string } = {}) {
+function adminDisputesQueryKey(params: AdminDisputesParams) {
+  return [
+    'admin',
+    'disputes',
+    params.status && params.status !== 'all' ? params.status : 'all',
+    params.page ?? 1,
+    params.limit ?? 20,
+  ] as const;
+}
+
+export function useAdminDisputes(params: AdminDisputesParams = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<ReturnRequest[]>({
-    queryKey: adminDisputesQueryKey(params.status),
+  const query = useQuery({
+    queryKey: adminDisputesQueryKey(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      if (params.status) searchParams.append('status', params.status);
-      const { data } = await apiClient.get(`/returns/admin/all?${searchParams.toString()}`);
-      return normalizeList<ReturnRequest>(data);
+      searchParams.set('page', String(params.page ?? 1));
+      searchParams.set('limit', String(params.limit ?? 20));
+      if (params.status && params.status !== 'all') {
+        searchParams.append('status', params.status);
+      }
+
+      const { data } = await apiClient.get(
+        `/returns/admin/all?${searchParams.toString()}`,
+      );
+      return unwrapPaginated<ReturnRequest>(data);
     },
   });
 
@@ -29,10 +48,9 @@ export function useAdminDisputes(params: { status?: string } = {}) {
         approve: 'approved',
         reject: 'rejected',
       };
-      return apiClient.put(
-        `/returns/admin/${disputeId}/status`,
-        { status: statusMap[action] || action },
-      );
+      return apiClient.put(`/returns/admin/${disputeId}/status`, {
+        status: statusMap[action] || action,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
@@ -40,8 +58,11 @@ export function useAdminDisputes(params: { status?: string } = {}) {
   });
 
   return {
-    data: query.data,
+    data: query.data?.data ?? [],
+    meta: query.data?.meta,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     resolveDispute: (disputeId: string, action: string) =>
       resolveMutation.mutateAsync({ disputeId, action }),
   };

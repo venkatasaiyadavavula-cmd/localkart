@@ -43,6 +43,7 @@ import {
   useAdminCommissions,
   type AdminBillStatusFilter,
 } from '@/hooks/use-admin-commissions';
+import { AdminPagination } from '@/components/admin/admin-pagination';
 import { formatPrice, formatDate } from '@/lib/utils';
 import type { AdminCommissionBill } from '@/types/api';
 
@@ -54,6 +55,7 @@ const statusColors: Record<string, string> = {
 
 export default function AdminCommissionsPage() {
   const [statusFilter, setStatusFilter] = useState<AdminBillStatusFilter>('all');
+  const [page, setPage] = useState(1);
   const [selectedBill, setSelectedBill] = useState<AdminCommissionBill | null>(null);
   const [paymentRef, setPaymentRef] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
@@ -62,13 +64,14 @@ export default function AdminCommissionsPage() {
   const [confirmFines, setConfirmFines] = useState(false);
 
   const billParams = useMemo(
-    () => ({ status: statusFilter, page: 1, limit: 50 }),
-    [statusFilter],
+    () => ({ status: statusFilter, page, limit: 20 }),
+    [statusFilter, page],
   );
 
   const {
     summary,
     bills,
+    billsMeta,
     isLoading,
     isError,
     refetch,
@@ -232,7 +235,10 @@ export default function AdminCommissionsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Tabs
           value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as AdminBillStatusFilter)}
+          onValueChange={(v) => {
+            setStatusFilter(v as AdminBillStatusFilter);
+            setPage(1);
+          }}
         >
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
@@ -316,6 +322,15 @@ export default function AdminCommissionsPage() {
               )}
             </TableBody>
           </Table>
+          {billsMeta && (
+            <AdminPagination
+              page={billsMeta.page}
+              totalPages={billsMeta.totalPages}
+              total={billsMeta.total}
+              limit={billsMeta.limit}
+              onPageChange={setPage}
+            />
+          )}
         </CardContent>
       </Card>
 
