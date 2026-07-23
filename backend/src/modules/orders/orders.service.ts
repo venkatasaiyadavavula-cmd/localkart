@@ -595,22 +595,78 @@ export class OrdersService {
     }
 
     order.status = status;
+    if (status === OrderStatus.OUT_FOR_DELIVERY) {
+      order.deliveryOtp = order.deliveryOtp || generateOtp();
+    }
+    if (status === OrderStatus.CANCELLED) {
+      order.cancelledAt = new Date();
+    }
+    if (dto.notes) {
+      order.deliveryNotes = dto.notes;
+    }
     return this.orderRepository.save(order);
   }
 
-  async getAllOrders(page: number, limit: number, status?: string, shopId?: string) {
+  async getAllOrders(
+    page: number,
+    limit: number,
+    filters: {
+      status?: string;
+      shopId?: string;
+      customerId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      shopSearch?: string;
+      customerSearch?: string;
+    } = {},
+  ) {
     const skip = (page - 1) * limit;
-    const where: any = {};
-    if (status) where.status = status;
-    if (shopId) where.shopId = shopId;
 
-    const [orders, total] = await this.orderRepository.findAndCount({
-      where,
-      relations: ['shop', 'customer', 'items'],
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.shop', 'shop')
+      .leftJoinAndSelect('order.customer', 'customer')
+      .leftJoinAndSelect('order.items', 'items');
+
+    if (filters.status) {
+      qb.andWhere('order.status = :status', { status: filters.status });
+    }
+    if (filters.shopId) {
+      qb.andWhere('order.shopId = :shopId', { shopId: filters.shopId });
+    }
+    if (filters.customerId) {
+      qb.andWhere('order.customerId = :customerId', {
+        customerId: filters.customerId,
+      });
+    }
+    if (filters.dateFrom) {
+      qb.andWhere('order.createdAt >= :dateFrom', {
+        dateFrom: new Date(filters.dateFrom),
+      });
+    }
+    if (filters.dateTo) {
+      const end = new Date(filters.dateTo);
+      end.setHours(23, 59, 59, 999);
+      qb.andWhere('order.createdAt <= :dateTo', { dateTo: end });
+    }
+    if (filters.shopSearch?.trim()) {
+      const term = `%${filters.shopSearch.trim()}%`;
+      qb.andWhere(
+        '(shop.name ILIKE :shopSearch OR shop.slug ILIKE :shopSearch)',
+        { shopSearch: term },
+      );
+    }
+    if (filters.customerSearch?.trim()) {
+      const term = `%${filters.customerSearch.trim()}%`;
+      qb.andWhere(
+        '(customer.name ILIKE :customerSearch OR customer.phone ILIKE :customerSearch OR customer.email ILIKE :customerSearch)',
+        { customerSearch: term },
+      );
+    }
+
+    qb.orderBy('order.createdAt', 'DESC').skip(skip).take(limit);
+
+    const [orders, total] = await qb.getManyAndCount();
 
     orders.forEach((o) => {
       delete o.customer?.password;
@@ -619,7 +675,7 @@ export class OrdersService {
 
     return {
       data: orders,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) || 0 },
     };
   }
 

@@ -69,12 +69,24 @@ export class OrdersController {
     @Query('limit') limit?: string,
     @Query('status') status?: string,
     @Query('shopId') shopId?: string,
+    @Query('customerId') customerId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('shopSearch') shopSearch?: string,
+    @Query('customerSearch') customerSearch?: string,
   ) {
     return this.ordersService.getAllOrders(
       parseInt(page || '1'),
       parseInt(limit || '20'),
-      status,
-      shopId,
+      {
+        status,
+        shopId,
+        customerId,
+        dateFrom,
+        dateTo,
+        shopSearch,
+        customerSearch,
+      },
     );
   }
 

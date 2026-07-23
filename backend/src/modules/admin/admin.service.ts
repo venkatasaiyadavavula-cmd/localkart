@@ -264,4 +264,96 @@ export class AdminService {
       )
       .slice(0, limit);
   }
+
+  async listCustomers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    isActive?: boolean;
+    dateFrom?: string;
+    dateTo?: string;
+  }) {
+    const { page, limit } = params;
+    const skip = (page - 1) * limit;
+
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: UserRole.CUSTOMER });
+
+    if (params.search?.trim()) {
+      const term = `%${params.search.trim()}%`;
+      qb.andWhere(
+        '(user.name ILIKE :search OR user.phone ILIKE :search OR user.email ILIKE :search)',
+        { search: term },
+      );
+    }
+    if (params.isActive !== undefined) {
+      qb.andWhere('user.isActive = :isActive', { isActive: params.isActive });
+    }
+    if (params.dateFrom) {
+      qb.andWhere('user.createdAt >= :dateFrom', {
+        dateFrom: new Date(params.dateFrom),
+      });
+    }
+    if (params.dateTo) {
+      const end = new Date(params.dateTo);
+      end.setHours(23, 59, 59, 999);
+      qb.andWhere('user.createdAt <= :dateTo', { dateTo: end });
+    }
+
+    qb.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+
+    const [users, total] = await qb.getManyAndCount();
+    const customerIds = users.map((u) => u.id);
+
+    const statsByCustomer: Record<
+      string,
+      { totalOrders: number; totalSpent: number }
+    > = {};
+
+    if (customerIds.length > 0) {
+      const rows = await this.orderRepository
+        .createQueryBuilder('order')
+        .select('order.customerId', 'customerId')
+        .addSelect('COUNT(order.id)', 'totalOrders')
+        .addSelect(
+          `COALESCE(SUM(CASE WHEN order.status = :delivered THEN order.totalAmount ELSE 0 END), 0)`,
+          'totalSpent',
+        )
+        .where('order.customerId IN (:...customerIds)', { customerIds })
+        .setParameter('delivered', OrderStatus.DELIVERED)
+        .groupBy('order.customerId')
+        .getRawMany();
+
+      for (const row of rows) {
+        statsByCustomer[row.customerId] = {
+          totalOrders: Number(row.totalOrders) || 0,
+          totalSpent: Number(row.totalSpent) || 0,
+        };
+      }
+    }
+
+    const data = users.map((user) => {
+      const { password, lastOtp, ...profile } = user;
+      const stats = statsByCustomer[user.id] ?? {
+        totalOrders: 0,
+        totalSpent: 0,
+      };
+      return {
+        ...profile,
+        totalOrders: stats.totalOrders,
+        totalSpent: stats.totalSpent,
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
+    };
+  }
 }
