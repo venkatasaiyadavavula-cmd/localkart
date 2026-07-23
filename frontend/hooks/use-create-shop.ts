@@ -20,7 +20,7 @@ export function useCreateShop() {
           shopId: shop?.id ?? user.shopId,
         });
       }
-      router.push('/dashboard');
+      router.push('/seller-onboarding');
     },
   });
 

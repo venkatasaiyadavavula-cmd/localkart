@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { shopOnboardingSchema, type ShopOnboardingFormValues } from '@/lib/validators/shop.schema';
@@ -23,7 +22,6 @@ type ShopFormData = ShopOnboardingFormValues;
 const steps = ['Shop Details', 'Address', 'Documents', 'Review'];
 
 export default function SellerOnboardingPage() {
-  const router = useRouter();
   const { createShop, isLoading } = useCreateShop();
   const [currentStep, setCurrentStep] = useState(0);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -77,7 +75,6 @@ export default function SellerOnboardingPage() {
         longitude: location.lng,
       });
       toast.success('Shop registered successfully! Awaiting approval.');
-      router.push('/dashboard');
     } catch {
       // apiClient interceptor already surfaces the backend error message
     }

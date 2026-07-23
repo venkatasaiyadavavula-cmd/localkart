@@ -2,10 +2,13 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { SellerHeader } from '@/components/seller/seller-header';
 import { SellerSidebar } from '@/components/seller/seller-sidebar';
+import { SellerPendingScreen } from '@/components/seller/seller-pending-screen';
+import { SellerRejectedScreen } from '@/components/seller/seller-rejected-screen';
 import { SellerSuspendedGate } from '@/components/seller/seller-suspended-gate';
 import { SellerSuspendedScreen } from '@/components/seller/seller-suspended-screen';
 import { getServerSession, hasAccessTokenCookie } from '@/lib/auth';
 import { authTrace } from '@/lib/auth-trace';
+import { resolveSellerShopContext } from '@/lib/seller-shop-routing';
 
 export const metadata: Metadata = {
   title: {
@@ -41,11 +44,28 @@ export default async function SellerDashboardLayout({
     }
   }
 
-  const shopStatus = session?.user.shopStatus ?? session?.user.shop?.status;
-  const shopName = session?.user.shopName ?? session?.user.shop?.name ?? undefined;
-  const isSuspended = shopStatus === 'suspended';
+  const shopCtx = resolveSellerShopContext(session?.user);
+  const { shopStatus, shopName, submittedAt } = shopCtx;
 
-  if (isSuspended) {
+  if (shopStatus === 'pending') {
+    authTrace('seller-layout', { action: 'pending-screen', shopStatus });
+    return (
+      <div className="flex min-h-screen bg-muted/20">
+        <SellerPendingScreen shopName={shopName} submittedAt={submittedAt} />
+      </div>
+    );
+  }
+
+  if (shopStatus === 'rejected') {
+    authTrace('seller-layout', { action: 'rejected-screen', shopStatus });
+    return (
+      <div className="flex min-h-screen bg-muted/20">
+        <SellerRejectedScreen shopName={shopName} />
+      </div>
+    );
+  }
+
+  if (shopStatus === 'suspended') {
     authTrace('seller-layout', { action: 'suspended-screen', shopStatus });
     return (
       <div className="flex min-h-screen bg-muted/20">

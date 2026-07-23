@@ -11,7 +11,7 @@ export interface SessionUser {
   shopId?: string;
   shopName?: string | null;
   shopStatus?: string | null;
-  shop?: { id?: string; name?: string; status?: string };
+  shop?: { id?: string; name?: string; status?: string; createdAt?: string };
 }
 
 const TRANSIENT_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
