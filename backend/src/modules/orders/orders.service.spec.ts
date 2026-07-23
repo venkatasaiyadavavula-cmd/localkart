@@ -225,6 +225,34 @@ describe('OrdersService.verifyDeliveryOtp', () => {
     );
     expect(result.order.customer?.password).toBeUndefined();
   });
+
+  it('sets deliveredAt when customer confirms delivery OTP from out_for_delivery', async () => {
+    const before = Date.now();
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({
+        status: OrderStatus.OUT_FOR_DELIVERY,
+        deliveryOtp: '654321',
+      }),
+    );
+
+    const result = await service.verifyDeliveryOtp(
+      ORDER_ID,
+      '654321',
+      { id: OWNER_ID, role: UserRole.CUSTOMER },
+    );
+
+    expect(result.order.status).toBe(OrderStatus.DELIVERED);
+    expect(result.order.deliveredAt).toBeInstanceOf(Date);
+    expect(result.order.deliveredAt!.getTime()).toBeGreaterThanOrEqual(before);
+    expect(result.order.paymentStatus).toBe(PaymentStatus.PAID);
+    expect(result.order.deliveryOtp).toBeNull();
+    expect(orderRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: OrderStatus.DELIVERED,
+        deliveredAt: expect.any(Date),
+      }),
+    );
+  });
 });
 
 describe('OrdersService.updateOrderStatusBySeller', () => {

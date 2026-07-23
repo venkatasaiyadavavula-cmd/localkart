@@ -16,6 +16,7 @@ import { Shop } from '../../core/entities/shop.entity';
 import { User, UserRole } from '../../core/entities/user.entity';
 import { CreateReturnRequestDto, UpdateReturnStatusDto } from './dto/return-request.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { restoreDeliveredStatus } from '../orders/order-delivery.util';
 import { getSignedUploadUrl, BUCKET_NAME } from '../../config/storage.config';
 import { assertScopedResourceAccess } from '../../core/utils/scoped-access.util';
 import razorpayInstance from '../../config/razorpay.config';
@@ -180,7 +181,7 @@ export class ReturnsService {
 
     // Revert order status
     const order = request.order;
-    order.status = OrderStatus.DELIVERED;
+    restoreDeliveredStatus(order);
     await this.orderRepository.save(order);
 
     return { message: 'Return request cancelled' };
@@ -259,7 +260,7 @@ export class ReturnsService {
 
     // Revert order status
     const order = request.order;
-    order.status = OrderStatus.DELIVERED;
+    restoreDeliveredStatus(order);
     await this.orderRepository.save(order);
 
     // Notify customer

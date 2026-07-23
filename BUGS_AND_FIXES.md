@@ -52,6 +52,12 @@
 **Fix:** Backend period-scoped stats with trend % (current vs previous rolling window), `deliveredAt` for revenue/orders/chart, approved-only active shops, pending `return_requests` for open disputes, merged recent-activity feed (orders/shops/products/returns). Frontend hook fetches both dashboard and revenue-chart endpoints.
 **Tests:** `admin-dashboard.util.spec.ts`, `admin.service.spec.ts`.
 
+### I. Delivered orders missing `deliveredAt` (Jul 2026)
+**Symptom:** Admin dashboard revenue/order stats excluded delivered orders because `deliveredAt` was NULL.
+**Cause:** Historical orders were marked `delivered` before OTP flow consistently set `deliveredAt`; return cancel/reject paths restored status without backfilling the timestamp.
+**Fix:** Centralized `markOrderDelivered` / `restoreDeliveredStatus` helpers; migration `018_backfill_order_delivered_at.ts` backfills `delivered`, `return_requested`, and `returned` rows using `COALESCE(updatedAt, createdAt)`.
+**Tests:** `order-delivery.util.spec.ts`, `orders.service.spec.ts` (OTP delivery sets `deliveredAt`).
+
 ---
 
 ## 🚨 CRITICAL BUGS (Must Fix Immediately)
