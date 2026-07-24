@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Upload, X, Image as ImageIcon, Video, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,10 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
+import {
+  ProductImagesUploadSection,
+  ProductVideosUploadSection,
+} from '@/components/forms/product-media-upload';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(200),
@@ -208,106 +212,24 @@ export function ProductForm({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Media</CardTitle>
-          <CardDescription>Add images and videos (Max 5 images, 3 videos)</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Images */}
-          <div className="space-y-3">
-            <Label>Product Images *</Label>
-            <div className="flex flex-wrap gap-3">
-              {existingImages.map((url, i) => (
-                <div key={`existing-${i}`} className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeExistingImage(i)}
-                    className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {newImageUrls.map((url, i) => (
-                <div key={`new-${i}`} className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeNewImage(i)}
-                    className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {existingImages.length + newImages.length < 5 && (
-                <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary">
-                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                  <span className="mt-1 text-xs text-muted-foreground">Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
+      <ProductImagesUploadSection
+        variant="card"
+        existingUrls={existingImages}
+        newPreviewUrls={newImageUrls}
+        onUpload={handleImageUpload}
+        onRemoveExisting={removeExistingImage}
+        onRemoveNew={removeNewImage}
+        required
+      />
 
-          {/* Videos */}
-          <div className="space-y-3">
-            <Label>Product Videos</Label>
-            <div className="flex flex-wrap gap-3">
-              {existingVideos.map((url, i) => (
-                <div key={`v-existing-${i}`} className="relative h-24 w-24 overflow-hidden rounded-lg border bg-muted">
-                  <div className="flex h-full items-center justify-center">
-                    <Video className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeExistingVideo(i)}
-                    className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {newVideoUrls.map((url, i) => (
-                <div key={`v-new-${i}`} className="relative h-24 w-24 overflow-hidden rounded-lg border bg-muted">
-                  <div className="flex h-full items-center justify-center">
-                    <Video className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeNewVideo(i)}
-                    className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {existingVideos.length + newVideos.length < 3 && (
-                <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary">
-                  <Video className="h-6 w-6 text-muted-foreground" />
-                  <span className="mt-1 text-xs text-muted-foreground">Upload</span>
-                  <input
-                    type="file"
-                    accept="video/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleVideoUpload}
-                  />
-                </label>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">₹10 per video upload charge applies</p>
-          </div>
-        </CardContent>
-      </Card>
+      <ProductVideosUploadSection
+        variant="card"
+        existingUrls={existingVideos}
+        newPreviewUrls={newVideoUrls}
+        onUpload={handleVideoUpload}
+        onRemoveExisting={removeExistingVideo}
+        onRemoveNew={removeNewVideo}
+      />
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isLoading}>

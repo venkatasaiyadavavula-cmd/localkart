@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronLeft, Upload, X, Loader2, Image as ImageIcon, Video } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerProduct } from '@/hooks/use-product';
 import { useUpdateProduct } from '@/hooks/use-update-product';
 import { uploadMediaFiles } from '@/lib/utils/media';
+import {
+  ProductImagesUploadSection,
+  ProductVideosUploadSection,
+} from '@/components/forms/product-media-upload';
 import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
@@ -316,59 +320,24 @@ export default function EditProductPage() {
               </CardContent>
             </Card>
 
-            {/* Media Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Media</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Existing & New Images */}
-                <div className="space-y-3">
-                  <Label>Product Images</Label>
-                  <div className="flex flex-wrap gap-3">
-                    {existingImages.map((url, index) => (
-                      <div key={`existing-${index}`} className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                        <img src={url} alt="" className="h-full w-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeExistingImage(index)}
-                          className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-white"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {newImageUrls.map((url, index) => (
-                      <div key={`new-${index}`} className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                        <img src={url} alt="" className="h-full w-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeNewImage(index)}
-                          className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-white"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {existingImages.length + newImages.length < 5 && (
-                      <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30">
-                        <ImageIcon className="h-6 w-6" />
-                        <span className="mt-1 text-xs">Upload</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={handleNewImageUpload}
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
+            <ProductImagesUploadSection
+              variant="card"
+              existingUrls={existingImages}
+              newPreviewUrls={newImageUrls}
+              onUpload={handleNewImageUpload}
+              onRemoveExisting={removeExistingImage}
+              onRemoveNew={removeNewImage}
+              required
+            />
 
-                {/* Videos similar to images */}
-              </CardContent>
-            </Card>
+            <ProductVideosUploadSection
+              variant="card"
+              existingUrls={existingVideos}
+              newPreviewUrls={newVideoUrls}
+              onUpload={handleNewVideoUpload}
+              onRemoveExisting={removeExistingVideo}
+              onRemoveNew={removeNewVideo}
+            />
           </div>
 
           {/* Sidebar */}

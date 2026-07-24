@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronLeft, Upload, X, Loader2, Image as ImageIcon, Video } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,11 @@ import {
 } from '@/components/ui/select';
 import { useCreateProduct } from '@/hooks/use-create-product';
 import { AiDescriptionGenerator } from '@/components/seller/ai-description-generator';
+import {
+  MAX_VIDEOS_DEFAULT,
+  ProductImagesUploadSection,
+  ProductVideosUploadSection,
+} from '@/components/forms/product-media-upload';
 import { uploadMediaFiles } from '@/lib/utils/media';
 
 enum ProductCategoryType {
@@ -89,8 +94,18 @@ export default function NewProductPage() {
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setVideos(prev => [...prev, ...files]);
-    files.forEach(f => setVideoUrls(prev => [...prev, URL.createObjectURL(f)]));
+    if (videos.length + files.length > MAX_VIDEOS_DEFAULT) {
+      toast.error(`Maximum ${MAX_VIDEOS_DEFAULT} videos allowed`);
+      return;
+    }
+    setVideos((prev) => [...prev, ...files]);
+    files.forEach((f) => setVideoUrls((prev) => [...prev, URL.createObjectURL(f)]));
+  };
+
+  const removeVideo = (index: number) => {
+    URL.revokeObjectURL(videoUrls[index]);
+    setVideos((prev) => prev.filter((_, i) => i !== index));
+    setVideoUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeImage = (index: number) => {
@@ -232,38 +247,22 @@ export default function NewProductPage() {
           </CardContent>
         </Card>
 
-        {/* Images */}
-        <Card className="border-gray-100 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-extrabold text-gray-700">
-              Product Images
-              <span className="ml-2 text-xs font-semibold text-gray-400">({images.length}/5)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-2 mb-3">
-              {imageUrls.map((url, i) => (
-                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {images.length < 5 && (
-                <label className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                  <ImageIcon className="h-5 w-5 text-gray-300 mb-1" />
-                  <span className="text-[10px] text-gray-400 font-medium">Add photo</span>
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-                </label>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <ProductImagesUploadSection
+          variant="card"
+          layout="grid"
+          newPreviewUrls={imageUrls}
+          onUpload={handleImageUpload}
+          onRemoveNew={removeImage}
+          required
+        />
+
+        <ProductVideosUploadSection
+          variant="card"
+          layout="grid"
+          newPreviewUrls={videoUrls}
+          onUpload={handleVideoUpload}
+          onRemoveNew={removeVideo}
+        />
 
         {/* Submit */}
         <Button
