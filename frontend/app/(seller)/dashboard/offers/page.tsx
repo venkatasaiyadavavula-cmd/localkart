@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice, normalizeList } from '@/lib/utils';
 import { getOfferQuestionsForProduct, type OfferQuestion } from '@/lib/daily-offer-questions';
 import { OfferCountdown } from '@/components/offers/offer-countdown';
+import { SellerProductVideosPanel } from '@/components/seller/seller-product-videos-panel';
 import type { DailyOffer, Product } from '@/types';
 
 import { API_URL } from '@/lib/api-config';
@@ -211,6 +212,8 @@ export default function SellerOffersPage() {
           </div>
         </div>
       </div>
+
+      <SellerProductVideosPanel />
 
       {/* Active offers */}
       <div className="px-4 mt-5 space-y-3">

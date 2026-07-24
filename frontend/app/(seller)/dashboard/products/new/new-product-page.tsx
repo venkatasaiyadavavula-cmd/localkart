@@ -136,8 +136,12 @@ export default function NewProductPage() {
       });
       toast.success('Product created successfully. Awaiting approval.');
       router.push('/dashboard/products');
-    } catch {
-      toast.error('Failed to create product');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error && error.message.includes('storage')
+          ? 'Video upload failed while saving to storage. Please try again.'
+          : 'Failed to create product';
+      toast.error(message);
     }
   };
 
