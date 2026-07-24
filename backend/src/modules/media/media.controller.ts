@@ -16,22 +16,7 @@ import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { UserRole } from '../../core/entities/user.entity';
-import { normalizeVideoMime } from './video-mime.util';
-
-function acceptVideoUpload(
-  file: Express.Multer.File,
-  cb: (error: Error | null, acceptFile: boolean) => void,
-) {
-  const normalized = normalizeVideoMime(file.mimetype, file.originalname);
-  if (!normalized) {
-    return cb(
-      new BadRequestException('Only video files allowed (mp4, mov, avi, webm)'),
-      false,
-    );
-  }
-  file.mimetype = normalized;
-  cb(null, true);
-}
+import { acceptVideoUpload } from './video-mime.util';
 
 @Controller('media')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -74,7 +59,15 @@ export class MediaController {
   @UseInterceptors(FileInterceptor('file', {
     limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
     fileFilter: (req, file, cb) => {
-      acceptVideoUpload(file, cb);
+      acceptVideoUpload(file, (error, acceptFile) => {
+        if (error) {
+          return cb(
+            new BadRequestException(error.message || 'Only video files allowed (mp4, mov, avi, webm)'),
+            false,
+          );
+        }
+        cb(null, acceptFile);
+      });
     },
   }))
   async uploadVideo(
