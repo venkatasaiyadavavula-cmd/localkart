@@ -32,3 +32,18 @@ export const getSignedViewUrl = (key: string, expiresIn = 3600) => {
     Expires: expiresIn,
   });
 };
+
+export async function putObjectBuffer(
+  key: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
+  await s3Client
+    .putObject({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+    .promise();
+}

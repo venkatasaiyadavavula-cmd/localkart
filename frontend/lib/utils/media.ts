@@ -2,10 +2,11 @@ import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils/api';
 
 interface UploadResponse {
-  uploadUrl: string;
+  uploadUrl?: string;
   publicUrl: string;
   key: string;
-  fileType: string;
+  fileType?: string;
+  uploadedByServer?: boolean;
   chargeMessage?: string;
 }
 
@@ -36,11 +37,13 @@ export async function uploadVideoFile(file: File): Promise<string> {
   const { data } = await apiClient.post<unknown>('/media/upload-video', formData);
 
   const result = unwrapApiData<UploadResponse>(data);
-  if (!result?.uploadUrl || !result?.publicUrl) {
+  if (!result?.publicUrl) {
     throw new Error('Invalid video upload response');
   }
 
-  await putFileToSignedUrl(file, result.uploadUrl, result.fileType || file.type);
+  if (!result.uploadedByServer && result.uploadUrl) {
+    await putFileToSignedUrl(file, result.uploadUrl, result.fileType || file.type);
+  }
 
   return result.publicUrl;
 }
@@ -59,11 +62,13 @@ export async function uploadMediaFile(file: File, type?: string): Promise<string
   });
 
   const result = unwrapApiData<UploadResponse>(data);
-  if (!result?.uploadUrl || !result?.publicUrl) {
+  if (!result?.publicUrl) {
     throw new Error('Invalid upload response');
   }
 
-  await putFileToSignedUrl(file, result.uploadUrl, result.fileType || file.type);
+  if (result.uploadUrl) {
+    await putFileToSignedUrl(file, result.uploadUrl, result.fileType || file.type);
+  }
 
   return result.publicUrl;
 }

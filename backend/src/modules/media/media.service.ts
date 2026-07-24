@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bull';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { getSignedUploadUrl, getSignedViewUrl, getPublicObjectUrl } from '../../config/storage.config';
+import { getSignedUploadUrl, getSignedViewUrl, getPublicObjectUrl, putObjectBuffer } from '../../config/storage.config';
 import { Shop } from '../../core/entities/shop.entity';
 import { Product } from '../../core/entities/product.entity';
 import { UserRole } from '../../core/entities/user.entity';
@@ -23,6 +23,10 @@ const VIDEO_PLAN_LIMITS: Record<SubscriptionPlan, number> = {
 };
 
 const VIDEO_CHARGE_PER_UPLOAD = 10; // ₹10 per video beyond free limit
+
+/** JSONB `videos` column — use jsonb_array_length, not array_length. */
+const PRODUCT_HAS_VIDEOS_SQL =
+  "p.videos IS NOT NULL AND jsonb_typeof(p.videos) = 'array' AND jsonb_array_length(p.videos) > 0";
 
 @Injectable()
 export class MediaService {
@@ -98,7 +102,7 @@ export class MediaService {
       .createQueryBuilder('p')
       .where('p.shopId = :shopId', { shopId: shop.id })
       .andWhere('p.updatedAt >= :startOfMonth', { startOfMonth })
-      .andWhere("array_length(p.videos, 1) > 0")
+      .andWhere(PRODUCT_HAS_VIDEOS_SQL)
       .getCount();
 
     // Determine charge
@@ -114,29 +118,52 @@ export class MediaService {
     // Generate upload key
     const extension = file.originalname.split('.').pop()?.toLowerCase() || 'mp4';
     const key       = `videos/${shop.id}/${uuidv4()}.${extension}`;
-    const uploadUrl = await getSignedUploadUrl(key, file.mimetype);
+    const contentType = file.mimetype;
 
-    // Add transcoding job to Bull queue
-    const job = await this.mediaQueue.add('transcode', {
-      userId,
-      shopId:       shop.id,
-      key,
-      originalName: file.originalname,
-      mimeType:     file.mimetype,
-      size:         file.size,
-      chargeAmount,
-    }, {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 5000 },
-    });
+    let uploadUrl: string | undefined;
+    let uploadedByServer = false;
+
+    if (file.buffer?.length) {
+      await putObjectBuffer(key, file.buffer, contentType);
+      uploadedByServer = true;
+    } else {
+      uploadUrl = await getSignedUploadUrl(key, contentType);
+    }
+
+    let jobId: string | number | undefined;
+    try {
+      const job = await this.mediaQueue.add('transcode', {
+        userId,
+        shopId:       shop.id,
+        key,
+        originalName: file.originalname,
+        mimeType:     contentType,
+        size:         file.size,
+        chargeAmount,
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      });
+      jobId = job.id;
+    } catch (queueError) {
+      this.logger.warn(
+        `Transcode queue unavailable (upload still saved): ${
+          queueError instanceof Error ? queueError.message : String(queueError)
+        }`,
+      );
+    }
 
     return {
-      uploadUrl,
+      ...(uploadUrl ? { uploadUrl } : {}),
+      uploadedByServer,
       key,
-      jobId:        job.id,
+      jobId,
       status:       'pending',
-      message:      'Video uploaded. Transcoding in progress.',
+      message:      uploadedByServer
+        ? 'Video uploaded successfully.'
+        : 'Video uploaded. Complete the storage upload from your browser.',
       publicUrl:    getPublicObjectUrl(key),
+      fileType:     contentType,
       chargeAmount,
       plan,
       monthlyCount: monthlyVideoCount + 1,
@@ -191,13 +218,13 @@ export class MediaService {
       .createQueryBuilder('p')
       .where('p.shopId = :shopId', { shopId: shop.id })
       .andWhere('p.updatedAt >= :startOfMonth', { startOfMonth })
-      .andWhere("array_length(p.videos, 1) > 0")
+      .andWhere(PRODUCT_HAS_VIDEOS_SQL)
       .getCount();
 
     const totalVideos = await this.productRepo
       .createQueryBuilder('p')
       .where('p.shopId = :shopId', { shopId: shop.id })
-      .andWhere("array_length(p.videos, 1) > 0")
+      .andWhere(PRODUCT_HAS_VIDEOS_SQL)
       .getCount();
 
     return {

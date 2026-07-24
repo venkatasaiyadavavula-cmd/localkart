@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -174,18 +175,27 @@ export default function EditProductPage() {
       const allImages = [...existingImages, ...uploadedImageUrls];
       const allVideos = [...existingVideos, ...uploadedVideoUrls];
 
+      const payload = {
+        ...data,
+        images: allImages,
+        videos: allVideos,
+      };
+      if (payload.mrp === undefined || Number.isNaN(payload.mrp as number)) {
+        delete (payload as { mrp?: number }).mrp;
+      }
+
       await updateProduct({
         productId,
-        data: {
-          ...data,
-          images: allImages,
-          videos: allVideos,
-        },
+        data: payload,
       });
       toast.success('Product updated successfully. Changes pending approval.');
       router.push('/dashboard/products');
-    } catch (error) {
-      toast.error('Failed to update product');
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : 'Failed to update product';
+      toast.error(message);
     }
   };
 

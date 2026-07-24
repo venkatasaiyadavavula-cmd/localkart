@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
+import { unwrapApiData } from '@/lib/utils/api';
 
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
@@ -38,7 +39,7 @@ export function useUpdateProduct() {
       }
 
       const { data: response } = await apiClient.put(`/catalog/seller/products/${productId}`, payload);
-      return response.data;
+      return unwrapApiData(response);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'products'] });

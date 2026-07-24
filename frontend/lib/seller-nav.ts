@@ -10,6 +10,7 @@ import {
   BarChart2,
   IndianRupee,
   Upload,
+  Video,
 } from 'lucide-react';
 
 export const sellerNavItems = [
@@ -17,6 +18,7 @@ export const sellerNavItems = [
   { icon: Package, label: 'Products', href: '/dashboard/products' },
   { icon: ShoppingBag, label: 'Orders', href: '/dashboard/orders' },
   { icon: Zap, label: "Today's Offers", href: '/dashboard/offers' },
+  { icon: Video, label: 'Videos', href: '/dashboard/videos' },
   { icon: TrendingUp, label: 'Ads', href: '/dashboard/ads' },
   { icon: IndianRupee, label: 'Commission', href: '/dashboard/commission' },
   { icon: BarChart2, label: 'Earnings', href: '/dashboard/earnings' },

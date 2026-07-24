@@ -22,12 +22,13 @@ import {
 import { useUpdateProduct } from '@/hooks/use-update-product';
 import { API_URL } from '@/lib/api-config';
 import { normalizeList } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { uploadMediaFiles } from '@/lib/utils/media';
 import type { Product } from '@/types/product';
 
 const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : '');
 
-export function SellerProductVideosPanel() {
+export function SellerProductVideosPanel({ className }: { className?: string }) {
   const [productId, setProductId] = useState('');
   const [existingVideos, setExistingVideos] = useState<string[]>([]);
   const [newVideos, setNewVideos] = useState<File[]>([]);
@@ -122,7 +123,7 @@ export function SellerProductVideosPanel() {
   };
 
   return (
-    <Card className="mx-4 mt-5 border-violet-200 shadow-sm">
+    <Card className={cn('border-violet-200 shadow-sm', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
           <Video className="h-4 w-4 text-violet-600" />
