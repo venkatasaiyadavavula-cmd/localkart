@@ -15,6 +15,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
 import { enrichProductsWithShopHours, enrichProductWithShopHours } from '../../core/utils/shop-hours.util';
+import { productUpdateRequiresReapproval } from './product-reapproval.util';
 
 const PLAN_LIMITS: Record<SubscriptionPlan, number> = {
   [SubscriptionPlan.STARTER]:  40,
@@ -196,8 +197,12 @@ export class CatalogService {
       product.slug = slugify(updateProductDto.name, { lower: true, strict: true });
     }
 
+    const requiresReapproval = productUpdateRequiresReapproval(updateProductDto, product);
+
     Object.assign(product, updateProductDto);
-    product.status = ProductStatus.PENDING; // Re-approval needed
+    if (requiresReapproval) {
+      product.status = ProductStatus.PENDING; // Re-approval needed
+    }
 
     await this.productRepository.save(product);
     return product;
