@@ -28,7 +28,14 @@ import type { Product } from '@/types/product';
 
 const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : '');
 
-export function SellerProductVideosPanel({ className }: { className?: string }) {
+export function SellerProductVideosPanel({
+  className,
+  onSavedSuccessfully,
+}: {
+  className?: string;
+  /** e.g. navigate to Products list after save on the standalone Videos page */
+  onSavedSuccessfully?: () => void;
+}) {
   const [productId, setProductId] = useState('');
   const [existingVideos, setExistingVideos] = useState<string[]>([]);
   const [newVideos, setNewVideos] = useState<File[]>([]);
@@ -115,6 +122,7 @@ export function SellerProductVideosPanel({ className }: { className?: string }) 
       toast.success('Product videos saved');
       setExistingVideos(allVideos);
       resetNewUploads();
+      onSavedSuccessfully?.();
     } catch {
       toast.error('Video upload failed. Use mp4, mov, or webm and try again.');
     } finally {

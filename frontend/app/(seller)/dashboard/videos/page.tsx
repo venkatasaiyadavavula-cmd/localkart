@@ -1,8 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { SellerProductVideosPanel } from '@/components/seller/seller-product-videos-panel';
 
 export default function SellerVideosPage() {
+  const router = useRouter();
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -12,7 +15,9 @@ export default function SellerVideosPage() {
           customer Videos feed.
         </p>
       </div>
-      <SellerProductVideosPanel />
+      <SellerProductVideosPanel
+        onSavedSuccessfully={() => router.push('/dashboard/products')}
+      />
     </div>
   );
 }
