@@ -38,3 +38,5 @@ coverage/
 
 # Docker
 *.pid
+dist/
+node_modules/
