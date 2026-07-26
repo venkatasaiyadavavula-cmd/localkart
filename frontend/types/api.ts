@@ -64,6 +64,7 @@ export interface AdminCommissionBill {
   orderCount: number;
   totalOrderValue: number;
   commissionAmount: number;
+  videoUploadFees?: number;
   fineAmount: number;
   totalDue: number;
   daysOverdue: number;
@@ -151,6 +152,7 @@ export interface CommissionBillsData {
     orderCount: number;
     totalOrderValue: number;
     commissionAmount: number;
+    videoUploadFees?: number;
     fineAmount: number;
     daysOverdue: number;
     status: 'pending' | 'paid' | 'overdue';

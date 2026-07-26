@@ -29,6 +29,7 @@ describe('CommissionService payment idempotency', () => {
       weekStartDate: '2025-07-12',
       orderCount: 5,
       commissionAmount: 100,
+      videoUploadFees: 0,
       fineAmount: 0,
       daysOverdue: 0,
       status: CommissionBillStatus.PENDING,

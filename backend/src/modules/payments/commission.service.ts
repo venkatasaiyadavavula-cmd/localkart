@@ -1,8 +1,9 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between } from 'typeorm';
+import { Repository, DataSource, Between, IsNull, In } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { CommissionBill, CommissionBillStatus } from '../../core/entities/commission-bill.entity';
+import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { WhatsappService } from '../notifications/whatsapp.service';
@@ -18,6 +19,7 @@ import {
 } from './commission-week.util';
 import { RAZORPAY_ORDER_TTL_MS } from './payments.config';
 import { razorpayReceipt } from './razorpay-receipt.util';
+import { commissionBillTotalDue } from './commission-bill-total.util';
 
 const FINE_PER_DAY = 25;
 
@@ -99,7 +101,7 @@ export class CommissionService {
     });
 
     for (const bill of unpaid) {
-      const total = Number(bill.commissionAmount) + Number(bill.fineAmount);
+      const total = commissionBillTotalDue(bill);
       const weekLabel = bill.weekStartDate
         ? formatWeekLabel(bill.weekStartDate, bill.billDate)
         : bill.billDate;
@@ -131,39 +133,74 @@ export class CommissionService {
     const weekStartDate = getWeekStartSaturday(weekEndingFriday);
     const { start, end } = getWeekOrderRange(weekEndingFriday);
 
-    const orders = await this.orderRepo.find({
-      where: {
-        shopId,
-        status: OrderStatus.DELIVERED,
-        deliveredAt: Between(start, end),
-      },
+    return this.dataSource.transaction(async (manager) => {
+      const billRepo = manager.getRepository(CommissionBill);
+      const videoChargeRepo = manager.getRepository(VideoUploadCharge);
+      const orderRepo = manager.getRepository(Order);
+
+      const racedExisting = await billRepo.findOne({
+        where: { shopId, billDate: weekEndingFriday },
+      });
+      if (racedExisting) return racedExisting;
+
+      const orders = await orderRepo.find({
+        where: {
+          shopId,
+          status: OrderStatus.DELIVERED,
+          deliveredAt: Between(start, end),
+        },
+      });
+
+      const unbilledVideoCharges = await videoChargeRepo.find({
+        where: {
+          shopId,
+          commissionBillId: IsNull(),
+          createdAt: Between(start, end),
+        },
+      });
+
+      if (orders.length === 0 && unbilledVideoCharges.length === 0) {
+        return null;
+      }
+
+      const totalOrderValue = orders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
+      const commissionAmount = parseFloat(
+        orders.reduce((sum, o) => sum + Number(o.commissionAmount), 0).toFixed(2),
+      );
+      const commissionPercent =
+        totalOrderValue > 0
+          ? parseFloat(((commissionAmount / totalOrderValue) * 100).toFixed(2))
+          : 0;
+
+      const videoUploadFees = parseFloat(
+        unbilledVideoCharges.reduce((sum, row) => sum + Number(row.amount), 0).toFixed(2),
+      );
+
+      const bill = await billRepo.save(
+        billRepo.create({
+          shopId,
+          billDate: weekEndingFriday,
+          weekStartDate,
+          orderCount: orders.length,
+          totalOrderValue,
+          commissionAmount,
+          commissionPercent,
+          videoUploadFees,
+          fineAmount: 0,
+          daysOverdue: 0,
+          status: CommissionBillStatus.PENDING,
+        }),
+      );
+
+      if (unbilledVideoCharges.length > 0) {
+        await videoChargeRepo.update(
+          { id: In(unbilledVideoCharges.map((row) => row.id)) },
+          { commissionBillId: bill.id },
+        );
+      }
+
+      return bill;
     });
-
-    if (orders.length === 0) return null;
-
-    const totalOrderValue = orders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
-    const commissionAmount = parseFloat(
-      orders.reduce((sum, o) => sum + Number(o.commissionAmount), 0).toFixed(2),
-    );
-    const commissionPercent =
-      totalOrderValue > 0
-        ? parseFloat(((commissionAmount / totalOrderValue) * 100).toFixed(2))
-        : 0;
-
-    const bill = this.billRepo.create({
-      shopId,
-      billDate: weekEndingFriday,
-      weekStartDate,
-      orderCount: orders.length,
-      totalOrderValue,
-      commissionAmount,
-      commissionPercent,
-      fineAmount: 0,
-      daysOverdue: 0,
-      status: CommissionBillStatus.PENDING,
-    });
-
-    return this.billRepo.save(bill);
   }
 
   /** @deprecated Use generateWeeklyBillForShop */
@@ -182,7 +219,7 @@ export class CommissionService {
     if (!bill) throw new NotFoundException('Bill not found');
     if (bill.status === CommissionBillStatus.PAID) throw new BadRequestException('Bill already paid');
 
-    const totalDue = Number(bill.commissionAmount) + Number(bill.fineAmount);
+    const totalDue = commissionBillTotalDue(bill);
     const weekLabel = bill.weekStartDate
       ? formatWeekLabel(bill.weekStartDate, bill.billDate)
       : bill.billDate;
@@ -201,6 +238,7 @@ export class CommissionService {
             weekLabel,
             orderCount: bill.orderCount,
             commissionAmount: bill.commissionAmount,
+            videoUploadFees: bill.videoUploadFees,
             fineAmount: bill.fineAmount,
             totalDue,
             daysOverdue: bill.daysOverdue,
@@ -239,6 +277,7 @@ export class CommissionService {
         weekLabel,
         orderCount: bill.orderCount,
         commissionAmount: bill.commissionAmount,
+        videoUploadFees: bill.videoUploadFees,
         fineAmount: bill.fineAmount,
         totalDue,
         daysOverdue: bill.daysOverdue,
@@ -304,7 +343,7 @@ export class CommissionService {
 
     const totalPending = bills
       .filter((b) => b.status !== CommissionBillStatus.PAID)
-      .reduce((sum, b) => sum + Number(b.commissionAmount) + Number(b.fineAmount), 0);
+      .reduce((sum, b) => sum + commissionBillTotalDue(b), 0);
 
     return { bills: enriched, total, totalPending, page, limit };
   }
@@ -373,7 +412,7 @@ export class CommissionService {
     const outstandingRow = await this.billRepo
       .createQueryBuilder('bill')
       .select(
-        'COALESCE(SUM(bill.commissionAmount + bill.fineAmount), 0)',
+        'COALESCE(SUM(bill.commissionAmount + bill.fineAmount + bill."videoUploadFees"), 0)',
         'total',
       )
       .where('bill.status IN (:...statuses)', {
@@ -486,6 +525,7 @@ export class CommissionService {
   private enrichBill(bill: CommissionBill) {
     const commissionAmount = Number(bill.commissionAmount);
     const fineAmount = Number(bill.fineAmount);
+    const videoUploadFees = Number(bill.videoUploadFees ?? 0);
     const isPaid = bill.status === CommissionBillStatus.PAID;
 
     return {
@@ -500,8 +540,11 @@ export class CommissionService {
       orderCount: bill.orderCount,
       totalOrderValue: Number(bill.totalOrderValue),
       commissionAmount,
+      videoUploadFees,
       fineAmount: isPaid ? 0 : fineAmount,
-      totalDue: isPaid ? 0 : commissionAmount + fineAmount,
+      totalDue: isPaid
+        ? 0
+        : commissionBillTotalDue({ commissionAmount, fineAmount, videoUploadFees }),
       daysOverdue: isPaid ? 0 : bill.daysOverdue,
       status: bill.status,
       razorpayOrderId: bill.razorpayOrderId,

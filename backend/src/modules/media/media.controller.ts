@@ -73,9 +73,10 @@ export class MediaController {
   async uploadVideo(
     @CurrentUser() user: any,
     @UploadedFile() file: Express.Multer.File,
+    @Query('productId') productId?: string,
   ) {
     if (!file) throw new BadRequestException('No video file provided');
-    return this.mediaService.uploadVideo(user.id, file);
+    return this.mediaService.uploadVideo(user.id, file, productId);
   }
 
   // ─── Video Stats (how many uploads, charge info) ──────────────────────────

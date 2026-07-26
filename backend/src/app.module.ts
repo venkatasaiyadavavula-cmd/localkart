@@ -34,6 +34,7 @@ import { SavedAddress } from './core/entities/saved-address.entity';
 import { StaffMember } from './core/entities/staff-member.entity';
 import { CommissionBill } from './core/entities/commission-bill.entity';
 import { FeaturedVideo } from './core/entities/featured-video.entity';
+import { VideoUploadCharge } from './core/entities/video-upload-charge.entity';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -76,7 +77,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
           User, Shop, Product, Category, Order, OrderItem,
           Subscription, Transaction, ReturnRequest, SponsoredProduct,
           DailyOffer, Review, ReviewHelpfulVote, Wishlist, SavedAddress, StaffMember, CommissionBill,
-          FeaturedVideo,
+          FeaturedVideo, VideoUploadCharge,
         ],
         synchronize: false,
         logging: false,

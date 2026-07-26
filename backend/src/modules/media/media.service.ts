@@ -14,6 +14,7 @@ import { Shop } from '../../core/entities/shop.entity';
 import { Product } from '../../core/entities/product.entity';
 import { UserRole } from '../../core/entities/user.entity';
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../../core/entities/subscription.entity';
+import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
 
 // ✅ Plan limits
 const VIDEO_PLAN_LIMITS: Record<SubscriptionPlan, number> = {
@@ -44,6 +45,9 @@ export class MediaService {
 
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
+
+    @InjectRepository(VideoUploadCharge)
+    private readonly videoUploadChargeRepo: Repository<VideoUploadCharge>,
   ) {}
 
   // ─── Image Upload ──────────────────────────────────────────────────────────
@@ -67,7 +71,7 @@ export class MediaService {
 
   // ─── Video Upload with ₹10 charge logic ───────────────────────────────────
 
-  async uploadVideo(userId: string, file: Express.Multer.File) {
+  async uploadVideo(userId: string, file: Express.Multer.File, productId?: string | null) {
     if (!file) throw new BadRequestException('No video file provided');
 
     // Find seller's shop
@@ -128,6 +132,17 @@ export class MediaService {
       uploadedByServer = true;
     } else {
       uploadUrl = await getSignedUploadUrl(key, contentType);
+    }
+
+    if (chargeAmount > 0) {
+      await this.videoUploadChargeRepo.save(
+        this.videoUploadChargeRepo.create({
+          shopId: shop.id,
+          amount: chargeAmount,
+          productId: productId ?? null,
+          storageKey: key,
+        }),
+      );
     }
 
     let jobId: string | number | undefined;

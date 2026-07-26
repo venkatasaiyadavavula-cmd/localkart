@@ -7,11 +7,12 @@ import { MediaProcessor } from './media.processor';
 import { Shop } from '../../core/entities/shop.entity';
 import { Product } from '../../core/entities/product.entity';
 import { Subscription } from '../../core/entities/subscription.entity';
+import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
 
 @Module({
   imports: [
     BullModule.registerQueue({ name: 'media' }),
-    TypeOrmModule.forFeature([Shop, Product, Subscription]),
+    TypeOrmModule.forFeature([Shop, Product, Subscription, VideoUploadCharge]),
   ],
   controllers: [MediaController],
   providers: [MediaService, MediaProcessor],

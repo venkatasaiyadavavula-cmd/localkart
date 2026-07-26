@@ -261,6 +261,7 @@ export default function AdminCommissionsPage() {
                 <TableHead>Week</TableHead>
                 <TableHead className="text-right">Orders</TableHead>
                 <TableHead className="text-right">Commission</TableHead>
+                <TableHead className="text-right">Video uploads</TableHead>
                 <TableHead className="text-right">Fine</TableHead>
                 <TableHead className="text-right">Total due</TableHead>
                 <TableHead>Status</TableHead>
@@ -274,14 +275,14 @@ export default function AdminCommissionsPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={11}>
+                    <TableCell colSpan={12}>
                       <Skeleton className="h-8 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : bills.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={12} className="h-32 text-center text-muted-foreground">
                     No commission bills found for this filter
                   </TableCell>
                 </TableRow>
@@ -292,6 +293,11 @@ export default function AdminCommissionsPage() {
                     <TableCell className="whitespace-nowrap text-sm">{bill.weekLabel}</TableCell>
                     <TableCell className="text-right">{bill.orderCount}</TableCell>
                     <TableCell className="text-right">{formatPrice(bill.commissionAmount)}</TableCell>
+                    <TableCell className="text-right">
+                      {Number(bill.videoUploadFees ?? 0) > 0
+                        ? formatPrice(bill.videoUploadFees ?? 0)
+                        : '—'}
+                    </TableCell>
                     <TableCell className="text-right">
                       {bill.fineAmount > 0 ? formatPrice(bill.fineAmount) : '—'}
                     </TableCell>

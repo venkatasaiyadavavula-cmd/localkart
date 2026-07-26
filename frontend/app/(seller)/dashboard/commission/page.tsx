@@ -25,10 +25,31 @@ interface CommissionBill {
   orderCount: number;
   totalOrderValue: number;
   commissionAmount: number;
+  videoUploadFees?: number;
   fineAmount: number;
   daysOverdue: number;
   status: BillStatus;
   paidAt?: string;
+}
+
+function billTotalDue(bill: Pick<CommissionBill, 'commissionAmount' | 'fineAmount' | 'videoUploadFees'>) {
+  return (
+    Number(bill.commissionAmount) +
+    Number(bill.fineAmount) +
+    Number(bill.videoUploadFees ?? 0)
+  );
+}
+
+function formatBillChargeBreakdown(bill: CommissionBill): string {
+  const parts = [`Commission ${formatPrice(bill.commissionAmount)}`];
+  const videoFees = Number(bill.videoUploadFees ?? 0);
+  if (videoFees > 0) {
+    parts.push(`Video uploads ${formatPrice(videoFees)}`);
+  }
+  if (Number(bill.fineAmount) > 0) {
+    parts.push(`Fine ${formatPrice(bill.fineAmount)}`);
+  }
+  return `${parts.join(' + ')} = ${formatPrice(billTotalDue(bill))}`;
 }
 
 function formatBillWeek(bill: CommissionBill): string {
@@ -199,7 +220,7 @@ export default function CommissionPage() {
             {unpaidBills.map(bill => {
               const cfg   = STATUS_CONFIG[bill.status];
               const Icon  = cfg.icon;
-              const total = Number(bill.commissionAmount) + Number(bill.fineAmount);
+              const total = billTotalDue(bill);
               return (
                 <div
                   key={bill.id}
@@ -230,11 +251,9 @@ export default function CommissionPage() {
                       <p className="text-xs text-gray-500 mt-0.5">
                         {bill.orderCount} orders · {formatPrice(bill.totalOrderValue)} revenue
                       </p>
-                      {bill.fineAmount > 0 && (
-                        <p className="text-[11px] font-semibold text-red-500 mt-0.5">
-                          Commission {formatPrice(bill.commissionAmount)} + Fine {formatPrice(bill.fineAmount)}
-                        </p>
-                      )}
+                      <p className="text-[11px] font-semibold text-gray-600 mt-0.5">
+                        {formatBillChargeBreakdown(bill)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
@@ -280,7 +299,7 @@ export default function CommissionPage() {
                   </div>
                 </div>
                 <p className="text-sm font-extrabold text-gray-600">
-                  {formatPrice(bill.commissionAmount)}
+                  {formatPrice(billTotalDue(bill))}
                 </p>
               </div>
             ))}

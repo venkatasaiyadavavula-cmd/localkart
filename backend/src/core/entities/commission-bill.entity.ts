@@ -50,6 +50,9 @@ export class CommissionBill {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   fineAmount: number;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  videoUploadFees: number;
+
   @Column({ type: 'int', default: 0 })
   daysOverdue: number;
 

@@ -1,5 +1,6 @@
 import { MediaService } from './media.service';
 import { putObjectBuffer } from '../../config/storage.config';
+import { SubscriptionPlan, SubscriptionStatus } from '../../core/entities/subscription.entity';
 
 jest.mock('../../config/storage.config', () => ({
   getPublicObjectUrl: jest.fn((key: string) => `https://example.test/${key}`),
@@ -13,6 +14,10 @@ describe('MediaService.uploadVideo', () => {
   const shopRepo = { findOne: jest.fn() };
   const subscriptionRepo = { findOne: jest.fn().mockResolvedValue(null) };
   const productRepo = { createQueryBuilder: jest.fn() };
+  const videoUploadChargeRepo = {
+    create: jest.fn((data) => data),
+    save: jest.fn().mockResolvedValue({ id: 'charge-1' }),
+  };
 
   let service: MediaService;
   let andWhere: jest.Mock;
@@ -32,6 +37,7 @@ describe('MediaService.uploadVideo', () => {
       shopRepo as never,
       productRepo as never,
       subscriptionRepo as never,
+      videoUploadChargeRepo as never,
     );
   });
 
@@ -51,6 +57,28 @@ describe('MediaService.uploadVideo', () => {
     expect(putObjectBuffer).toHaveBeenCalled();
     expect(result.uploadedByServer).toBe(true);
     expect(result.publicUrl).toContain('videos/shop-1/');
+    expect(videoUploadChargeRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ shopId: 'shop-1', amount: 10, storageKey: expect.stringContaining('videos/shop-1/') }),
+    );
+  });
+
+  it('does not accrue a charge when the upload is within the monthly free limit', async () => {
+    subscriptionRepo.findOne.mockResolvedValue({
+      plan: SubscriptionPlan.GROWTH,
+      status: SubscriptionStatus.ACTIVE,
+    });
+
+    const file = {
+      originalname: 'clip.mp4',
+      mimetype: 'video/mp4',
+      size: 1024,
+      buffer: Buffer.from('fake'),
+    } as Express.Multer.File;
+
+    const result = await service.uploadVideo('seller-1', file);
+
+    expect(result.chargeAmount).toBe(0);
+    expect(videoUploadChargeRepo.save).not.toHaveBeenCalled();
   });
 
   it('still returns publicUrl when transcode queue is unavailable', async () => {
