@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { unwrapApiData } from '@/lib/utils';
+import { unwrapApiData, unwrapPaginated } from '@/lib/utils/api';
 
 export interface AdminAdCampaignRow {
   id: string;
@@ -34,7 +34,7 @@ export function useAdminAdCampaigns(page = 1, limit = 30) {
       const { data } = await apiClient.get(
         `/admin/ad-campaigns?page=${page}&limit=${limit}`,
       );
-      return unwrapApiData<AdminAdCampaignsResponse>(data);
+      return unwrapPaginated<AdminAdCampaignRow>(data);
     },
   });
 

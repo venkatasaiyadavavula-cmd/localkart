@@ -1,4 +1,4 @@
-import { normalizePaginationMeta, unwrapPaginated } from './api';
+import { normalizePaginationMeta, unwrapApiData, unwrapPaginated } from './api';
 
 describe('unwrapPaginated', () => {
   const page = {
@@ -36,6 +36,21 @@ describe('unwrapPaginated', () => {
     });
 
     expect(result.meta.totalPages).toBe(2);
+  });
+
+  it('documents why paginated admin lists must not use unwrapApiData alone', () => {
+    const page = {
+      data: [{ id: 'campaign-1' }],
+      meta: { total: 1, page: 1, limit: 30, totalPages: 1 },
+    };
+
+    const wronglyUnwrapped = unwrapApiData<typeof page>(page);
+    expect(Array.isArray(wronglyUnwrapped)).toBe(true);
+    expect((wronglyUnwrapped as { meta?: unknown }).meta).toBeUndefined();
+
+    const correct = unwrapPaginated<{ id: string }>(page);
+    expect(correct.data).toHaveLength(1);
+    expect(correct.meta.total).toBe(1);
   });
 });
 
