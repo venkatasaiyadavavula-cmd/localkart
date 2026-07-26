@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { StaffMember, StaffRole, StaffStatus } from '../../core/entities/staff-member.entity';
 import { Shop } from '../../core/entities/shop.entity';
-import { MAX_STAFF, ROLE_PERMISSIONS } from './staff-permissions';
+import { MAX_STAFF, ROLE_PERMISSIONS, resolveStaffPermissions } from './staff-permissions';
 
 export { MAX_STAFF, ROLE_PERMISSIONS };
 
@@ -40,7 +40,7 @@ export class StaffService {
 
     return staff.map(s => ({
       ...s,
-      permissions: ROLE_PERMISSIONS[s.role],
+      permissions: resolveStaffPermissions(s.role),
       isOnline: s.lastLoginAt
         ? (Date.now() - new Date(s.lastLoginAt).getTime()) < 30 * 60 * 1000
         : false,
@@ -66,7 +66,7 @@ export class StaffService {
     const existingPhone = await this.staffRepo.findOne({ where: { phone: dto.phone } });
     if (existingPhone) throw new ConflictException('Phone number already used');
 
-    const role = dto.role ?? StaffRole.WORKER;
+    const role = StaffRole.EMPLOYEE;
 
     let staffId = dto.staffId?.trim().toLowerCase();
     if (!staffId) {
@@ -110,7 +110,7 @@ export class StaffService {
       phone: staff.phone,
       staffId: staff.staffId,
       role: staff.role,
-      permissions: ROLE_PERMISSIONS[staff.role],
+      permissions: resolveStaffPermissions(staff.role),
       tempPassword: password,
       message: 'Share these login credentials with your team member.',
     };
@@ -125,13 +125,12 @@ export class StaffService {
     const staff = await this.staffRepo.findOne({ where: { id: staffMemberId, shopId: shop.id } });
     if (!staff) throw new NotFoundException('Staff member not found');
 
-    if (dto.role) staff.role = dto.role;
     if (dto.note !== undefined) staff.note = dto.note;
 
     await this.staffRepo.save(staff);
 
     const { passwordHash, ...safeStaff } = staff;
-    return { ...safeStaff, permissions: ROLE_PERMISSIONS[staff.role] };
+    return { ...safeStaff, permissions: resolveStaffPermissions(staff.role) };
   }
 
   async removeStaff(ownerId: string, staffMemberId: string) {
@@ -184,7 +183,7 @@ export class StaffService {
     staff.lastLoginAt = new Date();
     await this.staffRepo.save(staff);
 
-    const permissions = ROLE_PERMISSIONS[staff.role];
+    const permissions = resolveStaffPermissions(staff.role);
 
     const token = this.jwtService.sign({
       sub: staff.id,

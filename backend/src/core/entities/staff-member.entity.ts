@@ -6,6 +6,8 @@ import {
 import { Shop } from './shop.entity';
 
 export enum StaffRole {
+  EMPLOYEE = 'employee',
+  /** @deprecated Use EMPLOYEE — kept for DB enum compatibility until fully migrated */
   WORKER           = 'worker',
   PRODUCTS_MANAGER = 'products_manager',
   DELIVERY_STAFF   = 'delivery_staff',

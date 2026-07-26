@@ -23,6 +23,7 @@ const footerLinks = {
   seller: [
     { label: 'Become a Seller', href: buildRegisterUrl({ intent: 'seller', redirect: SELLER_ONBOARDING_PATH }) },
     { label: 'Seller Login', href: buildLoginUrl({ intent: 'seller', redirect: '/dashboard' }) },
+    { label: 'Employee Login', href: '/work/login' },
     { label: 'Commission Structure', href: buildLoginUrl({ intent: 'seller', redirect: '/dashboard/commission' }) },
   ],
   legal: [

@@ -28,7 +28,7 @@ describe('StaffService.updateStaff', () => {
       shopId: 'shop-1',
       name: 'Worker',
       staffId: 'lk-abc-1234',
-      role: StaffRole.WORKER,
+      role: StaffRole.EMPLOYEE,
       status: StaffStatus.ACTIVE,
       passwordHash: '$2b$10$hashedsecretvalue',
     });

@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import {
   Users, Plus, Trash2, RefreshCw, Shield,
-  Package, Truck, Crown, Copy, CheckCircle2,
-  ChevronRight, X, AlertTriangle, Clock, Wifi,
+  Copy, CheckCircle2,
+  X, AlertTriangle, Clock, Wifi,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { unwrapApiData, normalizeList } from '@/lib/utils';
@@ -14,8 +14,24 @@ import { ErrorState } from '@/components/ui/error-state';
 
 import { formatWorkerHandle } from '@/components/work/worker-identity';
 
-type StaffRole = 'worker' | 'store_manager' | 'products_manager' | 'delivery_staff';
+type StaffRole = 'employee' | 'worker' | 'store_manager' | 'products_manager' | 'delivery_staff';
 type StaffStatus = 'active' | 'inactive';
+
+const EMPLOYEE_ROLE_DISPLAY = {
+  label: 'Employee',
+  icon: Users,
+  color: '#059669',
+  bg: '#ECFDF5',
+  border: 'rgba(5,150,105,0.20)',
+  gradient: 'linear-gradient(135deg,#059669,#047857)',
+  accessSummary: 'Products, stock, orders & deliveries',
+  ownerOnlyNote:
+    'Cannot pay subscription or commission bills, change shop settings, or add/remove other employees.',
+};
+
+function roleDisplayConfig(_role: string) {
+  return EMPLOYEE_ROLE_DISPLAY;
+}
 
 interface StaffMember {
   id:          string;
@@ -40,70 +56,8 @@ interface NewCredentials {
   message:     string;
 }
 
-const ROLE_CONFIG: Record<StaffRole, {
-  label:       string;
-  icon:        React.ElementType;
-  color:       string;
-  bg:          string;
-  border:      string;
-  permissions: string;
-  gradient:    string;
-}> = {
-  worker: {
-    label:       'Shop Worker',
-    icon:        Users,
-    color:       '#059669',
-    bg:          '#ECFDF5',
-    border:      'rgba(5,150,105,0.20)',
-    gradient:    'linear-gradient(135deg,#059669,#047857)',
-    permissions: 'Products + Stock + Deliveries',
-  },
-  store_manager: {
-    label:       'Store Manager',
-    icon:        Crown,
-    color:       '#7C3AED',
-    bg:          '#F5F3FF',
-    border:      'rgba(124,58,237,0.20)',
-    gradient:    'linear-gradient(135deg,#7C3AED,#6D28D9)',
-    permissions: 'Products + Orders + Inventory',
-  },
-  products_manager: {
-    label:       'Products Manager',
-    icon:        Package,
-    color:       '#2563EB',
-    bg:          '#EFF6FF',
-    border:      'rgba(37,99,235,0.20)',
-    gradient:    'linear-gradient(135deg,#2563EB,#1D4ED8)',
-    permissions: 'Products + Inventory',
-  },
-  delivery_staff: {
-    label:       'Delivery Staff',
-    icon:        Truck,
-    color:       '#059669',
-    bg:          '#ECFDF5',
-    border:      'rgba(5,150,105,0.20)',
-    gradient:    'linear-gradient(135deg,#059669,#047857)',
-    permissions: 'View + Update Orders only',
-  },
-};
-
-function CopyBtn({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success(`${label} copied!`);
-  };
-  return (
-    <button onClick={copy} className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-white/20">
-      {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-green-300" /> : <Copy className="h-3.5 w-3.5 text-white/70" />}
-    </button>
-  );
-}
-
 function CredentialsModal({ creds, onClose }: { creds: NewCredentials; onClose: () => void }) {
-  const cfg = ROLE_CONFIG[creds.role];
+  const cfg = roleDisplayConfig(creds.role);
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}>
       <div className="w-full max-w-sm rounded-3xl overflow-hidden animate-scale-spring" style={{ background: 'white', boxShadow: '0 32px 64px rgba(0,0,0,0.25)' }}>
@@ -190,7 +144,7 @@ function CredentialsModal({ creds, onClose }: { creds: NewCredentials; onClose: 
 
 function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: (c: NewCredentials) => void }) {
   const [form, setForm] = useState({
-    name: '', phone: '', role: 'worker' as StaffRole, note: '', staffId: '', password: '',
+    name: '', phone: '', note: '', staffId: '', password: '',
   });
   const qc = useQueryClient();
 
@@ -199,7 +153,6 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
       const payload: Record<string, string> = {
         name: form.name,
         phone: form.phone.startsWith('+') ? form.phone : `+91${form.phone.replace(/\D/g, '').slice(-10)}`,
-        role: form.role,
       };
       if (form.note) payload.note = form.note;
       if (form.staffId.trim()) payload.staffId = form.staffId.trim().toLowerCase();
@@ -211,7 +164,7 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
       qc.invalidateQueries({ queryKey: ['staff'] });
       onAdded(unwrapApiData<NewCredentials>(data) as NewCredentials);
       onClose();
-      setForm({ name: '', phone: '', role: 'worker', note: '', staffId: '', password: '' });
+      setForm({ name: '', phone: '', note: '', staffId: '', password: '' });
     },
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed to add employee'),
   });
@@ -282,33 +235,14 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
             />
           </div>
 
-          {/* Role */}
-          <div>
-            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-2 block">Role *</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(Object.entries(ROLE_CONFIG) as [StaffRole, typeof ROLE_CONFIG[StaffRole]][]).map(([role, cfg]) => {
-                const Icon = cfg.icon;
-                const selected = form.role === role;
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setForm((p) => ({ ...p, role }))}
-                    className="rounded-2xl border p-3 text-left transition-colors"
-                    style={{
-                      background: selected ? cfg.bg : 'white',
-                      borderColor: selected ? cfg.color : '#E5E9F2',
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4" style={{ color: cfg.color }} />
-                      <p className="text-xs font-extrabold" style={{ color: cfg.color }}>{cfg.label}</p>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-1">{cfg.permissions}</p>
-                  </button>
-                );
-              })}
+          <div className="rounded-2xl p-3 border" style={{ background: EMPLOYEE_ROLE_DISPLAY.bg, borderColor: EMPLOYEE_ROLE_DISPLAY.border }}>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" style={{ color: EMPLOYEE_ROLE_DISPLAY.color }} />
+              <p className="text-sm font-extrabold" style={{ color: EMPLOYEE_ROLE_DISPLAY.color }}>Shop employee access</p>
             </div>
+            <p className="text-[11px] text-gray-600 mt-1">{EMPLOYEE_ROLE_DISPLAY.accessSummary}</p>
+            <p className="text-[10px] text-gray-400 mt-1">{EMPLOYEE_ROLE_DISPLAY.ownerOnlyNote}</p>
+            <p className="text-[10px] text-emerald-700 mt-2 font-semibold">Login at /work/login with the credentials below.</p>
           </div>
 
           {/* Note */}
@@ -438,21 +372,11 @@ export default function StaffPage() {
         )}
       </div>
 
-      {/* Role legend */}
-      <div className="grid grid-cols-3 gap-2 mb-5">
-        {(Object.entries(ROLE_CONFIG) as [StaffRole, typeof ROLE_CONFIG[StaffRole]][]).map(([role, cfg]) => (
-          <div
-            key={role}
-            className="flex items-center gap-2 p-2.5 rounded-2xl border"
-            style={{ background: cfg.bg, borderColor: cfg.border }}
-          >
-            <cfg.icon className="h-4 w-4 flex-shrink-0" style={{ color: cfg.color }} />
-            <div className="min-w-0">
-              <p className="text-[10px] font-extrabold truncate" style={{ color: cfg.color }}>{cfg.label}</p>
-              <p className="text-[9px] text-gray-400 truncate">{cfg.permissions}</p>
-            </div>
-          </div>
-        ))}
+      {/* Employee access summary */}
+      <div className="mb-5 rounded-2xl border p-4" style={{ background: EMPLOYEE_ROLE_DISPLAY.bg, borderColor: EMPLOYEE_ROLE_DISPLAY.border }}>
+        <p className="text-sm font-extrabold" style={{ color: EMPLOYEE_ROLE_DISPLAY.color }}>What employees can do</p>
+        <p className="text-xs text-gray-600 mt-1">{EMPLOYEE_ROLE_DISPLAY.accessSummary}</p>
+        <p className="text-xs text-gray-500 mt-2">{EMPLOYEE_ROLE_DISPLAY.ownerOnlyNote}</p>
       </div>
 
       {/* Staff list */}
@@ -475,7 +399,7 @@ export default function StaffPage() {
       ) : (
         <div className="space-y-3">
           {activeStaff.map((member) => {
-            const cfg = ROLE_CONFIG[member.role];
+            const cfg = roleDisplayConfig(member.role);
             const Icon = cfg.icon;
             return (
               <div

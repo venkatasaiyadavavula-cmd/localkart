@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../../core/entities/user.entity';
 import { StaffMember, StaffStatus } from '../../../core/entities/staff-member.entity';
-import { ROLE_PERMISSIONS } from '../../seller/staff-permissions';
+import { resolveStaffPermissions } from '../../seller/staff-permissions';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -47,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         shopId: staff.shopId,
         shopName: staff.shop?.name,
         name: staff.name,
-        permissions: ROLE_PERMISSIONS[staff.role] ?? [],
+        permissions: resolveStaffPermissions(staff.role),
       };
     }
 
