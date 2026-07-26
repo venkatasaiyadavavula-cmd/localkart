@@ -7,6 +7,11 @@ describe('CatalogService.updateProduct', () => {
   const productRepository = { findOne: jest.fn(), save: jest.fn() };
   const subscriptionRepository = { findOne: jest.fn() };
   const categoryRepository = {};
+  const productVariantService = {
+    listByProductId: jest.fn().mockResolvedValue([]),
+    replaceVariantsForProduct: jest.fn(),
+    clearVariantsForProduct: jest.fn(),
+  };
 
   let service: CatalogService;
 
@@ -32,6 +37,7 @@ describe('CatalogService.updateProduct', () => {
       categoryRepository as never,
       shopRepository as never,
       subscriptionRepository as never,
+      productVariantService as never,
     );
 
     shopRepository.findOne.mockResolvedValue({

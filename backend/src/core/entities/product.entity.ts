@@ -12,6 +12,7 @@ import { Shop } from './shop.entity';
 import { Category } from './category.entity';
 import { OrderItem } from './order-item.entity';
 import { SponsoredProduct } from './sponsored-product.entity';
+import { ProductVariant } from './product-variant.entity';
 
 export enum ProductStatus {
   DRAFT = 'draft',
@@ -57,6 +58,9 @@ export class Product {
 
   @Column({ default: 0 })
   stock: number;
+
+  @Column({ default: false })
+  hasVariants: boolean;
 
   @Column({ length: 50, nullable: true })
   sku: string;
@@ -117,6 +121,9 @@ export class Product {
 
   @OneToMany(() => SponsoredProduct, (sponsored) => sponsored.product)
   sponsoredCampaigns: SponsoredProduct[];
+
+  @OneToMany(() => ProductVariant, (variant) => variant.product)
+  variants: ProductVariant[];
 
   @CreateDateColumn()
   createdAt: Date;

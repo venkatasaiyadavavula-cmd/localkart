@@ -29,6 +29,11 @@ import {
   ProductImagesUploadSection,
   ProductVideosUploadSection,
 } from '@/components/forms/product-media-upload';
+import {
+  ProductVariantsEditor,
+  inferVariantDimensionText,
+  type ProductVariantInput,
+} from '@/components/seller/product-variants-editor';
 import { PRODUCT_CATEGORY_VALUES, type ProductCategoryType } from '@/types/product';
 
 const productSchema = z.object({
@@ -78,6 +83,9 @@ export default function EditProductPage() {
   const [newVideos, setNewVideos] = useState<File[]>([]);
   const [newVideoUrls, setNewVideoUrls] = useState<string[]>([]);
   const [formHydrated, setFormHydrated] = useState(false);
+  const [variantsEnabled, setVariantsEnabled] = useState(false);
+  const [variants, setVariants] = useState<ProductVariantInput[]>([]);
+  const [initialVariantSnapshot, setInitialVariantSnapshot] = useState('');
 
   const {
     register,
@@ -108,6 +116,22 @@ export default function EditProductPage() {
     });
     setExistingImages(product.images || []);
     setExistingVideos(product.videos || []);
+    const apiVariants = (product as { variants?: ProductVariantInput[] }).variants ?? [];
+    if (apiVariants.length > 0) {
+      setVariantsEnabled(true);
+      const mapped = apiVariants.map((v) => ({
+        attributes: v.attributes,
+        stock: Number(v.stock),
+        priceOverride: v.priceOverride != null ? Number(v.priceOverride) : undefined,
+        sku: v.sku ?? undefined,
+      }));
+      setVariants(mapped);
+      setInitialVariantSnapshot(JSON.stringify(mapped));
+    } else {
+      setVariantsEnabled(false);
+      setVariants([]);
+      setInitialVariantSnapshot('');
+    }
     setFormHydrated(true);
   }, [product, reset]);
 
@@ -184,6 +208,12 @@ export default function EditProductPage() {
         delete (payload as { mrp?: number }).mrp;
       }
 
+      if (variantsEnabled && variants.length > 0) {
+        (payload as { variants?: ProductVariantInput[] }).variants = variants;
+      } else if (initialVariantSnapshot) {
+        (payload as { variants?: ProductVariantInput[] }).variants = [];
+      }
+
       await updateProduct({
         productId,
         data: payload,
@@ -207,7 +237,11 @@ export default function EditProductPage() {
       JSON.stringify(existingVideos) !== JSON.stringify(product.videos || [])
     ));
 
-  const canSave = isDirty || hasMediaChanges;
+  const hasVariantChanges =
+    JSON.stringify(variants) !== initialVariantSnapshot ||
+    (variantsEnabled && variants.length > 0 && !initialVariantSnapshot);
+
+  const canSave = isDirty || hasMediaChanges || hasVariantChanges;
 
   if (productLoading) {
     return (
@@ -329,6 +363,16 @@ export default function EditProductPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <ProductVariantsEditor
+              enabled={variantsEnabled}
+              onEnabledChange={setVariantsEnabled}
+              variants={variants}
+              onChange={setVariants}
+              basePrice={watch('price')}
+              initialColors={inferVariantDimensionText(variants, 'color')}
+              initialSizes={inferVariantDimensionText(variants, 'size')}
+            />
 
             <ProductImagesUploadSection
               variant="card"

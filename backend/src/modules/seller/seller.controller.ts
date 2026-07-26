@@ -27,6 +27,7 @@ import { ShopProfileDto } from './dto/shop-profile.dto';
 import { UpdateShopHoursDto } from './dto/shop-hours.dto';
 import { ShopToggleDto } from './dto/shop-toggle.dto';
 import { SubscribeDto } from './dto/subscription-plan.dto';
+import { VerifySubscriptionPaymentDto } from './dto/verify-subscription-payment.dto';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -126,6 +127,15 @@ export class SellerController {
   @Post('subscription/subscribe')
   async subscribe(@CurrentUser() user: any, @Body() subscribeDto: SubscribeDto) {
     return this.subscriptionService.subscribe(user.id, subscribeDto);
+  }
+
+  @Post('subscription/verify/:subscriptionId')
+  async verifySubscriptionPayment(
+    @CurrentUser() user: any,
+    @Param('subscriptionId') subscriptionId: string,
+    @Body() dto: VerifySubscriptionPaymentDto,
+  ) {
+    return this.subscriptionService.verifySubscriptionPayment(user.id, subscriptionId, dto);
   }
 
   @Post('subscription/cancel')

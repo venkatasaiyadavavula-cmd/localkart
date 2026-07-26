@@ -9,15 +9,17 @@ import { Category } from '../../core/entities/category.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
 import { Subscription } from '../../core/entities/subscription.entity';
+import { ProductVariant } from '../../core/entities/product-variant.entity';
 import { FeaturedVideoModule } from '../seller/featured-video.module';
+import { ProductVariantService } from './product-variant.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription]),
+    TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription, ProductVariant]),
     FeaturedVideoModule,
   ],
   controllers: [CatalogController],
-  providers: [CatalogService, SearchService, BulkUploadService],
+  providers: [CatalogService, SearchService, BulkUploadService, ProductVariantService],
   exports: [CatalogService],
 })
 export class CatalogModule {}

@@ -9,9 +9,11 @@ import {
   IsInt,
   Min,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProductCategoryType } from '../../../core/entities/product.entity';
+import { ProductVariantInputDto } from './product-variant.dto';
 
 export class CreateProductDto {
   @IsString()
@@ -66,4 +68,10 @@ export class CreateProductDto {
   @IsObject()
   @IsOptional()
   attributes?: Record<string, any>;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ProductVariantInputDto)
+  variants?: ProductVariantInputDto[];
 }

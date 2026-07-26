@@ -22,8 +22,11 @@ import { formatPrice } from '@/lib/utils';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
 const plans = SUBSCRIPTION_PLANS.map((p) => ({
   name: p.name,
+  planId: p.plan,
   price: p.price,
   productLimit: p.productLimit,
   features: p.features,
@@ -32,26 +35,112 @@ const plans = SUBSCRIPTION_PLANS.map((p) => ({
   popular: p.plan === 'growth',
 }));
 
+declare global { interface Window { Razorpay: any; } }
+
 export default function SubscriptionPage() {
-  const { data: subscription, isLoading, subscribe } = useSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { data: subscription, isLoading, subscribe, verifyPayment, invalidate } = useSubscription();
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [paymentPhase, setPaymentPhase] = useState<'idle' | 'checkout' | 'verifying'>('idle');
+
+  const selectedPlan = plans.find((p) => p.planId === selectedPlanId);
+
+  const loadRazorpay = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (window.Razorpay) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Razorpay'));
+      document.body.appendChild(script);
+    });
+
+  const openCheckout = async (order: {
+    subscriptionId: string;
+    razorpayOrderId: string;
+    amount: number;
+    currency: string;
+    key?: string;
+    plan?: string;
+  }) => {
+    const checkoutKey = RAZORPAY_KEY || order.key;
+    if (!checkoutKey) {
+      toast.error('Razorpay is not configured. Contact support.');
+      return;
+    }
+    await loadRazorpay();
+    setPaymentPhase('checkout');
+    const rzp = new window.Razorpay({
+      key: checkoutKey,
+      amount: order.amount,
+      currency: order.currency,
+      order_id: order.razorpayOrderId,
+      name: 'LocalKart',
+      description: `${order.plan ?? 'Subscription'} plan — monthly`,
+      theme: { color: '#3D5AF1' },
+      handler: async (response: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => {
+        setPaymentPhase('verifying');
+        try {
+          await verifyPayment({
+            subscriptionId: order.subscriptionId,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+          toast.success('Subscription upgraded successfully.');
+          setSelectedPlanId(null);
+          await invalidate();
+        } catch {
+          toast.error(
+            'Payment received but activation failed. Contact support with your payment ID.',
+          );
+        } finally {
+          setPaymentPhase('idle');
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          setPaymentPhase('idle');
+          toast.message('Payment cancelled — your current plan is unchanged.');
+        },
+      },
+    });
+    rzp.open();
+  };
 
   const handleSubscribe = async () => {
-    if (!selectedPlan) return;
-    const plan = plans.find((p) => p.name === selectedPlan);
+    if (!selectedPlanId) return;
     setIsSubscribing(true);
     try {
-      const result = await subscribe(selectedPlan.toLowerCase());
-      void result;
-      if (plan && plan.price > 0) {
-        toast.info('Plan request submitted. Payment integration coming soon — contact support to activate.');
+      const result = await subscribe(selectedPlanId);
+      if (result.requiresPayment && result.subscriptionId && result.razorpayOrderId) {
+        setSelectedPlanId(null);
+        await openCheckout({
+          subscriptionId: result.subscriptionId,
+          razorpayOrderId: result.razorpayOrderId,
+          amount: result.amount ?? 0,
+          currency: result.currency ?? 'INR',
+          key: result.key,
+          plan: result.plan,
+        });
       } else {
-        toast.success(`You are on the ${selectedPlan} plan.`);
+        toast.success(`You are on the ${selectedPlan?.name ?? 'new'} plan.`);
+        setSelectedPlanId(null);
+        await invalidate();
       }
-      setSelectedPlan(null);
-    } catch (error) {
-      toast.error('Failed to update subscription. Please try again.');
+    } catch (error: unknown) {
+      const message =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      toast.error(message || 'Failed to update subscription. Please try again.');
     } finally {
       setIsSubscribing(false);
     }
@@ -73,6 +162,7 @@ export default function SubscriptionPage() {
   const currentPlan = subscription?.plan?.toLowerCase() || 'starter';
   const productCount = subscription?.productCount || 0;
   const productLimit = subscription?.productLimit || SUBSCRIPTION_PLANS[0].productLimit;
+  const busy = isSubscribing || paymentPhase !== 'idle';
 
   return (
     <div className="space-y-6">
@@ -81,16 +171,24 @@ export default function SubscriptionPage() {
         <p className="text-muted-foreground">Manage your subscription plan</p>
       </div>
 
-      {/* Current Plan Summary */}
+      {paymentPhase === 'verifying' && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-3 py-4 text-sm">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            Confirming your payment…
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Current Plan</CardTitle>
           <CardDescription>Your active subscription details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className={`rounded-full p-3 ${plans.find(p => p.name.toLowerCase() === currentPlan)?.color}`}>
+              <div className={`rounded-full p-3 ${plans.find(p => p.planId === currentPlan)?.color}`}>
                 {currentPlan === 'starter' && <Zap className="h-6 w-6" />}
                 {currentPlan === 'growth' && <Sparkles className="h-6 w-6" />}
                 {currentPlan === 'business' && <Crown className="h-6 w-6" />}
@@ -102,14 +200,14 @@ export default function SubscriptionPage() {
                 </p>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <p className="text-2xl font-bold text-primary">
-                {formatPrice(plans.find(p => p.name.toLowerCase() === currentPlan)?.price || 0)}
+                {formatPrice(plans.find(p => p.planId === currentPlan)?.price || 0)}
                 <span className="text-sm font-normal text-muted-foreground">/month</span>
               </p>
               {subscription?.endDate && (
                 <p className="text-xs text-muted-foreground">
-                  Renews on {new Date(subscription.endDate).toLocaleDateString()}
+                  Valid until {new Date(subscription.endDate).toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -118,23 +216,26 @@ export default function SubscriptionPage() {
           <div className="h-2 w-full rounded-full bg-muted">
             <div
               className="h-2 rounded-full bg-primary transition-all"
-              style={{ width: `${(productCount / productLimit) * 100}%` }}
+              style={{ width: `${Math.min(100, (productCount / productLimit) * 100)}%` }}
             />
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Paid plans renew monthly via Razorpay checkout (manual payment each month). Auto-recurring
+            billing is planned as a fast-follow.
+          </p>
         </CardContent>
       </Card>
 
-      {/* Available Plans */}
       <div>
         <h2 className="mb-4 font-heading text-xl font-semibold">Available Plans</h2>
         <div className="grid gap-6 md:grid-cols-3">
           {plans.map((plan) => {
             const Icon = plan.icon;
-            const isCurrent = plan.name.toLowerCase() === currentPlan;
+            const isCurrent = plan.planId === currentPlan;
 
             return (
               <motion.div
-                key={plan.name}
+                key={plan.planId}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: plans.indexOf(plan) * 0.1 }}
@@ -169,8 +270,8 @@ export default function SubscriptionPage() {
                     <Button
                       className="w-full"
                       variant={isCurrent ? 'outline' : 'default'}
-                      disabled={isCurrent}
-                      onClick={() => setSelectedPlan(plan.name)}
+                      disabled={isCurrent || busy}
+                      onClick={() => setSelectedPlanId(plan.planId)}
                     >
                       {isCurrent ? 'Current Plan' : 'Upgrade'}
                     </Button>
@@ -182,31 +283,28 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={!!selectedPlan} onOpenChange={() => setSelectedPlan(null)}>
+      <Dialog open={!!selectedPlanId} onOpenChange={() => !busy && setSelectedPlanId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Subscription</DialogTitle>
             <DialogDescription>
-              You are about to subscribe to the {selectedPlan} plan.
+              You are about to subscribe to the {selectedPlan?.name} plan.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm">
-              Your card will be charged{' '}
-              <span className="font-semibold">
-                {formatPrice(plans.find(p => p.name === selectedPlan)?.price || 0)}
-              </span>{' '}
-              per month.
+              You will pay{' '}
+              <span className="font-semibold">{formatPrice(selectedPlan?.price || 0)}</span> now via
+              Razorpay to activate this plan for one month.
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedPlan(null)}>
+            <Button variant="outline" onClick={() => setSelectedPlanId(null)} disabled={busy}>
               Cancel
             </Button>
-            <Button onClick={handleSubscribe} disabled={isSubscribing}>
-              {isSubscribing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Confirm & Subscribe
+            <Button onClick={handleSubscribe} disabled={busy}>
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {selectedPlan && selectedPlan.price > 0 ? 'Pay & Activate' : 'Confirm'}
             </Button>
           </DialogFooter>
         </DialogContent>

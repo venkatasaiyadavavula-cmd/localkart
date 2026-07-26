@@ -56,6 +56,9 @@ export class Subscription {
   razorpaySubscriptionId: string;
 
   @Column({ nullable: true })
+  razorpayOrderId: string;
+
+  @Column({ nullable: true })
   razorpayPaymentId: string;
 
   @Column({ type: 'jsonb', nullable: true })

@@ -24,6 +24,10 @@ import {
   ProductVideosUploadSection,
 } from '@/components/forms/product-media-upload';
 import { uploadMediaFiles } from '@/lib/utils/media';
+import {
+  ProductVariantsEditor,
+  type ProductVariantInput,
+} from '@/components/seller/product-variants-editor';
 
 enum ProductCategoryType {
   GROCERIES       = 'groceries',
@@ -66,6 +70,8 @@ export default function NewProductPage() {
   const [videos,    setVideos]    = useState<File[]>([]);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [variantsEnabled, setVariantsEnabled] = useState(false);
+  const [variants, setVariants] = useState<ProductVariantInput[]>([]);
 
   const {
     register, handleSubmit, setValue, watch,
@@ -133,6 +139,7 @@ export default function NewProductPage() {
         ...data,
         images: imageUrls,
         videos: videoUrls,
+        ...(variantsEnabled && variants.length > 0 ? { variants } : {}),
       });
       toast.success('Product created successfully. Awaiting approval.');
       router.push('/dashboard/products');
@@ -250,6 +257,14 @@ export default function NewProductPage() {
             </div>
           </CardContent>
         </Card>
+
+        <ProductVariantsEditor
+          enabled={variantsEnabled}
+          onEnabledChange={setVariantsEnabled}
+          variants={variants}
+          onChange={setVariants}
+          basePrice={watchedPrice}
+        />
 
         <ProductImagesUploadSection
           variant="card"

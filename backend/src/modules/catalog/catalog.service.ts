@@ -16,6 +16,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
 import { enrichProductsWithShopHours, enrichProductWithShopHours } from '../../core/utils/shop-hours.util';
 import { productUpdateRequiresReapproval } from './product-reapproval.util';
+import { ProductVariantService } from './product-variant.service';
 
 const PLAN_LIMITS: Record<SubscriptionPlan, number> = {
   [SubscriptionPlan.STARTER]:  40,
@@ -34,6 +35,7 @@ export class CatalogService {
     private readonly shopRepository: Repository<Shop>,
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
+    private readonly productVariantService: ProductVariantService,
   ) {}
 
   async getProducts(query: SearchQueryDto) {
@@ -167,15 +169,22 @@ export class CatalogService {
       throw new BadRequestException('Product with this name already exists');
     }
 
+    const { variants, ...createFields } = createProductDto;
+
     const product = this.productRepository.create({
-      ...createProductDto,
+      ...createFields,
       slug,
       shopId: shop.id,
       status: ProductStatus.PENDING, // Requires admin approval
     });
 
     await this.productRepository.save(product);
-    return product;
+
+    if (variants?.length) {
+      await this.productVariantService.replaceVariantsForProduct(product.id, variants);
+    }
+
+    return this.getSellerProductById(userId, product.id);
   }
 
   async updateProduct(userId: string, productId: string, updateProductDto: UpdateProductDto) {
@@ -193,19 +202,30 @@ export class CatalogService {
       throw new NotFoundException('Product not found');
     }
 
-    if (updateProductDto.name) {
-      product.slug = slugify(updateProductDto.name, { lower: true, strict: true });
+    const { variants, ...updateFields } = updateProductDto;
+
+    if (updateFields.name) {
+      product.slug = slugify(updateFields.name, { lower: true, strict: true });
     }
 
-    const requiresReapproval = productUpdateRequiresReapproval(updateProductDto, product);
+    const requiresReapproval = productUpdateRequiresReapproval(updateFields, product);
 
-    Object.assign(product, updateProductDto);
+    Object.assign(product, updateFields);
     if (requiresReapproval) {
       product.status = ProductStatus.PENDING; // Re-approval needed
     }
 
     await this.productRepository.save(product);
-    return product;
+
+    if (variants !== undefined) {
+      if (variants.length === 0) {
+        await this.productVariantService.clearVariantsForProduct(product.id);
+      } else {
+        await this.productVariantService.replaceVariantsForProduct(product.id, variants);
+      }
+    }
+
+    return this.getSellerProductById(userId, productId);
   }
 
   async deleteProduct(userId: string, productId: string) {
@@ -279,7 +299,8 @@ export class CatalogService {
       throw new NotFoundException('Product not found');
     }
 
-    return product;
+    const variants = await this.productVariantService.listByProductId(product.id);
+    return { ...product, variants };
   }
 
   async getSellerProductLimit(userId: string) {
