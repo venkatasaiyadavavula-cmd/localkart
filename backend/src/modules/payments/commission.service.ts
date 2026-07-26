@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between, IsNull, In } from 'typeorm';
+import { Repository, DataSource, Between, IsNull, In, LessThan } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { CommissionBill, CommissionBillStatus } from '../../core/entities/commission-bill.entity';
 import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
@@ -128,9 +128,6 @@ export class CommissionService {
     shopId: string,
     weekEndingFriday: string,
   ): Promise<CommissionBill | null> {
-    const existing = await this.billRepo.findOne({ where: { shopId, billDate: weekEndingFriday } });
-    if (existing) return existing;
-
     const weekStartDate = getWeekStartSaturday(weekEndingFriday);
     const { start, end } = getWeekOrderRange(weekEndingFriday);
 
@@ -140,10 +137,10 @@ export class CommissionService {
       const adChargeRepo = manager.getRepository(AdCampaignCharge);
       const orderRepo = manager.getRepository(Order);
 
-      const racedExisting = await billRepo.findOne({
+      const existingBill = await billRepo.findOne({
         where: { shopId, billDate: weekEndingFriday },
+        lock: { mode: 'pessimistic_write' },
       });
-      if (racedExisting) return racedExisting;
 
       const orders = await orderRepo.find({
         where: {
@@ -153,29 +150,18 @@ export class CommissionService {
         },
       });
 
-      const unbilledVideoCharges = await videoChargeRepo.find({
-        where: {
-          shopId,
-          commissionBillId: IsNull(),
-          createdAt: Between(start, end),
-        },
-      });
-
-      const unbilledAdCharges = await adChargeRepo.find({
-        where: {
-          shopId,
-          commissionBillId: IsNull(),
-          createdAt: Between(start, end),
-        },
-      });
-
-      if (
-        orders.length === 0 &&
-        unbilledVideoCharges.length === 0 &&
-        unbilledAdCharges.length === 0
-      ) {
-        return null;
-      }
+      const unbilledVideoCharges = await this.findUnbilledVideoCharges(
+        videoChargeRepo,
+        shopId,
+        start,
+        end,
+      );
+      const unbilledAdCharges = await this.findUnbilledAdCharges(
+        adChargeRepo,
+        shopId,
+        start,
+        end,
+      );
 
       const totalOrderValue = orders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
       const commissionAmount = parseFloat(
@@ -186,13 +172,61 @@ export class CommissionService {
           ? parseFloat(((commissionAmount / totalOrderValue) * 100).toFixed(2))
           : 0;
 
-      const videoUploadFees = parseFloat(
+      const additionalVideoFees = parseFloat(
         unbilledVideoCharges.reduce((sum, row) => sum + Number(row.amount), 0).toFixed(2),
       );
-
-      const adCampaignFees = parseFloat(
+      const additionalAdFees = parseFloat(
         unbilledAdCharges.reduce((sum, row) => sum + Number(row.amount), 0).toFixed(2),
       );
+
+      if (existingBill) {
+        // Paid bills are never reopened — late accruals stay unbilled until a later week
+        // (picked up via carryover in findUnbilled* on the next generate run).
+        if (existingBill.status === CommissionBillStatus.PAID) {
+          return existingBill;
+        }
+
+        const hasTopUp =
+          additionalVideoFees > 0 ||
+          additionalAdFees > 0 ||
+          existingBill.orderCount !== orders.length ||
+          Number(existingBill.commissionAmount) !== commissionAmount;
+
+        if (!hasTopUp) {
+          return existingBill;
+        }
+
+        existingBill.orderCount = orders.length;
+        existingBill.totalOrderValue = totalOrderValue;
+        existingBill.commissionAmount = commissionAmount;
+        existingBill.commissionPercent = commissionPercent;
+        existingBill.videoUploadFees = parseFloat(
+          (Number(existingBill.videoUploadFees) + additionalVideoFees).toFixed(2),
+        );
+        existingBill.adCampaignFees = parseFloat(
+          (Number(existingBill.adCampaignFees) + additionalAdFees).toFixed(2),
+        );
+
+        const bill = await billRepo.save(existingBill);
+
+        await this.linkChargesToBill(
+          videoChargeRepo,
+          adChargeRepo,
+          unbilledVideoCharges,
+          unbilledAdCharges,
+          bill.id,
+        );
+
+        return bill;
+      }
+
+      if (
+        orders.length === 0 &&
+        unbilledVideoCharges.length === 0 &&
+        unbilledAdCharges.length === 0
+      ) {
+        return null;
+      }
 
       const bill = await billRepo.save(
         billRepo.create({
@@ -203,30 +237,77 @@ export class CommissionService {
           totalOrderValue,
           commissionAmount,
           commissionPercent,
-          videoUploadFees,
-          adCampaignFees,
+          videoUploadFees: additionalVideoFees,
+          adCampaignFees: additionalAdFees,
           fineAmount: 0,
           daysOverdue: 0,
           status: CommissionBillStatus.PENDING,
         }),
       );
 
-      if (unbilledVideoCharges.length > 0) {
-        await videoChargeRepo.update(
-          { id: In(unbilledVideoCharges.map((row) => row.id)) },
-          { commissionBillId: bill.id },
-        );
-      }
-
-      if (unbilledAdCharges.length > 0) {
-        await adChargeRepo.update(
-          { id: In(unbilledAdCharges.map((row) => row.id)) },
-          { commissionBillId: bill.id },
-        );
-      }
+      await this.linkChargesToBill(
+        videoChargeRepo,
+        adChargeRepo,
+        unbilledVideoCharges,
+        unbilledAdCharges,
+        bill.id,
+      );
 
       return bill;
     });
+  }
+
+  /**
+   * Unbilled accruals for this billing run: charges in the Sat–Fri week plus any older
+   * still-unbilled rows (e.g. deferred because that week's bill was already PAID).
+   */
+  private findUnbilledVideoCharges(
+    repo: Repository<VideoUploadCharge>,
+    shopId: string,
+    weekStart: Date,
+    weekEnd: Date,
+  ) {
+    return repo.find({
+      where: [
+        { shopId, commissionBillId: IsNull(), createdAt: Between(weekStart, weekEnd) },
+        { shopId, commissionBillId: IsNull(), createdAt: LessThan(weekStart) },
+      ],
+    });
+  }
+
+  private findUnbilledAdCharges(
+    repo: Repository<AdCampaignCharge>,
+    shopId: string,
+    weekStart: Date,
+    weekEnd: Date,
+  ) {
+    return repo.find({
+      where: [
+        { shopId, commissionBillId: IsNull(), createdAt: Between(weekStart, weekEnd) },
+        { shopId, commissionBillId: IsNull(), createdAt: LessThan(weekStart) },
+      ],
+    });
+  }
+
+  private async linkChargesToBill(
+    videoChargeRepo: Repository<VideoUploadCharge>,
+    adChargeRepo: Repository<AdCampaignCharge>,
+    unbilledVideoCharges: VideoUploadCharge[],
+    unbilledAdCharges: AdCampaignCharge[],
+    billId: string,
+  ) {
+    if (unbilledVideoCharges.length > 0) {
+      await videoChargeRepo.update(
+        { id: In(unbilledVideoCharges.map((row) => row.id)) },
+        { commissionBillId: billId },
+      );
+    }
+    if (unbilledAdCharges.length > 0) {
+      await adChargeRepo.update(
+        { id: In(unbilledAdCharges.map((row) => row.id)) },
+        { commissionBillId: billId },
+      );
+    }
   }
 
   /** @deprecated Use generateWeeklyBillForShop */

@@ -8,11 +8,18 @@ describe('CommissionService.generateWeeklyBillForShop', () => {
   const shopId = 'shop-1';
   const weekEndingFriday = '2025-07-18';
 
-  function buildWeeklyService() {
+  function buildWeeklyService(initialBill: Record<string, unknown> | null = null) {
+    let billState = initialBill
+      ? { id: 'bill-existing', shopId, billDate: weekEndingFriday, ...initialBill }
+      : null;
+
     const innerBillRepo = {
-      findOne: jest.fn().mockResolvedValue(null),
+      findOne: jest.fn(async () => billState),
       create: jest.fn((data) => data),
-      save: jest.fn(async (data) => ({ id: 'bill-new', ...data })),
+      save: jest.fn(async (data) => {
+        billState = { id: billState?.id ?? 'bill-new', ...data };
+        return billState;
+      }),
     };
     const orderRepo = {
       find: jest.fn().mockResolvedValue([]),
@@ -41,19 +48,22 @@ describe('CommissionService.generateWeeklyBillForShop', () => {
       transaction: jest.fn(async (cb: (m: typeof manager) => Promise<unknown>) => cb(manager)),
     };
 
-    const outerBillRepo = {
-      findOne: jest.fn().mockResolvedValue(null),
-    };
-
     const service = new CommissionService(
-      outerBillRepo as never,
+      { findOne: jest.fn() } as never,
       {} as never,
       {} as never,
       dataSource as never,
       { sendCommissionReminder: jest.fn() } as never,
     );
 
-    return { service, innerBillRepo, orderRepo, videoChargeRepo, adChargeRepo, dataSource };
+    return {
+      service,
+      innerBillRepo,
+      orderRepo,
+      videoChargeRepo,
+      adChargeRepo,
+      getBill: () => billState,
+    };
   }
 
   it('returns null when there are no delivered orders, video charges, or ad charges', async () => {
@@ -122,38 +132,73 @@ describe('CommissionService.generateWeeklyBillForShop', () => {
     });
   });
 
-  it('sums commission and video upload fees on the same weekly bill', async () => {
-    const { service, orderRepo, videoChargeRepo } = buildWeeklyService();
-    orderRepo.find.mockResolvedValue([
-      {
-        totalAmount: 500,
-        commissionAmount: 50,
-        status: OrderStatus.DELIVERED,
-      },
-    ]);
-    videoChargeRepo.find.mockResolvedValue([{ id: 'vc-1', amount: 10, shopId }]);
+  it('does not change an unpaid bill when generate runs again with no new accruals', async () => {
+    const { service, innerBillRepo, videoChargeRepo, adChargeRepo } = buildWeeklyService({
+      status: CommissionBillStatus.PENDING,
+      videoUploadFees: 10,
+      adCampaignFees: 0,
+      orderCount: 0,
+      commissionAmount: 0,
+      totalOrderValue: 0,
+    });
+
+    await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
+    await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
+
+    expect(innerBillRepo.save).not.toHaveBeenCalled();
+    expect(videoChargeRepo.update).not.toHaveBeenCalled();
+    expect(adChargeRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('tops up an existing unpaid bill when new accruals appear later in the same week', async () => {
+    const { service, adChargeRepo, getBill } = buildWeeklyService({
+      status: CommissionBillStatus.PENDING,
+      videoUploadFees: 10,
+      adCampaignFees: 0,
+      orderCount: 0,
+      commissionAmount: 0,
+      totalOrderValue: 0,
+    });
+
+    adChargeRepo.find.mockResolvedValue([{ id: 'ac-late', amount: 200, shopId }]);
 
     const bill = await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
 
     expect(bill).toMatchObject({
-      orderCount: 1,
-      commissionAmount: 50,
       videoUploadFees: 10,
+      adCampaignFees: 200,
     });
+    expect(adChargeRepo.update).toHaveBeenCalledWith(
+      { id: expect.anything() },
+      { commissionBillId: 'bill-existing' },
+    );
+    expect(getBill()).toMatchObject({ adCampaignFees: 200 });
   });
 
-  it('returns existing bill without re-processing accruals', async () => {
-    const existing = { id: 'bill-existing', shopId, billDate: weekEndingFriday };
-    const outerBillRepo = { findOne: jest.fn().mockResolvedValue(existing) };
-    const service = new CommissionService(
-      outerBillRepo as never,
-      {} as never,
-      {} as never,
-      { transaction: jest.fn() } as never,
-      { sendCommissionReminder: jest.fn() } as never,
-    );
+  it('does not reopen a paid bill; late accruals are billed on a later generate run', async () => {
+    const { service, adChargeRepo, innerBillRepo } = buildWeeklyService({
+      status: CommissionBillStatus.PAID,
+      videoUploadFees: 10,
+      adCampaignFees: 0,
+      orderCount: 0,
+      commissionAmount: 0,
+      totalOrderValue: 0,
+    });
+
+    adChargeRepo.find.mockResolvedValue([{ id: 'ac-late', amount: 200, shopId }]);
 
     const bill = await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
-    expect(bill).toBe(existing);
+
+    expect(bill).toMatchObject({ status: CommissionBillStatus.PAID, adCampaignFees: 0 });
+    expect(innerBillRepo.save).not.toHaveBeenCalled();
+    expect(adChargeRepo.update).not.toHaveBeenCalled();
+
+    const { service: service2, adChargeRepo: adRepo2 } = buildWeeklyService();
+    adRepo2.find.mockResolvedValue([{ id: 'ac-late', amount: 200, shopId }]);
+
+    const nextBill = await service2.generateWeeklyBillForShop(shopId, '2025-07-25');
+
+    expect(nextBill).toMatchObject({ adCampaignFees: 200 });
+    expect(adRepo2.update).toHaveBeenCalled();
   });
 });
