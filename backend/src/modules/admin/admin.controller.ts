@@ -211,4 +211,10 @@ export class AdminController {
   async pauseAdCampaign(@Param('id') id: string) {
     return this.adCampaignService.pauseCampaignAsAdmin(id);
   }
+
+  @Post('ad-campaigns/:id/resume')
+  @HttpCode(HttpStatus.OK)
+  async resumeAdCampaign(@Param('id') id: string) {
+    return this.adCampaignService.resumeCampaignAsAdmin(id);
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { SponsoredProduct, AdStatus, AdType } from '../../core/entities/sponsored-product.entity';
@@ -128,10 +128,18 @@ export class AdCampaignService {
     }
 
     if (dto.status) {
+      this.assertSellerMaySetStatus(campaign, dto.status);
+      if (dto.status === AdStatus.PAUSED) {
+        campaign.pausedByAdmin = false;
+      }
       await this.applyCampaignStatus(campaign, dto.status);
     }
 
-    Object.assign(campaign, dto);
+    const { status: _status, ...rest } = dto;
+    Object.assign(campaign, rest);
+    if (dto.status) {
+      campaign.status = dto.status;
+    }
     await this.adRepository.save(campaign);
     return campaign;
   }
@@ -154,6 +162,22 @@ export class AdCampaignService {
     }
     await this.applyCampaignStatus(campaign, AdStatus.PAUSED);
     campaign.status = AdStatus.PAUSED;
+    campaign.pausedByAdmin = true;
+    await this.adRepository.save(campaign);
+    return campaign;
+  }
+
+  async resumeCampaignAsAdmin(id: string) {
+    const campaign = await this.adRepository.findOne({
+      where: { id },
+      relations: ['product'],
+    });
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+    campaign.pausedByAdmin = false;
+    await this.applyCampaignStatus(campaign, AdStatus.ACTIVE);
+    campaign.status = AdStatus.ACTIVE;
     await this.adRepository.save(campaign);
     return campaign;
   }
@@ -191,6 +215,7 @@ export class AdCampaignService {
         productName: c.product?.name ?? '—',
         adType: c.adType,
         status: c.status,
+        pausedByAdmin: c.pausedByAdmin,
         startDate: c.startDate,
         endDate: c.endDate,
         totalCost: Number(c.totalCost),
@@ -299,6 +324,14 @@ export class AdCampaignService {
         featuredVideoId: params.featuredVideoId ?? null,
       }),
     );
+  }
+
+  private assertSellerMaySetStatus(campaign: SponsoredProduct, status: AdStatus) {
+    if (status === AdStatus.ACTIVE && campaign.pausedByAdmin) {
+      throw new ForbiddenException(
+        'This campaign was paused by admin and cannot be resumed by the seller. Contact support.',
+      );
+    }
   }
 
   private async applyCampaignStatus(campaign: SponsoredProduct, status: AdStatus) {

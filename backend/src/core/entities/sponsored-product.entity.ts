@@ -48,6 +48,10 @@ export class SponsoredProduct {
   @Column({ type: 'enum', enum: AdStatus, default: AdStatus.PENDING })
   status: AdStatus;
 
+  /** When true, only admin can resume the campaign (seller pause/resume blocked for re-activation). */
+  @Column({ default: false })
+  pausedByAdmin: boolean;
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   costPerDay: number;
 

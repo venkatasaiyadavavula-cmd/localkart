@@ -13,6 +13,7 @@ export interface AdCampaign {
   shopId: string;
   adType: AdType;
   status: AdStatus;
+  pausedByAdmin?: boolean;
   costPerDay: number;
   startDate: string;
   endDate: string;

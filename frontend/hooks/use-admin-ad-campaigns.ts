@@ -17,6 +17,7 @@ export interface AdminAdCampaignRow {
   chargeRecorded: boolean;
   chargeAmount: number | null;
   chargeBilled: boolean;
+  pausedByAdmin?: boolean;
   createdAt: string;
 }
 
@@ -48,6 +49,16 @@ export function useAdminAdCampaigns(page = 1, limit = 30) {
     },
   });
 
+  const resumeMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      const { data } = await apiClient.post(`/admin/ad-campaigns/${campaignId}/resume`);
+      return unwrapApiData(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'ad-campaigns'] });
+    },
+  });
+
   return {
     campaigns: query.data?.data ?? [],
     meta: query.data?.meta,
@@ -55,6 +66,8 @@ export function useAdminAdCampaigns(page = 1, limit = 30) {
     isError: query.isError,
     refetch: query.refetch,
     pauseCampaign: pauseMutation.mutateAsync,
+    resumeCampaign: resumeMutation.mutateAsync,
     isPausing: pauseMutation.isPending,
+    isResuming: resumeMutation.isPending,
   };
 }

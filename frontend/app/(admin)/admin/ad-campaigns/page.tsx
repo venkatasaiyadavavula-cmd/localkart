@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Megaphone, Pause, RefreshCw } from 'lucide-react';
+import { Megaphone, Pause, Play, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import { formatPrice, formatDate } from '@/lib/utils';
 
 export default function AdminAdCampaignsPage() {
   const [page, setPage] = useState(1);
-  const { campaigns, meta, isLoading, isError, refetch, pauseCampaign, isPausing } =
+  const { campaigns, meta, isLoading, isError, refetch, pauseCampaign, resumeCampaign, isPausing, isResuming } =
     useAdminAdCampaigns(page, 30);
 
   const handlePause = async (id: string, kind: string) => {
@@ -36,6 +36,16 @@ export default function AdminAdCampaignsPage() {
       toast.success('Campaign paused and product unsponsored');
     } catch {
       toast.error('Failed to pause campaign');
+    }
+  };
+
+  const handleResume = async (id: string, kind: string) => {
+    if (kind !== 'sponsored') return;
+    try {
+      await resumeCampaign(id);
+      toast.success('Campaign resumed');
+    } catch {
+      toast.error('Failed to resume campaign');
     }
   };
 
@@ -107,6 +117,11 @@ export default function AdminAdCampaignsPage() {
                       <Badge variant="outline" className="capitalize">
                         {row.status}
                       </Badge>
+                      {row.kind === 'sponsored' && row.pausedByAdmin && (
+                        <Badge variant="destructive" className="ml-1">
+                          Admin paused
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm">
                       {formatDate(row.startDate)}
@@ -139,6 +154,19 @@ export default function AdminAdCampaignsPage() {
                           Pause
                         </Button>
                       )}
+                      {row.kind === 'sponsored' &&
+                        row.status === 'paused' &&
+                        row.pausedByAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isResuming}
+                            onClick={() => handleResume(row.id, row.kind)}
+                          >
+                            <Play className="mr-1 h-3 w-3" />
+                            Resume
+                          </Button>
+                        )}
                     </TableCell>
                   </TableRow>
                 ))

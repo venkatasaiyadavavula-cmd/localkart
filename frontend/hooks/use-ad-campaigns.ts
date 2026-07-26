@@ -32,7 +32,8 @@ export function useAdCampaigns() {
 
   const pauseMutation = useMutation({
     mutationFn: async (campaignId: string) => {
-      return apiClient.post(`/seller/ads/${campaignId}/pause`, {});
+      const { data } = await apiClient.post(`/seller/ads/${campaignId}/pause`, {});
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });
@@ -41,7 +42,8 @@ export function useAdCampaigns() {
 
   const resumeMutation = useMutation({
     mutationFn: async (campaignId: string) => {
-      return apiClient.post(`/seller/ads/${campaignId}/resume`, {});
+      const { data } = await apiClient.post(`/seller/ads/${campaignId}/resume`, {});
+      return unwrapApiData(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller', 'ads'] });

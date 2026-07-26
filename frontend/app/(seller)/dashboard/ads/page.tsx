@@ -92,13 +92,31 @@ export default function SellerAdsPage() {
     }
   };
 
-  const handleToggleStatus = async (campaignId: string, currentStatus: string) => {
+  const handleToggleStatus = async (
+    campaignId: string,
+    currentStatus: string,
+    pausedByAdmin?: boolean,
+  ) => {
+    if (pausedByAdmin && currentStatus !== 'active') {
+      toast.error(
+        'This campaign was paused by admin and cannot be resumed. Contact support.',
+      );
+      return;
+    }
+
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
     try {
       await updateCampaign(campaignId, { status: newStatus });
       toast.success(`Campaign ${newStatus === 'active' ? 'resumed' : 'paused'}`);
-    } catch {
-      toast.error('Failed to update campaign');
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string | string[] } } })?.response?.data
+          ?.message;
+      const text = Array.isArray(msg) ? msg[0] : msg;
+      toast.error(
+        text ||
+          'Failed to update campaign',
+      );
     }
   };
 
@@ -254,6 +272,7 @@ export default function SellerAdsPage() {
                 {campaigns?.sponsored?.map((campaign: {
                   id: string;
                   status: string;
+                  pausedByAdmin?: boolean;
                   endDate: string;
                   impressions: number;
                   clicks: number;
@@ -275,13 +294,29 @@ export default function SellerAdsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                        {campaign.status}
-                      </Badge>
+                      {campaign.pausedByAdmin ? (
+                        <Badge variant="destructive">Paused by admin</Badge>
+                      ) : (
+                        <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                          {campaign.status}
+                        </Badge>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleToggleStatus(campaign.id, campaign.status)}
+                        disabled={campaign.pausedByAdmin && campaign.status !== 'active'}
+                        title={
+                          campaign.pausedByAdmin
+                            ? 'Contact support to resume this campaign'
+                            : undefined
+                        }
+                        onClick={() =>
+                          handleToggleStatus(
+                            campaign.id,
+                            campaign.status,
+                            campaign.pausedByAdmin,
+                          )
+                        }
                       >
                         {campaign.status === 'active' ? (
                           <Pause className="h-4 w-4" />
