@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { AdCampaignService } from '../seller/ad-campaign.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,6 +29,7 @@ export class AdminController {
     private readonly moderationService: ModerationService,
     private readonly commissionService: CommissionService,
     private readonly fraudDetectionService: FraudDetectionService,
+    private readonly adCampaignService: AdCampaignService,
   ) {}
 
   // Dashboard
@@ -191,5 +193,22 @@ export class AdminController {
   @Get('fraud/cod-risk/:orderId')
   async assessCodRisk(@Param('orderId') orderId: string) {
     return this.fraudDetectionService.assessCodRisk(orderId);
+  }
+
+  @Get('ad-campaigns')
+  async listAdCampaigns(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adCampaignService.listCampaignsForAdmin(
+      parseInt(page || '1', 10),
+      parseInt(limit || '30', 10),
+    );
+  }
+
+  @Post('ad-campaigns/:id/pause')
+  @HttpCode(HttpStatus.OK)
+  async pauseAdCampaign(@Param('id') id: string) {
+    return this.adCampaignService.pauseCampaignAsAdmin(id);
   }
 }

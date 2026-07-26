@@ -6,6 +6,7 @@ import {
   DollarSign,
   AlertTriangle,
   Users,
+  Megaphone,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ export const adminNavItems: AdminNavItem[] = [
   { icon: Package, label: 'Products', href: '/admin/products' },
   { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
   { icon: DollarSign, label: 'Commissions', href: '/admin/commissions' },
+  { icon: Megaphone, label: 'Ad campaigns', href: '/admin/ad-campaigns' },
   { icon: AlertTriangle, label: 'Disputes', href: '/admin/disputes' },
   { icon: Users, label: 'Customers', href: '/admin/customers' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },

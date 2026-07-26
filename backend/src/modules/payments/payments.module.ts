@@ -11,12 +11,13 @@ import { Transaction } from '../../core/entities/transaction.entity';
 import { CommissionBill } from '../../core/entities/commission-bill.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
+import { AdCampaignCharge } from '../../core/entities/ad-campaign-charge.entity';
 import { OrdersModule } from '../orders/orders.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, Transaction, CommissionBill, Shop, VideoUploadCharge]),
+    TypeOrmModule.forFeature([Order, Transaction, CommissionBill, Shop, VideoUploadCharge, AdCampaignCharge]),
     OrdersModule,
     NotificationsModule,
     ScheduleModule.forRoot(),

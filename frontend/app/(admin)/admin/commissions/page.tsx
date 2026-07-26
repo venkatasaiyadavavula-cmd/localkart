@@ -262,6 +262,7 @@ export default function AdminCommissionsPage() {
                 <TableHead className="text-right">Orders</TableHead>
                 <TableHead className="text-right">Commission</TableHead>
                 <TableHead className="text-right">Video uploads</TableHead>
+                <TableHead className="text-right">Ad campaigns</TableHead>
                 <TableHead className="text-right">Fine</TableHead>
                 <TableHead className="text-right">Total due</TableHead>
                 <TableHead>Status</TableHead>
@@ -275,14 +276,14 @@ export default function AdminCommissionsPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={12}>
+                    <TableCell colSpan={13}>
                       <Skeleton className="h-8 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : bills.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={13} className="h-32 text-center text-muted-foreground">
                     No commission bills found for this filter
                   </TableCell>
                 </TableRow>
@@ -296,6 +297,11 @@ export default function AdminCommissionsPage() {
                     <TableCell className="text-right">
                       {Number(bill.videoUploadFees ?? 0) > 0
                         ? formatPrice(bill.videoUploadFees ?? 0)
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {Number(bill.adCampaignFees ?? 0) > 0
+                        ? formatPrice(bill.adCampaignFees ?? 0)
                         : '—'}
                     </TableCell>
                     <TableCell className="text-right">

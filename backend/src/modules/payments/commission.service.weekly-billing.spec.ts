@@ -2,6 +2,7 @@ import { CommissionService } from './commission.service';
 import { CommissionBill, CommissionBillStatus } from '../../core/entities/commission-bill.entity';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
+import { AdCampaignCharge } from '../../core/entities/ad-campaign-charge.entity';
 
 describe('CommissionService.generateWeeklyBillForShop', () => {
   const shopId = 'shop-1';
@@ -21,11 +22,17 @@ describe('CommissionService.generateWeeklyBillForShop', () => {
       update: jest.fn().mockResolvedValue(undefined),
     };
 
+    const adChargeRepo = {
+      find: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+
     const manager = {
       getRepository: jest.fn((entity: unknown) => {
         if (entity === CommissionBill) return innerBillRepo;
         if (entity === Order) return orderRepo;
         if (entity === VideoUploadCharge) return videoChargeRepo;
+        if (entity === AdCampaignCharge) return adChargeRepo;
         throw new Error(`Unexpected entity ${entity}`);
       }),
     };
@@ -46,10 +53,10 @@ describe('CommissionService.generateWeeklyBillForShop', () => {
       { sendCommissionReminder: jest.fn() } as never,
     );
 
-    return { service, innerBillRepo, orderRepo, videoChargeRepo, dataSource };
+    return { service, innerBillRepo, orderRepo, videoChargeRepo, adChargeRepo, dataSource };
   }
 
-  it('returns null when there are no delivered orders and no unbilled video charges', async () => {
+  it('returns null when there are no delivered orders, video charges, or ad charges', async () => {
     const { service } = buildWeeklyService();
     const bill = await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
     expect(bill).toBeNull();
@@ -78,6 +85,41 @@ describe('CommissionService.generateWeeklyBillForShop', () => {
       { commissionBillId: 'bill-new' },
     );
     expect(innerBillRepo.save).toHaveBeenCalled();
+  });
+
+  it('sums commission, video upload fees, and ad campaign fees on the same weekly bill', async () => {
+    const { service, orderRepo, videoChargeRepo, adChargeRepo } = buildWeeklyService();
+    orderRepo.find.mockResolvedValue([
+      {
+        totalAmount: 500,
+        commissionAmount: 50,
+        status: OrderStatus.DELIVERED,
+      },
+    ]);
+    videoChargeRepo.find.mockResolvedValue([{ id: 'vc-1', amount: 10, shopId }]);
+    adChargeRepo.find.mockResolvedValue([{ id: 'ac-1', amount: 200, shopId }]);
+
+    const bill = await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
+
+    expect(bill).toMatchObject({
+      orderCount: 1,
+      commissionAmount: 50,
+      videoUploadFees: 10,
+      adCampaignFees: 200,
+    });
+  });
+
+  it('creates a bill when only ad campaign accruals exist', async () => {
+    const { service, adChargeRepo } = buildWeeklyService();
+    adChargeRepo.find.mockResolvedValue([{ id: 'ac-1', amount: 50, shopId }]);
+
+    const bill = await service.generateWeeklyBillForShop(shopId, weekEndingFriday);
+
+    expect(bill).toMatchObject({
+      orderCount: 0,
+      commissionAmount: 0,
+      adCampaignFees: 50,
+    });
   });
 
   it('sums commission and video upload fees on the same weekly bill', async () => {

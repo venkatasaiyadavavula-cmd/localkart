@@ -15,6 +15,8 @@ import { Subscription } from '../../core/entities/subscription.entity';
 import { Category } from '../../core/entities/category.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CommissionRatesModule } from '../catalog/commission-rates.module';
+import { SellerModule } from '../seller/seller.module';
+import { AdCampaignService } from '../seller/ad-campaign.service';
 
 @Module({
   imports: [
@@ -30,6 +32,7 @@ import { CommissionRatesModule } from '../catalog/commission-rates.module';
     ]),
     NotificationsModule,
     CommissionRatesModule,
+    SellerModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, ModerationService, CommissionService, FraudDetectionService],

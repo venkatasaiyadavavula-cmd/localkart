@@ -26,17 +26,21 @@ interface CommissionBill {
   totalOrderValue: number;
   commissionAmount: number;
   videoUploadFees?: number;
+  adCampaignFees?: number;
   fineAmount: number;
   daysOverdue: number;
   status: BillStatus;
   paidAt?: string;
 }
 
-function billTotalDue(bill: Pick<CommissionBill, 'commissionAmount' | 'fineAmount' | 'videoUploadFees'>) {
+function billTotalDue(
+  bill: Pick<CommissionBill, 'commissionAmount' | 'fineAmount' | 'videoUploadFees' | 'adCampaignFees'>,
+) {
   return (
     Number(bill.commissionAmount) +
     Number(bill.fineAmount) +
-    Number(bill.videoUploadFees ?? 0)
+    Number(bill.videoUploadFees ?? 0) +
+    Number(bill.adCampaignFees ?? 0)
   );
 }
 
@@ -45,6 +49,10 @@ function formatBillChargeBreakdown(bill: CommissionBill): string {
   const videoFees = Number(bill.videoUploadFees ?? 0);
   if (videoFees > 0) {
     parts.push(`Video uploads ${formatPrice(videoFees)}`);
+  }
+  const adFees = Number(bill.adCampaignFees ?? 0);
+  if (adFees > 0) {
+    parts.push(`Ad campaigns ${formatPrice(adFees)}`);
   }
   if (Number(bill.fineAmount) > 0) {
     parts.push(`Fine ${formatPrice(bill.fineAmount)}`);

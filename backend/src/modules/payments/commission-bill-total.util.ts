@@ -3,10 +3,12 @@ export function commissionBillTotalDue(bill: {
   commissionAmount: number | string;
   fineAmount: number | string;
   videoUploadFees?: number | string | null;
+  adCampaignFees?: number | string | null;
 }): number {
   return (
     Number(bill.commissionAmount) +
     Number(bill.fineAmount) +
-    Number(bill.videoUploadFees ?? 0)
+    Number(bill.videoUploadFees ?? 0) +
+    Number(bill.adCampaignFees ?? 0)
   );
 }

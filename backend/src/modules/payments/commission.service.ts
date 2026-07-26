@@ -4,6 +4,7 @@ import { Repository, DataSource, Between, IsNull, In } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { CommissionBill, CommissionBillStatus } from '../../core/entities/commission-bill.entity';
 import { VideoUploadCharge } from '../../core/entities/video-upload-charge.entity';
+import { AdCampaignCharge } from '../../core/entities/ad-campaign-charge.entity';
 import { Order, OrderStatus } from '../../core/entities/order.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { WhatsappService } from '../notifications/whatsapp.service';
@@ -136,6 +137,7 @@ export class CommissionService {
     return this.dataSource.transaction(async (manager) => {
       const billRepo = manager.getRepository(CommissionBill);
       const videoChargeRepo = manager.getRepository(VideoUploadCharge);
+      const adChargeRepo = manager.getRepository(AdCampaignCharge);
       const orderRepo = manager.getRepository(Order);
 
       const racedExisting = await billRepo.findOne({
@@ -159,7 +161,19 @@ export class CommissionService {
         },
       });
 
-      if (orders.length === 0 && unbilledVideoCharges.length === 0) {
+      const unbilledAdCharges = await adChargeRepo.find({
+        where: {
+          shopId,
+          commissionBillId: IsNull(),
+          createdAt: Between(start, end),
+        },
+      });
+
+      if (
+        orders.length === 0 &&
+        unbilledVideoCharges.length === 0 &&
+        unbilledAdCharges.length === 0
+      ) {
         return null;
       }
 
@@ -176,6 +190,10 @@ export class CommissionService {
         unbilledVideoCharges.reduce((sum, row) => sum + Number(row.amount), 0).toFixed(2),
       );
 
+      const adCampaignFees = parseFloat(
+        unbilledAdCharges.reduce((sum, row) => sum + Number(row.amount), 0).toFixed(2),
+      );
+
       const bill = await billRepo.save(
         billRepo.create({
           shopId,
@@ -186,6 +204,7 @@ export class CommissionService {
           commissionAmount,
           commissionPercent,
           videoUploadFees,
+          adCampaignFees,
           fineAmount: 0,
           daysOverdue: 0,
           status: CommissionBillStatus.PENDING,
@@ -195,6 +214,13 @@ export class CommissionService {
       if (unbilledVideoCharges.length > 0) {
         await videoChargeRepo.update(
           { id: In(unbilledVideoCharges.map((row) => row.id)) },
+          { commissionBillId: bill.id },
+        );
+      }
+
+      if (unbilledAdCharges.length > 0) {
+        await adChargeRepo.update(
+          { id: In(unbilledAdCharges.map((row) => row.id)) },
           { commissionBillId: bill.id },
         );
       }
@@ -239,6 +265,7 @@ export class CommissionService {
             orderCount: bill.orderCount,
             commissionAmount: bill.commissionAmount,
             videoUploadFees: bill.videoUploadFees,
+            adCampaignFees: bill.adCampaignFees,
             fineAmount: bill.fineAmount,
             totalDue,
             daysOverdue: bill.daysOverdue,
@@ -278,6 +305,7 @@ export class CommissionService {
         orderCount: bill.orderCount,
         commissionAmount: bill.commissionAmount,
         videoUploadFees: bill.videoUploadFees,
+        adCampaignFees: bill.adCampaignFees,
         fineAmount: bill.fineAmount,
         totalDue,
         daysOverdue: bill.daysOverdue,
@@ -412,7 +440,7 @@ export class CommissionService {
     const outstandingRow = await this.billRepo
       .createQueryBuilder('bill')
       .select(
-        'COALESCE(SUM(bill.commissionAmount + bill.fineAmount + bill."videoUploadFees"), 0)',
+        'COALESCE(SUM(bill.commissionAmount + bill.fineAmount + bill."videoUploadFees" + bill."adCampaignFees"), 0)',
         'total',
       )
       .where('bill.status IN (:...statuses)', {
@@ -526,6 +554,7 @@ export class CommissionService {
     const commissionAmount = Number(bill.commissionAmount);
     const fineAmount = Number(bill.fineAmount);
     const videoUploadFees = Number(bill.videoUploadFees ?? 0);
+    const adCampaignFees = Number(bill.adCampaignFees ?? 0);
     const isPaid = bill.status === CommissionBillStatus.PAID;
 
     return {
@@ -541,10 +570,11 @@ export class CommissionService {
       totalOrderValue: Number(bill.totalOrderValue),
       commissionAmount,
       videoUploadFees,
+      adCampaignFees,
       fineAmount: isPaid ? 0 : fineAmount,
       totalDue: isPaid
         ? 0
-        : commissionBillTotalDue({ commissionAmount, fineAmount, videoUploadFees }),
+        : commissionBillTotalDue({ commissionAmount, fineAmount, videoUploadFees, adCampaignFees }),
       daysOverdue: isPaid ? 0 : bill.daysOverdue,
       status: bill.status,
       razorpayOrderId: bill.razorpayOrderId,

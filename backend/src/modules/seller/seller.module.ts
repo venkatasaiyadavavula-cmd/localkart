@@ -24,6 +24,8 @@ import { SponsoredProduct } from '../../core/entities/sponsored-product.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { CommissionBill } from '../../core/entities/commission-bill.entity';
 import { StaffMember } from '../../core/entities/staff-member.entity';
+import { AdCampaignCharge } from '../../core/entities/ad-campaign-charge.entity';
+import { FeaturedVideo } from '../../core/entities/featured-video.entity';
 import { CatalogModule } from '../catalog/catalog.module';
 import { OrdersModule } from '../orders/orders.module';
 import { StaffWorkController } from './staff-work.controller';
@@ -36,7 +38,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     TypeOrmModule.forFeature([
       Shop, User, Product, Order,
       Subscription, SponsoredProduct, Transaction,
-      CommissionBill, StaffMember, DailyOffer,
+      CommissionBill, StaffMember, DailyOffer, AdCampaignCharge, FeaturedVideo,
     ]),
     BullModule.registerQueue({ name: 'media' }),
     NotificationsModule,

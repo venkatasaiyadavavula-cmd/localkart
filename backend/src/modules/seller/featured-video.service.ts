@@ -8,6 +8,7 @@ import { FeaturedVideo, FeaturedVideoStatus } from '../../core/entities/featured
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { FEATURED_VIDEO_HOURS, FEATURED_VIDEO_PRICE } from './ad-packages';
+import { AdCampaignCharge } from '../../core/entities/ad-campaign-charge.entity';
 
 @Injectable()
 export class FeaturedVideoService {
@@ -20,6 +21,9 @@ export class FeaturedVideoService {
     private readonly productRepo: Repository<Product>,
     @InjectRepository(Shop)
     private readonly shopRepo: Repository<Shop>,
+
+    @InjectRepository(AdCampaignCharge)
+    private readonly adChargeRepo: Repository<AdCampaignCharge>,
   ) {}
 
   @Cron('0 * * * *')
@@ -66,6 +70,15 @@ export class FeaturedVideoService {
     });
 
     await this.featuredRepo.save(featured);
+
+    await this.adChargeRepo.save(
+      this.adChargeRepo.create({
+        shopId: shop.id,
+        amount: FEATURED_VIDEO_PRICE,
+        productId: product.id,
+        featuredVideoId: featured.id,
+      }),
+    );
 
     return {
       ...featured,

@@ -30,6 +30,7 @@ describe('CommissionService payment idempotency', () => {
       orderCount: 5,
       commissionAmount: 100,
       videoUploadFees: 0,
+      adCampaignFees: 0,
       fineAmount: 0,
       daysOverdue: 0,
       status: CommissionBillStatus.PENDING,
