@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import Link from 'next/link';
 import {
   Plus, Trash2, Loader2, Clock, Zap,
@@ -15,15 +14,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { formatPrice, normalizeList } from '@/lib/utils';
+import { apiClient } from '@/lib/api/client';
 import { getOfferQuestionsForProduct, type OfferQuestion } from '@/lib/daily-offer-questions';
 import { OfferCountdown } from '@/components/offers/offer-countdown';
 import type { DailyOffer, Product } from '@/types';
 
-import { API_URL } from '@/lib/api-config';
 const MAX_OFFERS = 5;
-
-const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : '');
 
 export default function SellerOffersPage() {
   const queryClient = useQueryClient();
@@ -35,12 +33,10 @@ export default function SellerOffersPage() {
   const [searchProduct, setSearchProduct] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const { data: offers = [], isLoading: offersLoading } = useQuery<DailyOffer[]>({
+  const { data: offers = [], isLoading: offersLoading, isError: offersError, refetch: refetchOffers } = useQuery<DailyOffer[]>({
     queryKey: ['seller-daily-offers'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/seller/daily-offers`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const { data } = await apiClient.get('/seller/daily-offers');
       return normalizeList<DailyOffer>(data);
     },
   });
@@ -48,9 +44,7 @@ export default function SellerOffersPage() {
   const { data: products } = useQuery<Product[]>({
     queryKey: ['seller-products-for-offer'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/catalog/seller/products?limit=100`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const { data } = await apiClient.get('/catalog/seller/products?limit=100');
       return normalizeList(data);
     },
   });
@@ -91,9 +85,7 @@ export default function SellerOffersPage() {
       sellerNotes?: string;
       offerDetails?: Record<string, string | number>;
     }) => {
-      await axios.post(`${API_URL}/seller/daily-offers`, payload, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      await apiClient.post('/seller/daily-offers', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller-daily-offers'] });
@@ -106,9 +98,7 @@ export default function SellerOffersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete(`${API_URL}/seller/daily-offers/${id}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      await apiClient.delete(`/seller/daily-offers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller-daily-offers'] });
@@ -178,7 +168,7 @@ export default function SellerOffersPage() {
             OFFERS
           </h1>
           <p className="mt-2 max-w-sm text-sm text-orange-50/90">
-            Put your product on the homepage for 24 hours. One product per day. More visibility, more orders.
+            Put your products on the homepage for 24 hours. Up to {MAX_OFFERS} active offers at once — more visibility, more orders.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold backdrop-blur-sm">
@@ -204,7 +194,7 @@ export default function SellerOffersPage() {
           <Info className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
           <div className="space-y-1.5 text-xs text-gray-600">
             <p className="font-bold text-gray-900">How Daily Offers work</p>
-            <p>• <strong>One product per day</strong> — each product can only have one offer every 24 hours</p>
+            <p>• <strong>Up to {MAX_OFFERS} active offers</strong> — each product can only have one offer every 24 hours</p>
             <p>• Offers appear on the <strong>customer homepage</strong> with a live countdown</p>
             <p>• After 24 hours, the offer <strong>expires automatically</strong> — no action needed</p>
             <p>• Answer product details (size, color, stock) so customers know exactly what they get</p>
@@ -218,7 +208,9 @@ export default function SellerOffersPage() {
           <Tag className="h-4 w-4 text-orange-500" /> Live Offers
         </h2>
 
-        {offersLoading ? (
+        {offersError ? (
+          <ErrorState title="Could not load offers" onRetry={() => refetchOffers()} />
+        ) : offersLoading ? (
           Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-2xl" />)
         ) : offers?.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-orange-200 bg-white py-14 text-center">

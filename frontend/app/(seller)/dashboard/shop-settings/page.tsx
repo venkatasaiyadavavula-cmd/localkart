@@ -18,19 +18,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { WeeklyHoursEditor } from '@/components/shop/weekly-hours-editor';
 import { ShopOpenBadge } from '@/components/shop/shop-open-badge';
 import { DEFAULT_OPERATING_HOURS, type OperatingHours } from '@/types/shop-hours';
-
-const shopSchema = z.object({
-  name: z.string().min(2, 'Shop name is required').max(150),
-  description: z.string().optional(),
-  address: z.string().min(5, 'Address is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  pincode: z.string().min(6, 'Valid pincode required'),
-  contactPhone: z.string().min(10, 'Valid phone required'),
-  contactEmail: z.string().email().optional().or(z.literal('')),
-  deliveryCharge: z.coerce.number().min(0).default(0),
-  freeDeliveryAbove: z.coerce.number().min(0).default(0),
-});
+import { shopSchema } from '@/lib/validators/shop.schema';
 
 type ShopFormData = z.infer<typeof shopSchema>;
 
@@ -156,11 +144,17 @@ export default function ShopSettingsPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="contactPhone">Contact Phone *</Label>
-                    <Input id="contactPhone" {...register('contactPhone')} />
+                    <Input id="contactPhone" {...register('contactPhone')} placeholder="10-digit mobile" />
+                    {errors.contactPhone && (
+                      <p className="text-xs text-destructive">{errors.contactPhone.message}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="contactEmail">Contact Email</Label>
                     <Input id="contactEmail" type="email" {...register('contactEmail')} />
+                    {errors.contactEmail && (
+                      <p className="text-xs text-destructive">{errors.contactEmail.message}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -174,19 +168,23 @@ export default function ShopSettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="address">Street Address *</Label>
                   <Textarea id="address" {...register('address')} rows={2} />
+                  {errors.address && <p className="text-xs text-destructive">{errors.address.message}</p>}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="city">City *</Label>
                     <Input id="city" {...register('city')} />
+                    {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State *</Label>
                     <Input id="state" {...register('state')} />
+                    {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pincode">Pincode *</Label>
                     <Input id="pincode" {...register('pincode')} />
+                    {errors.pincode && <p className="text-xs text-destructive">{errors.pincode.message}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -221,10 +219,16 @@ export default function ShopSettingsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="deliveryCharge">Delivery Charge (₹)</Label>
                     <Input id="deliveryCharge" type="number" {...register('deliveryCharge')} />
+                    {errors.deliveryCharge && (
+                      <p className="text-xs text-destructive">{errors.deliveryCharge.message}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="freeDeliveryAbove">Free Delivery Above (₹)</Label>
                     <Input id="freeDeliveryAbove" type="number" {...register('freeDeliveryAbove')} />
+                    {errors.freeDeliveryAbove && (
+                      <p className="text-xs text-destructive">{errors.freeDeliveryAbove.message}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>

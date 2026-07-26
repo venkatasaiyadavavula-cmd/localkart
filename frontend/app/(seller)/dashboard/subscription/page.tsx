@@ -21,6 +21,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { formatPrice } from '@/lib/utils';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -38,7 +39,7 @@ const plans = SUBSCRIPTION_PLANS.map((p) => ({
 declare global { interface Window { Razorpay: any; } }
 
 export default function SubscriptionPage() {
-  const { data: subscription, isLoading, subscribe, verifyPayment, invalidate } = useSubscription();
+  const { data: subscription, isLoading, isError, refetch, subscribe, verifyPayment, invalidate } = useSubscription();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [paymentPhase, setPaymentPhase] = useState<'idle' | 'checkout' | 'verifying'>('idle');
@@ -145,6 +146,15 @@ export default function SubscriptionPage() {
       setIsSubscribing(false);
     }
   };
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-heading text-2xl font-bold text-foreground">Subscription</h1>
+        <ErrorState title="Could not load subscription" onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

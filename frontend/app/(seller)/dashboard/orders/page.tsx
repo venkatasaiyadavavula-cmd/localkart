@@ -24,6 +24,7 @@ import { formatDeliveryAddress } from '@/lib/utils/api';
 import { OrderStatus, statusLabels } from '@/types/order';
 import { DeliveryLocationPanel } from '@/components/seller/delivery-location-panel';
 import { cn } from '@/lib/utils';
+import { ErrorState } from '@/components/ui/error-state';
 
 const statusFlow: Record<string, { next: OrderStatus; label: string; color: string }> = {
   confirmed:        { next: 'processing',        label: '✅ Accept Order',      color: 'bg-green-500 hover:bg-green-600' },
@@ -59,7 +60,7 @@ export default function SellerOrdersPage() {
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const { data: allOrdersList, isLoading, updateOrderStatus, verifyOrderOtp } = useSellerOrders({
+  const { data: allOrdersList, isLoading, isError, refetch, updateOrderStatus, verifyOrderOtp } = useSellerOrders({
     search: searchQuery,
   });
 
@@ -152,7 +153,9 @@ export default function SellerOrdersPage() {
       </div>
 
       <div className="px-4 py-3 space-y-3">
-        {isLoading
+        {isError ? (
+          <ErrorState title="Could not load orders" onRetry={() => refetch()} />
+        ) : isLoading
           ? Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl p-4 space-y-3">
                 <Skeleton className="h-4 w-32" />

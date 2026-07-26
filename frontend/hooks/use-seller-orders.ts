@@ -47,6 +47,8 @@ export function useSellerOrders(params: { status?: string; search?: string } = {
   return {
     data: query.data,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     updateOrderStatus: (orderId: string, status: string) =>
       updateStatusMutation.mutateAsync({ orderId, status }),
     verifyOrderOtp: (orderId: string, otp: string) =>

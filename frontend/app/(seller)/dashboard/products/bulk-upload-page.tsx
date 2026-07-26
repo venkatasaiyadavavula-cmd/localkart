@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import Link from 'next/link';
 import {
   Upload, Download, FileSpreadsheet, CheckCircle2,
@@ -10,9 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { unwrapApiData } from '@/lib/utils';
-
-import { API_URL as API } from '@/lib/api-config';
-const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
+import { apiClient } from '@/lib/api/client';
 
 interface BulkUploadResult {
   total:   number;
@@ -44,7 +41,7 @@ export default function BulkUploadPage() {
   const { data: planInfo } = useQuery<PlanInfo>({
     queryKey: ['plan-info'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/catalog/seller/product-limit`, { headers: auth() });
+      const { data } = await apiClient.get('/catalog/seller/product-limit');
       return unwrapApiData<PlanInfo>(data);
     },
   });
@@ -53,9 +50,7 @@ export default function BulkUploadPage() {
     mutationFn: async (file: File) => {
       const form = new FormData();
       form.append('file', file);
-      const { data } = await axios.post(`${API}/catalog/seller/bulk-upload`, form, {
-        headers: { ...auth(), 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await apiClient.post('/catalog/seller/bulk-upload', form);
       return unwrapApiData<BulkUploadResult>(data);
     },
     onSuccess: (data) => {
@@ -94,17 +89,20 @@ export default function BulkUploadPage() {
   };
 
   const downloadTemplate = async () => {
-    const res = await axios.get(`${API}/catalog/seller/bulk-upload/template`, {
-      headers: auth(),
-      responseType: 'blob',
-    });
-    const url = URL.createObjectURL(res.data);
-    const a   = document.createElement('a');
-    a.href = url;
-    a.download = 'localkart-products-template.xlsx';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Template downloaded!');
+    try {
+      const res = await apiClient.get('/catalog/seller/bulk-upload/template', {
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'localkart-products-template.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Template downloaded!');
+    } catch {
+      toast.error('Failed to download template. Please try again.');
+    }
   };
 
   const planCfg  = PLAN_COLORS[planInfo?.plan ?? 'starter'];

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 import {
   Users, Plus, Trash2, RefreshCw, Shield,
   Package, Truck, Crown, Copy, CheckCircle2,
@@ -10,11 +10,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { unwrapApiData, normalizeList } from '@/lib/utils';
+import { ErrorState } from '@/components/ui/error-state';
 
 import { formatWorkerHandle } from '@/components/work/worker-identity';
-
-import { API_URL as API } from '@/lib/api-config';
-const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
 type StaffRole = 'worker' | 'store_manager' | 'products_manager' | 'delivery_staff';
 type StaffStatus = 'active' | 'inactive';
@@ -206,7 +204,7 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
       if (form.note) payload.note = form.note;
       if (form.staffId.trim()) payload.staffId = form.staffId.trim().toLowerCase();
       if (form.password.trim()) payload.password = form.password;
-      const { data } = await axios.post(`${API}/seller/staff`, payload, { headers: auth() });
+      const { data } = await apiClient.post('/seller/staff', payload);
       return data;
     },
     onSuccess: (data) => {
@@ -284,13 +282,33 @@ function AddStaffSheet({ open, onClose, onAdded }: { open: boolean; onClose: () 
             />
           </div>
 
-          {/* Role - default worker */}
-          <div className="rounded-2xl p-3 border" style={{ background: ROLE_CONFIG.worker.bg, borderColor: ROLE_CONFIG.worker.border }}>
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4" style={{ color: ROLE_CONFIG.worker.color }} />
-              <p className="text-sm font-extrabold" style={{ color: ROLE_CONFIG.worker.color }}>Shop Worker Access</p>
+          {/* Role */}
+          <div>
+            <label className="text-xs font-extrabold text-gray-500 uppercase tracking-wide mb-2 block">Role *</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.entries(ROLE_CONFIG) as [StaffRole, typeof ROLE_CONFIG[StaffRole]][]).map(([role, cfg]) => {
+                const Icon = cfg.icon;
+                const selected = form.role === role;
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setForm((p) => ({ ...p, role }))}
+                    className="rounded-2xl border p-3 text-left transition-colors"
+                    style={{
+                      background: selected ? cfg.bg : 'white',
+                      borderColor: selected ? cfg.color : '#E5E9F2',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" style={{ color: cfg.color }} />
+                      <p className="text-xs font-extrabold" style={{ color: cfg.color }}>{cfg.label}</p>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">{cfg.permissions}</p>
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-[11px] text-gray-500 mt-1">Products add · Stock update · Delivery manage only</p>
           </div>
 
           {/* Note */}
@@ -324,17 +342,17 @@ export default function StaffPage() {
   const [deleteId,   setDeleteId]   = useState<string | null>(null);
   const qc = useQueryClient();
 
-  const { data: staff = [], isLoading } = useQuery<StaffMember[]>({
+  const { data: staff = [], isLoading, isError, refetch } = useQuery<StaffMember[]>({
     queryKey: ['staff'],
     queryFn:  async () => {
-      const { data } = await axios.get(`${API}/seller/staff`, { headers: auth() });
+      const { data } = await apiClient.get('/seller/staff');
       return normalizeList<StaffMember>(data);
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.delete(`${API}/seller/staff/${id}`, { headers: auth() });
+      const { data } = await apiClient.delete(`/seller/staff/${id}`);
       return data;
     },
     onSuccess: (data) => {
@@ -348,7 +366,7 @@ export default function StaffPage() {
 
   const resetMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.post(`${API}/seller/staff/${id}/reset-password`, {}, { headers: auth() });
+      const { data } = await apiClient.post(`/seller/staff/${id}/reset-password`, {});
       return data;
     },
     onSuccess: (data) => {
@@ -369,6 +387,14 @@ export default function StaffPage() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="h-24 rounded-2xl skeleton-shimmer" />
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-4 max-w-2xl mx-auto">
+        <ErrorState title="Could not load team" onRetry={() => refetch()} />
       </div>
     );
   }

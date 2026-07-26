@@ -124,6 +124,10 @@ export default function NewProductPage() {
       toast.error('Please select a category');
       return;
     }
+    if (images.length === 0) {
+      toast.error('At least one product image is required');
+      return;
+    }
     try {
       let imageUrls: string[] = [];
       if (images.length > 0) {

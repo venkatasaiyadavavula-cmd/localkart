@@ -53,9 +53,14 @@ export default function SellerOnboardingPage() {
     }
 
     const isValid = await trigger(fieldsToValidate);
-    if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+    if (!isValid) return;
+
+    if (currentStep === 1 && !location) {
+      toast.error('Please pin your shop location on the map before continuing');
+      return;
     }
+
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
   const handleBack = () => {
@@ -145,7 +150,12 @@ export default function SellerOnboardingPage() {
                       <Label htmlFor="contactPhone">Contact Phone *</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input id="contactPhone" className="pl-10" {...register('contactPhone')} />
+                        <Input
+                          id="contactPhone"
+                          className="pl-10"
+                          placeholder="10-digit mobile (or +91…)"
+                          {...register('contactPhone')}
+                        />
                       </div>
                       {errors.contactPhone && <p className="text-xs text-destructive">{errors.contactPhone.message}</p>}
                     </div>

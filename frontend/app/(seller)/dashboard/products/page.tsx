@@ -24,6 +24,8 @@ import {
 import { useSellerProducts } from '@/hooks/use-seller-products';
 import { formatPrice, getProductUrl } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { parseQuickEditValues } from '@/lib/seller/quick-edit-product';
+import { ErrorState } from '@/components/ui/error-state';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   draft:        { label: 'Draft',        color: 'bg-gray-100 text-gray-700',   icon: Clock },
@@ -43,7 +45,9 @@ export default function SellerProductsPage() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [savingQuick, setSavingQuick] = useState(false);
 
-  const { data: productsList, isLoading, deleteProduct, updateProduct } = useSellerProducts({ search: searchQuery });
+  const [quickEditError, setQuickEditError] = useState<string | null>(null);
+
+  const { data: productsList, isLoading, isError, refetch, deleteProduct, updateProduct } = useSellerProducts({ search: searchQuery });
 
   const products = productsList || [];
   const filtered = activeFilter === 'all' ? products : products.filter((p: any) => p.status === activeFilter);
@@ -73,15 +77,23 @@ export default function SellerProductsPage() {
     setEditProduct(product);
     setQuickStock(String(product.stock));
     setQuickPrice(String(product.price));
+    setQuickEditError(null);
   };
 
   const saveQuickEdit = async () => {
     if (!editProduct) return;
+    const parsed = parseQuickEditValues(quickStock, quickPrice);
+    if (!parsed.ok) {
+      setQuickEditError(parsed.message);
+      toast.error(parsed.message);
+      return;
+    }
+    setQuickEditError(null);
     setSavingQuick(true);
     try {
       await updateProduct(editProduct.id, {
-        stock: Number(quickStock),
-        price: Number(quickPrice),
+        stock: parsed.stock,
+        price: parsed.price,
       });
       toast.success('Price & stock updated. Product may need re-approval if it was live.');
       setEditProduct(null);
@@ -161,7 +173,9 @@ export default function SellerProductsPage() {
 
       {/* Products list */}
       <div className="px-4 space-y-3">
-        {isLoading
+        {isError ? (
+          <ErrorState title="Could not load products" onRetry={() => refetch()} />
+        ) : isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl p-4 flex gap-3 items-center">
                 <Skeleton className="w-16 h-16 rounded-xl flex-shrink-0" />
@@ -366,6 +380,9 @@ export default function SellerProductsPage() {
             >
               {savingQuick ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Changes'}
             </Button>
+            {quickEditError && (
+              <p className="text-xs text-destructive text-center">{quickEditError}</p>
+            )}
           </div>
         </SheetContent>
       </Sheet>

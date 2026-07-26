@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 import { AlertCircle, CheckCircle2, Clock, IndianRupee, TrendingUp, Calendar, CreditCard, ChevronRight } from 'lucide-react';
 import { formatPrice, unwrapApiData } from '@/lib/utils';
 import { formatCalendarDate, formatCalendarDateWeekday } from '@/lib/utils/date';
@@ -11,7 +11,6 @@ import { ErrorState } from '@/components/ui/error-state';
 
 import type { CommissionBillsData } from '@/types/api';
 
-import { API_URL as API } from '@/lib/api-config';
 // NEXT_PUBLIC_RAZORPAY_KEY_ID is inlined at `npm run build` (see frontend/.env.production). Checkout also accepts key from POST /commission/pay.
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -82,18 +81,14 @@ export default function CommissionPage() {
   const { data, isLoading, isError, refetch } = useQuery<CommissionBillsData>({
     queryKey: ['commission-bills'],
     queryFn: async () => {
-      const { data: res } = await axios.get(`${API}/commission/my-bills`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
-      });
+      const { data: res } = await apiClient.get('/commission/my-bills');
       return unwrapApiData<CommissionBillsData>(res);
     },
   });
 
   const payMutation = useMutation({
     mutationFn: async (billId: string) => {
-      const { data } = await axios.post(`${API}/commission/pay/${billId}`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
-      });
+      const { data } = await apiClient.post(`/commission/pay/${billId}`, {});
       return { ...(unwrapApiData(data) as object), billId };
     },
     onSuccess: (data) => openRazorpay(data),
@@ -102,9 +97,7 @@ export default function CommissionPage() {
 
   const verifyMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const { data } = await axios.post(`${API}/commission/verify/${payload.billId}`, payload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
-      });
+      const { data } = await apiClient.post(`/commission/verify/${payload.billId}`, payload);
       return unwrapApiData(data);
     },
     onSuccess: () => {

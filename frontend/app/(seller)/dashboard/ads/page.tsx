@@ -30,6 +30,7 @@ import { useAdCampaigns } from '@/hooks/use-ad-campaigns';
 import { useFeaturedVideos } from '@/hooks/use-featured-videos';
 import { formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 const AD_PACKAGES = [
   { id: 'day', label: '1 Day', price: 50, days: 1 },
@@ -45,7 +46,7 @@ export default function SellerAdsPage() {
   const [adPackage, setAdPackage] = useState<'day' | 'week' | 'month'>('week');
 
   const { data: productsList } = useSellerProducts({ limit: 100 });
-  const { data: campaigns, isLoading, createCampaign, updateCampaign } = useAdCampaigns();
+  const { data: campaigns, isLoading, isError, refetch, createCampaign, updateCampaign } = useAdCampaigns();
   const { featuredVideos, isLoading: videosLoading, promoteVideo, isPromoting } = useFeaturedVideos();
 
   const products = (productsList || []).filter((p: { status?: string }) => p.status === 'approved');
@@ -61,13 +62,20 @@ export default function SellerAdsPage() {
     const startDate = new Date();
 
     try {
-      await createCampaign({
+      const created = await createCampaign({
         productId: selectedProduct,
         adType: 'sponsored',
         package: adPackage,
         startDate: startDate.toISOString(),
       });
-      toast.success('Ad campaign submitted — pending approval');
+      const status = (created as { status?: string })?.status;
+      if (status === 'active') {
+        toast.success(
+          `Campaign is live. ${formatPrice(selectedPkg.price)} will be added to your weekly commission bill.`,
+        );
+      } else {
+        toast.success('Campaign scheduled. Charges appear on your weekly commission bill when it runs.');
+      }
       setShowNewAdDialog(false);
       setSelectedProduct('');
     } catch {
@@ -83,7 +91,10 @@ export default function SellerAdsPage() {
 
     try {
       const result = await promoteVideo(videoProductId);
-      toast.success(result?.message || 'Video featured on homepage for 24 hours (₹29)');
+      toast.success(
+        result?.message ||
+          'Video featured for 24 hours. ₹29 will be added to your weekly commission bill.',
+      );
       setShowVideoDialog(false);
       setVideoProductId('');
     } catch (err: unknown) {
@@ -125,7 +136,9 @@ export default function SellerAdsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Ad Campaigns</h1>
-          <p className="text-muted-foreground">Promote products & feature videos on homepage</p>
+          <p className="text-muted-foreground">
+            Promote products and feature videos — charges roll into your weekly commission bill (no upfront Razorpay checkout).
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Dialog open={showVideoDialog} onOpenChange={setShowVideoDialog}>
@@ -139,7 +152,7 @@ export default function SellerAdsPage() {
               <DialogHeader>
                 <DialogTitle>Homepage Video Suggestion</DialogTitle>
                 <DialogDescription>
-                  Show your product video on everyone&apos;s homepage for 24 hours. Regular video upload is ₹10; homepage suggestion is ₹29.
+                  Show your product video on everyone&apos;s homepage for 24 hours. ₹29 is charged on your weekly commission bill (not Razorpay at click). Regular video upload is ₹10.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -164,7 +177,7 @@ export default function SellerAdsPage() {
                 <div className="rounded-lg bg-amber-50 border border-amber-100 p-4">
                   <p className="text-sm font-medium text-amber-900">₹29 for 24 hours</p>
                   <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> Visible to all customers on homepage until expiry
+                    <Clock className="h-3 w-3" /> Visible on homepage until expiry · pay with weekly commission bill
                   </p>
                 </div>
               </div>
@@ -188,7 +201,7 @@ export default function SellerAdsPage() {
               <DialogHeader>
                 <DialogTitle>Create Product Ad</DialogTitle>
                 <DialogDescription>
-                  Boost your product visibility on homepage and search results.
+                  Boost visibility on homepage and search. Payment is collected on your weekly commission bill, not at checkout.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -230,9 +243,12 @@ export default function SellerAdsPage() {
                     {formatPrice(selectedPkg.price)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {selectedPkg.days} day{selectedPkg.days > 1 ? 's' : ''} of sponsored placement
+                    {selectedPkg.days} day{selectedPkg.days > 1 ? 's' : ''} of sponsored placement · billed weekly
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Campaigns usually go live immediately. Admin may pause ads that violate policies.
+                </p>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowNewAdDialog(false)}>Cancel</Button>
@@ -260,10 +276,12 @@ export default function SellerAdsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sponsored Products</CardTitle>
-            <CardDescription>Products currently being promoted</CardDescription>
+            <CardDescription>Product placement ads (sponsored search/homepage)</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isError ? (
+              <ErrorState title="Could not load campaigns" onRetry={() => refetch()} />
+            ) : isLoading ? (
               <Skeleton className="h-32 w-full" />
             ) : campaigns?.sponsored?.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground">No active sponsored campaigns</p>
@@ -332,13 +350,45 @@ export default function SellerAdsPage() {
           </CardContent>
         </Card>
 
+        {(campaigns?.video?.length ?? 0) > 0 && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-primary" />
+                Video product ads
+              </CardTitle>
+              <CardDescription>Sponsored campaigns using product video placements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {campaigns?.video?.map((campaign: {
+                  id: string;
+                  status: string;
+                  endDate: string;
+                  product: { name: string };
+                }) => (
+                  <div key={campaign.id} className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <p className="font-medium">{campaign.product?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Ends {format(new Date(campaign.endDate), 'dd MMM')} · {campaign.status}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">Video ad</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-amber-500" />
               Homepage Video Suggestions
             </CardTitle>
-            <CardDescription>₹29 per video · 24 hour homepage visibility</CardDescription>
+            <CardDescription>₹29 per video · 24h visibility · billed on weekly commission</CardDescription>
           </CardHeader>
           <CardContent>
             {videosLoading ? (

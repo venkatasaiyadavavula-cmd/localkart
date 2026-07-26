@@ -42,6 +42,8 @@ export function useSellerProducts(params: Record<string, unknown> = {}) {
   return {
     data: query.data,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     deleteProduct: deleteMutation.mutateAsync,
     updateProduct: (productId: string, data: Record<string, unknown>) =>
       updateMutation.mutateAsync({ productId, data }),

@@ -1,5 +1,19 @@
 import { z } from 'zod';
 
+/** Normalize Indian mobile input to 10 digits (strips +91 / leading 0). */
+export function normalizeIndianMobileInput(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(-10);
+  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(-10);
+  return digits;
+}
+
+const tenDigitPhone = z.preprocess(
+  normalizeIndianMobileInput,
+  z.string().regex(/^\d{10}$/, 'Enter a 10-digit mobile number (without +91)'),
+);
+
 export const shopSchema = z.object({
   name: z.string().min(2, 'Shop name is required').max(150),
   description: z.string().max(1000).optional(),
@@ -7,7 +21,7 @@ export const shopSchema = z.object({
   city: z.string().min(1, 'City is required').default('Kadapa'),
   state: z.string().min(1, 'State is required').default('Andhra Pradesh'),
   pincode: z.string().regex(/^\d{6}$/, 'Valid 6-digit pincode required'),
-  contactPhone: z.string().regex(/^\d{10}$/, 'Valid 10-digit phone required'),
+  contactPhone: tenDigitPhone,
   contactEmail: z.string().email().optional().or(z.literal('')),
   openingTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format').optional(),
   closingTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format').optional(),

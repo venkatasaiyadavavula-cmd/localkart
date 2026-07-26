@@ -57,6 +57,8 @@ export function useSubscription() {
   return {
     data: query.data,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     subscribe: subscribeMutation.mutateAsync,
     verifyPayment: verifyMutation.mutateAsync,
     isVerifying: verifyMutation.isPending,

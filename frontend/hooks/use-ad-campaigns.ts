@@ -53,6 +53,8 @@ export function useAdCampaigns() {
   return {
     data: query.data,
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     createCampaign: createMutation.mutateAsync,
     updateCampaign: async (campaignId: string, payload: { status?: string }) => {
       if (payload.status === 'paused' || payload.status === 'active') {
