@@ -4,11 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatOrderDateTime } from '@/lib/utils/date';
 import { toast } from 'sonner';
-<<<<<<< Updated upstream
-import { Truck, CheckCircle } from 'lucide-react';
-=======
 import { Truck, CheckCircle, Phone, MapPin } from 'lucide-react';
->>>>>>> Stashed changes
 import { staffWorkApi } from '@/lib/api/staff-work';
 import { formatPrice, normalizeList } from '@/lib/utils';
 import { formatDeliveryAddress } from '@/lib/utils/api';
