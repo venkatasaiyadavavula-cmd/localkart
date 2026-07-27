@@ -11,9 +11,15 @@ interface WorkerIdentityProps {
   className?: string;
 }
 
+/** Strip display "@handle" prefix before API login (stored IDs have no "@"). */
+export function normalizeStaffLoginId(raw: string): string {
+  const trimmed = raw.trim().toLowerCase();
+  return trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+}
+
 export function formatWorkerHandle(staffId: string) {
-  const id = staffId.trim();
-  return id.startsWith('@') ? id : `@${id}`;
+  const id = normalizeStaffLoginId(staffId);
+  return `@${id}`;
 }
 
 export function WorkerIdentity({ name, staffId, shopName, variant = 'compact', className }: WorkerIdentityProps) {
