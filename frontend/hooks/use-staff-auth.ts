@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
 import { API_URL as API } from '@/lib/api-config';
+import { normalizeStaffLoginId } from '@/components/work/worker-identity';
 
 export interface StaffSession {
   id: string;
@@ -37,7 +38,7 @@ export const useStaffAuth = create<StaffAuthState>()(
         set({ isLoading: true });
         try {
           const { data } = await axios.post(`${API}/seller/staff/login`, {
-            staffId: staffId.trim().toLowerCase(),
+            staffId: normalizeStaffLoginId(staffId),
             password,
           });
           const payload = data?.data ?? data;

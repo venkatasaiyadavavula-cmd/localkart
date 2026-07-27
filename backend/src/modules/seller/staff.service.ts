@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { StaffMember, StaffRole, StaffStatus } from '../../core/entities/staff-member.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { MAX_STAFF, ROLE_PERMISSIONS, resolveStaffPermissions } from './staff-permissions';
+import { normalizeStaffLoginId } from './staff-login-id.util';
 
 export { MAX_STAFF, ROLE_PERMISSIONS };
 
@@ -170,12 +171,18 @@ export class StaffService {
   }
 
   async staffLogin(staffId: string, password: string) {
+    const normalizedId = normalizeStaffLoginId(staffId);
     const staff = await this.staffRepo.findOne({
-      where: { staffId: staffId.trim().toLowerCase(), status: StaffStatus.ACTIVE },
+      where: { staffId: normalizedId },
       relations: ['shop'],
     });
 
-    if (!staff) throw new UnauthorizedException('Invalid Login ID or account inactive');
+    if (!staff) {
+      throw new UnauthorizedException('Login ID not recognized');
+    }
+    if (staff.status !== StaffStatus.ACTIVE) {
+      throw new UnauthorizedException('This account is inactive. Contact your shop owner.');
+    }
 
     const valid = await bcrypt.compare(password, staff.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid password');

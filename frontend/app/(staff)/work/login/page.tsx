@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStaffAuth } from '@/hooks/use-staff-auth';
-import { formatWorkerHandle } from '@/components/work/worker-identity';
+import { formatWorkerHandle, normalizeStaffLoginId } from '@/components/work/worker-identity';
 
 export default function WorkLoginPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function WorkLoginPage() {
     setSubmitting(true);
     try {
       await login(staffId, password);
-      const handle = formatWorkerHandle(staffId.trim().toLowerCase());
+      const handle = formatWorkerHandle(staffId);
       const session = useStaffAuth.getState().staff;
       toast.success(`Welcome ${session?.name ?? 'back'}! Signed in as ${handle}`);
       router.push('/work');
@@ -58,8 +58,8 @@ export default function WorkLoginPage() {
               <Input
                 id="staffId"
                 value={staffId}
-                onChange={(e) => setStaffId(e.target.value)}
-                placeholder="e.g. test_9542"
+                onChange={(e) => setStaffId(normalizeStaffLoginId(e.target.value))}
+                placeholder="e.g. test_9542 or @test_9542"
                 className="pl-10 font-mono"
                 required
               />
