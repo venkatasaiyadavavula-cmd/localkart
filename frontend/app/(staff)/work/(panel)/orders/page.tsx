@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatOrderDateTime } from '@/lib/utils/date';
 import { toast } from 'sonner';
+<<<<<<< Updated upstream
 import { Truck, CheckCircle } from 'lucide-react';
+=======
+import { Truck, CheckCircle, Phone, MapPin } from 'lucide-react';
+>>>>>>> Stashed changes
 import { staffWorkApi } from '@/lib/api/staff-work';
 import { formatPrice, normalizeList } from '@/lib/utils';
 import { formatDeliveryAddress } from '@/lib/utils/api';
@@ -40,7 +44,17 @@ export default function WorkOrdersPage() {
     queryKey: ['staff', 'orders'],
     queryFn: async () => {
       const res = await staffWorkApi.getOrders(1);
-      return normalizeList<{ status: string; id: string; orderNumber: string; createdAt: string; totalAmount: number; items?: any[]; deliveryAddress?: any; deliveryStaffName?: string }>(res);
+      return normalizeList<{
+        status: string;
+        id: string;
+        orderNumber: string;
+        createdAt: string;
+        totalAmount: number;
+        items?: any[];
+        deliveryAddress?: any;
+        deliveryStaffName?: string;
+        customer?: { name?: string; phone?: string };
+      }>(res);
     },
   });
 
@@ -157,10 +171,35 @@ export default function WorkOrdersPage() {
                   ))}
                 </div>
 
+                {(order.customer?.name || order.customer?.phone) && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                      {order.customer?.name?.[0]?.toUpperCase() ?? '?'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      {order.customer?.name && (
+                        <p className="text-sm font-semibold text-gray-800">{order.customer.name}</p>
+                      )}
+                      {order.customer?.phone && (
+                        <a
+                          href={`tel:${order.customer.phone}`}
+                          className="text-xs text-gray-500 flex items-center gap-1 hover:text-emerald-600 active:text-emerald-700"
+                        >
+                          <Phone className="h-3 w-3 flex-shrink-0" />
+                          <span className="underline-offset-2 hover:underline">{order.customer.phone}</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {order.deliveryAddress && (
-                  <p className="mt-2 text-xs text-gray-500 line-clamp-2">
-                    📍 {formatDeliveryAddress(order.deliveryAddress)}
-                  </p>
+                  <div className="mt-2 flex items-start gap-1.5 rounded-xl bg-gray-50 p-2.5">
+                    <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-600 line-clamp-3">
+                      {formatDeliveryAddress(order.deliveryAddress)}
+                    </p>
+                  </div>
                 )}
 
                 {order.status === 'pending_otp' && (
