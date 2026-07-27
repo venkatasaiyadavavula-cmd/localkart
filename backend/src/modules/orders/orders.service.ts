@@ -284,6 +284,9 @@ export class OrdersService {
     if (currentUser.role === UserRole.SELLER && order.shop.ownerId !== currentUser.id) {
       throw new ForbiddenException('You can only verify OTP for your shop orders');
     }
+    if (currentUser.role === 'staff' && order.shopId !== currentUser.shopId) {
+      throw new ForbiddenException('You can only verify OTP for your shop orders');
+    }
 
     if (order.deliveryOtp !== otp) {
       throw new BadRequestException('Invalid OTP');
@@ -306,6 +309,16 @@ export class OrdersService {
       order.status = OrderStatus.CONFIRMED;
       order.confirmedAt = new Date();
       order.deliveryOtp = null;
+    } else if (currentUser.role === 'staff') {
+      if (order.status === OrderStatus.PENDING_OTP) {
+        order.status = OrderStatus.CONFIRMED;
+        order.confirmedAt = new Date();
+        order.deliveryOtp = null;
+      } else if (order.status === OrderStatus.OUT_FOR_DELIVERY) {
+        markOrderDelivered(order);
+      } else {
+        throw new BadRequestException('Order is not ready for OTP verification');
+      }
     }
 
     await this.orderRepository.save(order);

@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatOrderDateTime } from '@/lib/utils/date';
 import { toast } from 'sonner';
-import { Package, Truck, CheckCircle } from 'lucide-react';
+import { Truck, CheckCircle } from 'lucide-react';
 import { staffWorkApi } from '@/lib/api/staff-work';
 import { formatPrice, normalizeList } from '@/lib/utils';
 import { formatDeliveryAddress } from '@/lib/utils/api';
 import { DeliveryLocationPanel } from '@/components/seller/delivery-location-panel';
+import { OrderDeliveryOtpDialog } from '@/components/orders/order-delivery-otp-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -17,19 +18,22 @@ const statusFlow: Record<string, { next: string; label: string }> = {
   confirmed:        { next: 'processing',        label: '✅ Accept Order' },
   processing:       { next: 'ready_for_pickup',  label: '📦 Mark Ready' },
   ready_for_pickup: { next: 'out_for_delivery',  label: '🛵 Out for Delivery' },
-  out_for_delivery: { next: 'delivered',         label: '✓ Mark Delivered' },
 };
 
 const tabs = [
+  { label: '⏳ OTP', value: 'pending_otp' },
   { label: '🔔 New', value: 'confirmed' },
   { label: '📦 Active', value: 'processing' },
   { label: '🛵 Delivery', value: 'out_for_delivery' },
   { label: '✅ Done', value: 'delivered' },
 ];
 
+type OtpMode = 'confirm_order' | 'confirm_delivery';
+
 export default function WorkOrdersPage() {
-  const [activeTab, setActiveTab] = useState('confirmed');
+  const [activeTab, setActiveTab] = useState('pending_otp');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [otpTarget, setOtpTarget] = useState<{ orderId: string; mode: OtpMode } | null>(null);
   const qc = useQueryClient();
 
   const { data: allOrders, isLoading } = useQuery({
@@ -47,6 +51,7 @@ export default function WorkOrdersPage() {
     return order.status === activeTab;
   });
 
+  const otpCount = (allOrders ?? []).filter((o) => o.status === 'pending_otp').length;
   const newCount = (allOrders ?? []).filter((o) => o.status === 'confirmed').length;
 
   const updateStatus = useMutation({
@@ -67,33 +72,60 @@ export default function WorkOrdersPage() {
     updateStatus.mutate({ id: orderId, status });
   };
 
+  const handleVerifyOtp = async (otp: string) => {
+    if (!otpTarget) return;
+    try {
+      await staffWorkApi.verifyOrderOtp(otpTarget.orderId, otp);
+      toast.success(
+        otpTarget.mode === 'confirm_delivery'
+          ? 'Delivery confirmed with OTP!'
+          : 'Order confirmed with OTP!',
+      );
+      qc.invalidateQueries({ queryKey: ['staff', 'orders'] });
+      setOtpTarget(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Invalid OTP');
+      throw error;
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-black text-gray-900">Orders & Deliveries</h1>
         <p className="text-xs text-gray-500">
-          {newCount > 0 ? `🔔 ${newCount} new order${newCount > 1 ? 's' : ''} waiting` : 'Accept and deliver orders'}
+          {otpCount > 0 || newCount > 0
+            ? [
+                otpCount > 0 && `⏳ ${otpCount} awaiting OTP`,
+                newCount > 0 && `🔔 ${newCount} new`,
+              ].filter(Boolean).join(' · ')
+            : 'Accept and deliver orders'}
         </p>
       </div>
 
       <div className="flex gap-2 overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={cn(
-              'flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold relative',
-              activeTab === tab.value ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600',
-            )}
-          >
-            {tab.label}
-            {tab.value === 'confirmed' && newCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                {newCount}
-              </span>
-            )}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const badgeCount =
+            tab.value === 'pending_otp' ? otpCount :
+            tab.value === 'confirmed' ? newCount : 0;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                'flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold relative',
+                activeTab === tab.value ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600',
+              )}
+            >
+              {tab.label}
+              {badgeCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {badgeCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {isLoading ? (
@@ -131,6 +163,32 @@ export default function WorkOrdersPage() {
                   </p>
                 )}
 
+                {order.status === 'pending_otp' && (
+                  <div className="mt-3">
+                    <Button
+                      className="w-full bg-amber-500 hover:bg-amber-600"
+                      onClick={() => setOtpTarget({ orderId: order.id, mode: 'confirm_order' })}
+                    >
+                      🔐 Enter Customer OTP to Confirm
+                    </Button>
+                    <p className="text-[10px] text-gray-400 text-center mt-2">
+                      Ask customer for OTP sent to their phone
+                    </p>
+                  </div>
+                )}
+
+                {order.status === 'out_for_delivery' && (
+                  <div className="mt-3 space-y-2">
+                    <Button
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => setOtpTarget({ orderId: order.id, mode: 'confirm_delivery' })}
+                    >
+                      🔐 Enter Customer OTP to Confirm Delivery
+                    </Button>
+                    <DeliveryLocationPanel orderId={order.id} staffName={order.deliveryStaffName} />
+                  </div>
+                )}
+
                 {next && (
                   <Button
                     className="mt-3 w-full bg-emerald-600 hover:bg-emerald-700"
@@ -139,10 +197,6 @@ export default function WorkOrdersPage() {
                   >
                     {updatingId === order.id ? 'Updating...' : next.label}
                   </Button>
-                )}
-
-                {order.status === 'out_for_delivery' && (
-                  <DeliveryLocationPanel orderId={order.id} staffName={order.deliveryStaffName} />
                 )}
 
                 {order.status === 'delivered' && (
@@ -155,6 +209,21 @@ export default function WorkOrdersPage() {
           })}
         </div>
       )}
+
+      <OrderDeliveryOtpDialog
+        open={!!otpTarget}
+        onOpenChange={(open) => !open && setOtpTarget(null)}
+        title={
+          otpTarget?.mode === 'confirm_delivery'
+            ? 'Confirm Delivery with OTP'
+            : 'Confirm Order with OTP'
+        }
+        description="Enter the OTP sent to the customer's phone."
+        confirmLabel={
+          otpTarget?.mode === 'confirm_delivery' ? 'Confirm Delivery' : 'Confirm Order'
+        }
+        onVerify={handleVerifyOtp}
+      />
     </div>
   );
 }

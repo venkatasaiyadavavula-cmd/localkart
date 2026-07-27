@@ -68,4 +68,12 @@ export class StaffWorkService {
     const ownerId = await this.resolveOwnerId(staffUser.shopId);
     return this.ordersService.updateDeliveryLocation(orderId, ownerId, dto);
   }
+
+  async verifyOrderOtp(staffUser: any, orderId: string, otp: string) {
+    return this.ordersService.verifyDeliveryOtp(orderId, otp, {
+      id: staffUser.id,
+      role: 'staff',
+      shopId: staffUser.shopId,
+    });
+  }
 }

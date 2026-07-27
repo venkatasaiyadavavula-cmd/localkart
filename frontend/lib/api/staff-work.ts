@@ -52,4 +52,9 @@ export const staffWorkApi = {
     const { data } = await staffClient().put(`/staff/work/orders/${orderId}/location`, body);
     return unwrapApiData(data);
   },
+
+  async verifyOrderOtp(orderId: string, otp: string) {
+    const { data } = await staffClient().post(`/staff/work/orders/${orderId}/verify-otp`, { otp });
+    return unwrapApiData(data);
+  },
 };

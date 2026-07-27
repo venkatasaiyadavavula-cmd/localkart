@@ -79,4 +79,14 @@ export class StaffWorkController {
   ) {
     return this.staffWorkService.updateDeliveryLocation(user, id, dto);
   }
+
+  @Post('orders/:id/verify-otp')
+  @RequirePermissions('orders:write')
+  verifyOrderOtp(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body('otp') otp: string,
+  ) {
+    return this.staffWorkService.verifyOrderOtp(user, id, otp);
+  }
 }

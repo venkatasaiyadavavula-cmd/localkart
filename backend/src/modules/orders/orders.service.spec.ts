@@ -217,13 +217,39 @@ describe('OrdersService.verifyDeliveryOtp', () => {
     orderRepository.save.mockImplementation(async (o) => o);
   });
 
-  it('strips customer.password from the returned order', async () => {
+  it('lets seller confirm pending_otp for their shop order', async () => {
     const result = await service.verifyDeliveryOtp(
       ORDER_ID,
       '654321',
-      { id: OWNER_ID, role: UserRole.CUSTOMER },
+      { id: SELLER_ID, role: UserRole.SELLER },
     );
-    expect(result.order.customer?.password).toBeUndefined();
+
+    expect(result.order.status).toBe(OrderStatus.CONFIRMED);
+    expect(result.order.deliveryOtp).toBeNull();
+    expect(orderRepository.save).toHaveBeenCalled();
+  });
+
+  it('lets staff with orders:write confirm OTP for same-shop order', async () => {
+    const result = await service.verifyDeliveryOtp(
+      ORDER_ID,
+      '654321',
+      { id: 'staff-1', role: 'staff', shopId: SHOP_ID },
+    );
+
+    expect(result.order.status).toBe(OrderStatus.CONFIRMED);
+    expect(result.order.deliveryOtp).toBeNull();
+  });
+
+  it('rejects staff OTP verification for another shop order', async () => {
+    const promise = service.verifyDeliveryOtp(
+      ORDER_ID,
+      '654321',
+      { id: 'staff-1', role: 'staff', shopId: 'other-shop-id' },
+    );
+
+    await expect(promise).rejects.toThrow(ForbiddenException);
+    await expect(promise).rejects.toThrow(/your shop orders/i);
+    expect(orderRepository.save).not.toHaveBeenCalled();
   });
 
   it('sets deliveredAt when customer confirms delivery OTP from out_for_delivery', async () => {

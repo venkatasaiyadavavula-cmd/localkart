@@ -9,15 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { OrderDeliveryOtpDialog } from '@/components/orders/order-delivery-otp-dialog';
 import { useSellerOrders } from '@/hooks/use-seller-orders';
 import { formatPrice } from '@/lib/utils';
 import { formatDeliveryAddress } from '@/lib/utils/api';
@@ -57,8 +49,6 @@ export default function SellerOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [otpOrderId, setOtpOrderId] = useState<string | null>(null);
-  const [otp, setOtp] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
 
   const { data: allOrdersList, isLoading, isError, refetch, updateOrderStatus, verifyOrderOtp } = useSellerOrders({
     search: searchQuery,
@@ -82,21 +72,6 @@ export default function SellerOrdersPage() {
       toast.error(error.response?.data?.message || 'Failed to update order');
     } finally {
       setUpdatingId(null);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otpOrderId || otp.length < 4) return;
-    setIsVerifying(true);
-    try {
-      await verifyOrderOtp(otpOrderId, otp);
-      toast.success('Order confirmed with OTP!');
-      setOtpOrderId(null);
-      setOtp('');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid OTP');
-    } finally {
-      setIsVerifying(false);
     }
   };
 
@@ -228,7 +203,7 @@ export default function SellerOrdersPage() {
                 {order.status === 'pending_otp' && (
                   <div className="px-4 pb-4">
                     <Button
-                      onClick={() => { setOtpOrderId(order.id); setOtp(''); }}
+                      onClick={() => setOtpOrderId(order.id)}
                       className="w-full h-11 rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-600 text-white border-0"
                     >
                       🔐 Enter Customer OTP to Confirm
@@ -274,34 +249,24 @@ export default function SellerOrdersPage() {
         }
       </div>
 
-      <Dialog open={!!otpOrderId} onOpenChange={(open) => !open && setOtpOrderId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Order with OTP</DialogTitle>
-            <DialogDescription>
-              Enter the OTP sent to the customer&apos;s phone to confirm this order.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center py-4">
-            <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOtpOrderId(null)}>Cancel</Button>
-            <Button onClick={handleVerifyOtp} disabled={isVerifying || otp.length < 4}>
-              {isVerifying ? 'Verifying...' : 'Confirm Order'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <OrderDeliveryOtpDialog
+        open={!!otpOrderId}
+        onOpenChange={(open) => !open && setOtpOrderId(null)}
+        title="Confirm Order with OTP"
+        description="Enter the OTP sent to the customer's phone to confirm this order."
+        confirmLabel="Confirm Order"
+        onVerify={async (otp) => {
+          if (!otpOrderId) return;
+          try {
+            await verifyOrderOtp(otpOrderId, otp);
+            toast.success('Order confirmed with OTP!');
+            setOtpOrderId(null);
+          } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Invalid OTP');
+            throw error;
+          }
+        }}
+      />
     </div>
   );
 }
