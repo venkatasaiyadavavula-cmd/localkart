@@ -122,8 +122,11 @@ describe('Razorpay payment audit', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
+    const { resetRazorpayInstanceForTests } = require('../../config/razorpay.config');
+    resetRazorpayInstanceForTests();
     process.env = {
       ...originalEnv,
+      RAZORPAY_KEY_ID: 'rzp_test_key',
       RAZORPAY_KEY_SECRET: 'test_key_secret',
       RAZORPAY_WEBHOOK_SECRET: WEBHOOK_SECRET,
       PAYMENTS_ENABLED: 'true',

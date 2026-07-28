@@ -11,9 +11,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCartStore } from '@/store/cart-store';
 import { useLocationStore } from '@/store/location-store';
 import { getLocationDisplayLabel } from '@/lib/geocode';
-import { useTranslation } from '@/hooks/use-translation';
+import { LanguageToggle } from './language-toggle';
 import { LocationDialog } from '@/components/location/location-dialog';
 import { useGeolocation } from '@/hooks/use-geolocation';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 export function MobileHeader() {
@@ -94,6 +95,7 @@ export function MobileHeader() {
           </button>
 
           <div className="flex items-center gap-1.5 flex-shrink-0" ref={menuRef}>
+            <LanguageToggle className="!h-9 !w-9 !min-w-9" />
             <Link
               href="/wishlist"
               className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-100 bg-white shadow-xs"

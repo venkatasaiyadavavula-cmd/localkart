@@ -17,13 +17,15 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const payload = JSON.parse(body);
 
-  // Verify signature
+  // Verify signature (constant-time)
   const expectedSignature = crypto
     .createHmac('sha256', webhookSecret)
     .update(body)
     .digest('hex');
 
-  if (signature !== expectedSignature) {
+  const sigBuf = Buffer.from(signature ?? '', 'utf8');
+  const expBuf = Buffer.from(expectedSignature, 'utf8');
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 

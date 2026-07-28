@@ -30,8 +30,6 @@ const nextConfig = {
   // దీనికి బదులుగా, అన్ని పేజీలు రిక్వెస్ట్ టైమ్ లో రెండర్ అవుతాయి.
   reactStrictMode: true,
   trailingSlash: false,
-  
-  // 8. అదనపు భద్రత: webpack కాన్ఫిగ్ ద్వారా కూడా నిరోధించవచ్చు, కానీ ఇది అవసరం లేదు.
 };
 
 module.exports = nextConfig;

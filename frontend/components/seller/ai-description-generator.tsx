@@ -52,8 +52,10 @@ export function AiDescriptionGenerator({ productName, category, price, unit, onG
       setStatus('loading-model');
       setProgress(0);
 
-      // Lazy-load transformers.js only when needed
-      const { pipeline, env } = await import('@xenova/transformers');
+      // Dynamic import hidden from webpack static analysis (Next 14.2.17+ otherwise bundles onnx native binaries).
+      const { pipeline, env } = await (Function(
+        'return import("@xenova/transformers")',
+      )() as Promise<typeof import('@xenova/transformers')>);
       env.allowLocalModels  = false;
       env.useBrowserCache   = true;
 
