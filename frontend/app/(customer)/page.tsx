@@ -269,7 +269,7 @@ export default function HomePage() {
       </div>
 
       <div className="px-4 py-5 mt-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Link href={buildRegisterUrl({ intent: 'customer' })}>
             <div className="relative overflow-hidden rounded-3xl p-5 h-full" style={{ background: 'linear-gradient(135deg,#EEF0FE 0%,#FFFFFF 100%)', border: '1px solid rgba(61,90,241,0.12)' }}>
               <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-2">{t('homeForShoppers')}</p>
@@ -284,6 +284,14 @@ export default function HomePage() {
               <p className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display,Syne,sans-serif)' }}>{t('homeBecomeSeller')}</p>
               <p className="text-xs text-gray-500 mt-1">{t('homeBecomeSellerSub')}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-xs font-extrabold text-violet-600">{t('homeStartSellingFreeBtn')} <ArrowRight className="h-3.5 w-3.5" /></span>
+            </div>
+          </Link>
+          <Link href="/work/login">
+            <div className="relative overflow-hidden rounded-3xl p-5 h-full" style={{ background: 'linear-gradient(135deg,#ECFDF5 0%,#FFFFFF 100%)', border: '1px solid rgba(5,150,105,0.15)' }}>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2">{t('homeForShopStaff')}</p>
+              <p className="text-lg font-black text-gray-900" style={{ fontFamily: 'var(--font-display,Syne,sans-serif)' }}>{t('homeEmployeeLogin')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('homeEmployeeLoginSub')}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-extrabold text-emerald-600">{t('homeEmployeeLoginBtn')} <ArrowRight className="h-3.5 w-3.5" /></span>
             </div>
           </Link>
         </div>
