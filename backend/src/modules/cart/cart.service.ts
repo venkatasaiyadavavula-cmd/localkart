@@ -5,6 +5,7 @@ import { Redis } from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
+import { User, UserRole } from '../../core/entities/user.entity';
 import { AddToCartDto, UpdateCartItemDto, CartItem } from './dto/cart-item.dto';
 import { isShopCurrentlyOpen } from '../../core/utils/shop-hours.util';
 
@@ -19,6 +20,8 @@ export class CartService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   private getCartKey(userId: string): string {
@@ -35,6 +38,13 @@ export class CartService {
     const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     return { items, totalAmount, totalItems };
+  }
+
+  private async assertNotSellerOwnShop(userId: string, shopOwnerId: string | undefined) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user?.role === UserRole.SELLER && shopOwnerId === userId) {
+      throw new BadRequestException('You cannot add products from your own shop to your cart');
+    }
   }
 
   async addToCart(userId: string, addToCartDto: AddToCartDto) {
@@ -62,6 +72,8 @@ export class CartService {
     if (!isShopCurrentlyOpen(product.shop)) {
       throw new BadRequestException('Shop is currently closed');
     }
+
+    await this.assertNotSellerOwnShop(userId, product.shop.ownerId);
 
     const cartKey = this.getCartKey(userId);
     let items: CartItem[] = [];
@@ -176,6 +188,7 @@ export class CartService {
       if (!product) {
         throw new BadRequestException(`Product ${item.name} is no longer available`);
       }
+      await this.assertNotSellerOwnShop(userId, product.shop.ownerId);
       if (product.stock < item.quantity) {
         throw new BadRequestException(`Only ${product.stock} of ${item.name} available`);
       }

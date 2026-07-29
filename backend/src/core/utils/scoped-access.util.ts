@@ -21,6 +21,7 @@ export function isScopedResourceAllowed(
   if (role === UserRole.ADMIN) return true;
   if (role === UserRole.CUSTOMER) return resource.customerId === userId;
   if (role === UserRole.SELLER) {
+    if (resource.customerId === userId) return true;
     if (resource.shopOwnerId) return resource.shopOwnerId === userId;
     return !!options?.sellerShopId && options.sellerShopId === resource.shopId;
   }

@@ -6,7 +6,8 @@ import { OrdersService } from './orders.service';
 import { Order } from '../../core/entities/order.entity';
 import { OrderItem } from '../../core/entities/order-item.entity';
 import { Product } from '../../core/entities/product.entity';
-import { Shop } from '../../core/entities/shop.entity';
+import { Shop, ShopStatus } from '../../core/entities/shop.entity';
+import { ManualOverride } from '../../core/entities/shop.entity';
 import { User, UserRole } from '../../core/entities/user.entity';
 import { Transaction } from '../../core/entities/transaction.entity';
 import { ReturnRequest } from '../../core/entities/return-request.entity';
@@ -227,6 +228,26 @@ describe('OrdersService.verifyDeliveryOtp', () => {
     expect(result.order.status).toBe(OrderStatus.CONFIRMED);
     expect(result.order.deliveryOtp).toBeNull();
     expect(orderRepository.save).toHaveBeenCalled();
+  });
+
+  it('treats seller as customer buyer when verifying OTP on their own purchase', async () => {
+    orderRepository.findOne.mockResolvedValue(
+      mockOrder({
+        customerId: SELLER_ID,
+        shop: { ownerId: OTHER_CUSTOMER_ID } as Shop,
+        status: OrderStatus.OUT_FOR_DELIVERY,
+        deliveryOtp: '654321',
+      }),
+    );
+
+    const result = await service.verifyDeliveryOtp(
+      ORDER_ID,
+      '654321',
+      { id: SELLER_ID, role: UserRole.SELLER },
+    );
+
+    expect(result.order.status).toBe(OrderStatus.DELIVERED);
+    expect(result.order.deliveryOtp).toBeNull();
   });
 
   it('lets staff with orders:write confirm OTP for same-shop order', async () => {
@@ -560,5 +581,136 @@ describe('OrdersService.confirmPaidOrder', () => {
     const result = await service.confirmPaidOrder(ORDER_ID, 'pay_456');
     expect(result.deliveryOtp).toBeUndefined();
     expect(result.customer?.password).toBeUndefined();
+  });
+});
+
+describe('OrdersService.createOrder seller self-dealing', () => {
+  let service: OrdersService;
+  const shippingAddress = {
+    name: 'Test',
+    phone: '+919876543210',
+    address: '123 Main St',
+    city: 'Kadapa',
+    state: 'AP',
+    pincode: '516001',
+  };
+  const cartService = { validateCartForCheckout: jest.fn() };
+  const shopRepository = { findOne: jest.fn() };
+  const userRepository = { findOne: jest.fn() };
+  const locationService = { resolveDeliveryCharge: jest.fn().mockReturnValue(0) };
+  const dataSource = { createQueryRunner: jest.fn() };
+
+  const openShop = {
+    id: SHOP_ID,
+    ownerId: SELLER_ID,
+    status: ShopStatus.APPROVED,
+    openingTime: '00:00',
+    closingTime: '23:59',
+    manualOverride: ManualOverride.FORCE_OPEN,
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: getRepositoryToken(Order), useValue: {} },
+        { provide: getRepositoryToken(OrderItem), useValue: {} },
+        { provide: getRepositoryToken(Product), useValue: {} },
+        { provide: getRepositoryToken(Shop), useValue: shopRepository },
+        { provide: getRepositoryToken(User), useValue: userRepository },
+        { provide: getRepositoryToken(Transaction), useValue: {} },
+        { provide: getRepositoryToken(ReturnRequest), useValue: {} },
+        { provide: CartService, useValue: cartService },
+        { provide: DataSource, useValue: dataSource },
+        { provide: OrderStateMachine, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
+        { provide: TrackingGateway, useValue: {} },
+        { provide: LocationService, useValue: locationService },
+        {
+          provide: CommissionRatesService,
+          useValue: {
+            getRatesMap: jest.fn().mockResolvedValue({
+              groceries: 2,
+              fashion: 4,
+              electronics: 3,
+              home_essentials: 4,
+              beauty: 5,
+              accessories: 5,
+            }),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+    jest.clearAllMocks();
+    locationService.resolveDeliveryCharge.mockReturnValue(0);
+  });
+
+  it('rejects seller placing order from own shop', async () => {
+    cartService.validateCartForCheckout.mockResolvedValue({
+      cart: { items: [{ shopId: SHOP_ID, price: 100, quantity: 1, productId: 'p1' }] },
+      products: [
+        {
+          id: 'p1',
+          shopId: SHOP_ID,
+          categoryType: 'groceries',
+          shop: { ownerId: SELLER_ID, status: ShopStatus.APPROVED },
+        },
+      ],
+    });
+    shopRepository.findOne.mockResolvedValue(openShop);
+    userRepository.findOne.mockResolvedValue({ id: SELLER_ID, role: UserRole.SELLER });
+
+    const promise = service.createOrder(SELLER_ID, { shippingAddress });
+    await expect(promise).rejects.toThrow(BadRequestException);
+    await expect(promise).rejects.toThrow(/own shop/i);
+    expect(dataSource.createQueryRunner).not.toHaveBeenCalled();
+  });
+
+  it('allows seller to order from another shop', async () => {
+    cartService.validateCartForCheckout.mockResolvedValue({
+      cart: { items: [{ shopId: SHOP_ID, price: 100, quantity: 1, productId: 'p1' }] },
+      products: [
+        {
+          id: 'p1',
+          shopId: SHOP_ID,
+          categoryType: 'groceries',
+          shop: { ownerId: OTHER_CUSTOMER_ID, status: ShopStatus.APPROVED },
+        },
+      ],
+    });
+    shopRepository.findOne.mockResolvedValue({ ...openShop, ownerId: OTHER_CUSTOMER_ID });
+    userRepository.findOne.mockResolvedValue({ id: SELLER_ID, role: UserRole.SELLER });
+    dataSource.createQueryRunner.mockReturnValue({
+      connect: jest.fn().mockRejectedValue(new Error('past-self-deal-guard')),
+    });
+
+    await expect(
+      service.createOrder(SELLER_ID, { shippingAddress }),
+    ).rejects.toThrow('past-self-deal-guard');
+  });
+
+  it('does not apply self-dealing guard to customers', async () => {
+    cartService.validateCartForCheckout.mockResolvedValue({
+      cart: { items: [{ shopId: SHOP_ID, price: 50, quantity: 2, productId: 'p1' }] },
+      products: [
+        {
+          id: 'p1',
+          shopId: SHOP_ID,
+          categoryType: 'groceries',
+          shop: { ownerId: SELLER_ID, status: ShopStatus.APPROVED },
+        },
+      ],
+    });
+    shopRepository.findOne.mockResolvedValue(openShop);
+    userRepository.findOne.mockResolvedValue({ id: OWNER_ID, role: UserRole.CUSTOMER });
+    dataSource.createQueryRunner.mockReturnValue({
+      connect: jest.fn().mockRejectedValue(new Error('past-self-deal-guard')),
+    });
+
+    await expect(
+      service.createOrder(OWNER_ID, { shippingAddress }),
+    ).rejects.toThrow('past-self-deal-guard');
   });
 });

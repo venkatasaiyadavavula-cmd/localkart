@@ -23,7 +23,7 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('create-order')
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async createRazorpayOrder(
     @CurrentUser() user: any,
     @Body() createPaymentDto: CreatePaymentDto,
@@ -33,7 +33,7 @@ export class PaymentsController {
   }
 
   @Post('verify')
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   @HttpCode(HttpStatus.OK)
   async verifyPayment(
     @CurrentUser() user: any,
@@ -51,7 +51,7 @@ export class PaymentsController {
   }
 
   @Post('cod/initiate')
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async initiateCodOrder(
     @CurrentUser() user: any,
     @Body() createPaymentDto: CreatePaymentDto,

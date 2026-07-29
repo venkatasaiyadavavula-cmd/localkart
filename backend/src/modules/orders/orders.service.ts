@@ -68,6 +68,22 @@ export class OrdersService {
     };
   }
 
+  private assertSellerNotOrderingOwnShop(
+    user: User,
+    cartItems: { shopId: string }[],
+    products: Product[],
+  ) {
+    if (user.role !== UserRole.SELLER) return;
+
+    const shopIds = [...new Set(cartItems.map((item) => item.shopId))];
+    for (const sid of shopIds) {
+      const ownerId = products.find((p) => p.shopId === sid)?.shop?.ownerId;
+      if (ownerId === user.id) {
+        throw new BadRequestException('You cannot place an order from your own shop');
+      }
+    }
+  }
+
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
     const { paymentMethod = PaymentMethod.COD, shippingAddress, deliveryNotes } = createOrderDto;
 
@@ -99,6 +115,8 @@ export class OrdersService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    this.assertSellerNotOrderingOwnShop(user, cart.items, products);
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const deliveryCharge = this.locationService.resolveDeliveryCharge(
@@ -281,8 +299,12 @@ export class OrdersService {
     if (currentUser.role === UserRole.CUSTOMER && order.customerId !== currentUser.id) {
       throw new ForbiddenException('You can only verify OTP for your own orders');
     }
-    if (currentUser.role === UserRole.SELLER && order.shop.ownerId !== currentUser.id) {
-      throw new ForbiddenException('You can only verify OTP for your shop orders');
+    if (currentUser.role === UserRole.SELLER) {
+      const isBuyer = order.customerId === currentUser.id;
+      const isShopOwner = order.shop.ownerId === currentUser.id;
+      if (!isBuyer && !isShopOwner) {
+        throw new ForbiddenException('You can only verify OTP for your orders or your shop orders');
+      }
     }
     if (currentUser.role === 'staff' && order.shopId !== currentUser.shopId) {
       throw new ForbiddenException('You can only verify OTP for your shop orders');
@@ -292,7 +314,11 @@ export class OrdersService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    if (currentUser.role === UserRole.CUSTOMER) {
+    const actAsCustomer =
+      currentUser.role === UserRole.CUSTOMER ||
+      (currentUser.role === UserRole.SELLER && order.customerId === currentUser.id);
+
+    if (actAsCustomer) {
       if (order.status === OrderStatus.PENDING_OTP) {
         order.status = OrderStatus.CONFIRMED;
         order.confirmedAt = new Date();

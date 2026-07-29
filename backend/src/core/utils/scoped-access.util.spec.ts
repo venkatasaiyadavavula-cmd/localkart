@@ -28,6 +28,10 @@ describe('scoped-access.util', () => {
     expect(isScopedResourceAllowed(resource, UserRole.SELLER, 'seller-1')).toBe(true);
   });
 
+  it('allows seller viewing an order they placed as a customer', () => {
+    expect(isScopedResourceAllowed(resource, UserRole.SELLER, 'customer-a')).toBe(true);
+  });
+
   it('denies seller from another shop', () => {
     expect(isScopedResourceAllowed(resource, UserRole.SELLER, 'seller-2')).toBe(false);
   });

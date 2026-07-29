@@ -8,7 +8,7 @@ import { Shop } from '../../core/entities/shop.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Shop]),
+    TypeOrmModule.forFeature([Product, Shop, User]),
     RedisModule.forRoot({
       type: 'single',
       url: 'redis://localhost:6379',

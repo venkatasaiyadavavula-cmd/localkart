@@ -26,7 +26,7 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async createOrder(@CurrentUser() user: any, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.createOrder(user.id, createOrderDto);
   }
@@ -135,7 +135,7 @@ export class OrdersController {
   }
 
   @Put(':id/cancel')
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async cancelOrder(
     @CurrentUser() user: any,
     @Param('id') id: string,

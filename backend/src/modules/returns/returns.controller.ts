@@ -28,7 +28,7 @@ export class ReturnsController {
   constructor(private readonly returnsService: ReturnsService) {}
 
   @Post()
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   @UseInterceptors(FilesInterceptor('evidence', 5))
   async createReturnRequest(
     @CurrentUser() user: any,
@@ -57,7 +57,7 @@ export class ReturnsController {
   }
 
   @Put(':id/cancel')
-  @Roles(UserRole.CUSTOMER)
+  @Roles(UserRole.CUSTOMER, UserRole.SELLER)
   async cancelReturnRequest(@CurrentUser() user: any, @Param('id') id: string) {
     return this.returnsService.cancelReturnRequest(id, user.id);
   }
