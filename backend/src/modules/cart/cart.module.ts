@@ -5,6 +5,7 @@ import { CartController } from './cart.controller';
 import { CartService } from './cart.service';
 import { Product } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
+import { User } from '../../core/entities/user.entity';
 
 @Module({
   imports: [
