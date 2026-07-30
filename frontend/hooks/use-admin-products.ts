@@ -33,16 +33,12 @@ export function useAdminProducts(params: AdminProductsParams = {}) {
       searchParams.set('status', status);
       searchParams.set('page', String(params.page ?? 1));
       searchParams.set('limit', String(params.limit ?? 20));
-
-      const { data } = await apiClient.get(`/admin/products?${searchParams.toString()}`);
-      const result = unwrapPaginated<Product>(data);
-
-      if (params.search) {
-        const q = params.search.toLowerCase();
-        result.data = result.data.filter((p) => p.name?.toLowerCase().includes(q));
+      if (params.search?.trim()) {
+        searchParams.set('search', params.search.trim());
       }
 
-      return result;
+      const { data } = await apiClient.get(`/admin/products?${searchParams.toString()}`);
+      return unwrapPaginated<Product>(data);
     },
   });
 

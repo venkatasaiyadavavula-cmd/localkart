@@ -26,21 +26,16 @@ export default function AdminAdCampaignsPage() {
   const { campaigns, meta, isLoading, isError, refetch, pauseCampaign, resumeCampaign, isPausing, isResuming } =
     useAdminAdCampaigns(page, 30);
 
-  const handlePause = async (id: string, kind: string) => {
-    if (kind !== 'sponsored') {
-      toast.message('Featured video promotions cannot be paused from this screen yet.');
-      return;
-    }
+  const handlePause = async (id: string) => {
     try {
       await pauseCampaign(id);
-      toast.success('Campaign paused and product unsponsored');
+      toast.success('Campaign paused');
     } catch {
       toast.error('Failed to pause campaign');
     }
   };
 
-  const handleResume = async (id: string, kind: string) => {
-    if (kind !== 'sponsored') return;
+  const handleResume = async (id: string) => {
     try {
       await resumeCampaign(id);
       toast.success('Campaign resumed');
@@ -117,7 +112,7 @@ export default function AdminAdCampaignsPage() {
                       <Badge variant="outline" className="capitalize">
                         {row.status}
                       </Badge>
-                      {row.kind === 'sponsored' && row.pausedByAdmin && (
+                      {row.pausedByAdmin && (
                         <Badge variant="destructive" className="ml-1">
                           Admin paused
                         </Badge>
@@ -143,30 +138,28 @@ export default function AdminAdCampaignsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {row.kind === 'sponsored' && row.status === 'active' && (
+                      {row.status === 'active' && (
                         <Button
                           size="sm"
                           variant="outline"
                           disabled={isPausing}
-                          onClick={() => handlePause(row.id, row.kind)}
+                          onClick={() => handlePause(row.id)}
                         >
                           <Pause className="mr-1 h-3 w-3" />
                           Pause
                         </Button>
                       )}
-                      {row.kind === 'sponsored' &&
-                        row.status === 'paused' &&
-                        row.pausedByAdmin && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isResuming}
-                            onClick={() => handleResume(row.id, row.kind)}
-                          >
-                            <Play className="mr-1 h-3 w-3" />
-                            Resume
-                          </Button>
-                        )}
+                      {row.status === 'paused' && row.pausedByAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isResuming}
+                          onClick={() => handleResume(row.id)}
+                        >
+                          <Play className="mr-1 h-3 w-3" />
+                          Resume
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

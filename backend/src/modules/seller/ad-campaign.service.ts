@@ -4,7 +4,7 @@ import { Repository, In } from 'typeorm';
 import { SponsoredProduct, AdStatus, AdType } from '../../core/entities/sponsored-product.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { Shop } from '../../core/entities/shop.entity';
-import { FeaturedVideo } from '../../core/entities/featured-video.entity';
+import { FeaturedVideo, FeaturedVideoStatus } from '../../core/entities/featured-video.entity';
 import { AdCampaignCharge } from '../../core/entities/ad-campaign-charge.entity';
 import { CreateAdCampaignDto, UpdateAdCampaignDto } from './dto/ad-campaign.dto';
 import { AD_PACKAGES, AdPackage } from './ad-packages';
@@ -157,14 +157,25 @@ export class AdCampaignService {
       where: { id },
       relations: ['product'],
     });
-    if (!campaign) {
+    if (campaign) {
+      await this.applyCampaignStatus(campaign, AdStatus.PAUSED);
+      campaign.status = AdStatus.PAUSED;
+      campaign.pausedByAdmin = true;
+      await this.adRepository.save(campaign);
+      return campaign;
+    }
+
+    const featured = await this.featuredVideoRepository.findOne({ where: { id } });
+    if (!featured) {
       throw new NotFoundException('Campaign not found');
     }
-    await this.applyCampaignStatus(campaign, AdStatus.PAUSED);
-    campaign.status = AdStatus.PAUSED;
-    campaign.pausedByAdmin = true;
-    await this.adRepository.save(campaign);
-    return campaign;
+    if (featured.status === FeaturedVideoStatus.EXPIRED) {
+      throw new BadRequestException('Expired featured videos cannot be paused');
+    }
+    featured.status = FeaturedVideoStatus.PAUSED;
+    featured.pausedByAdmin = true;
+    await this.featuredVideoRepository.save(featured);
+    return featured;
   }
 
   async resumeCampaignAsAdmin(id: string) {
@@ -172,14 +183,28 @@ export class AdCampaignService {
       where: { id },
       relations: ['product'],
     });
-    if (!campaign) {
+    if (campaign) {
+      campaign.pausedByAdmin = false;
+      await this.applyCampaignStatus(campaign, AdStatus.ACTIVE);
+      campaign.status = AdStatus.ACTIVE;
+      await this.adRepository.save(campaign);
+      return campaign;
+    }
+
+    const featured = await this.featuredVideoRepository.findOne({ where: { id } });
+    if (!featured) {
       throw new NotFoundException('Campaign not found');
     }
-    campaign.pausedByAdmin = false;
-    await this.applyCampaignStatus(campaign, AdStatus.ACTIVE);
-    campaign.status = AdStatus.ACTIVE;
-    await this.adRepository.save(campaign);
-    return campaign;
+    if (!featured.pausedByAdmin) {
+      throw new BadRequestException('Featured video was not paused by admin');
+    }
+    if (featured.expiresAt <= new Date()) {
+      throw new BadRequestException('Featured video has expired and cannot be resumed');
+    }
+    featured.pausedByAdmin = false;
+    featured.status = FeaturedVideoStatus.ACTIVE;
+    await this.featuredVideoRepository.save(featured);
+    return featured;
   }
 
   async listCampaignsForAdmin(page = 1, limit = 30) {
@@ -258,6 +283,7 @@ export class AdCampaignService {
         productName: f.product?.name ?? '—',
         adType: 'featured_video',
         status: f.status,
+        pausedByAdmin: f.pausedByAdmin,
         startDate: start,
         endDate: end,
         totalCost: Number(f.amount),

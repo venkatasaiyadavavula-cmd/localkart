@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -15,40 +15,40 @@ export class ModerationService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async getPendingShops(page: number, limit: number) {
-    const skip = (page - 1) * limit;
-    const [shops, total] = await this.shopRepository.findAndCount({
-      where: { status: ShopStatus.PENDING },
-      relations: ['owner'],
-      order: { createdAt: 'ASC' },
-      skip,
-      take: limit,
-    });
-
-    shops.forEach(s => delete s.owner?.password);
-    return {
-      data: shops,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-    };
+  async getPendingShops(page: number, limit: number, search?: string) {
+    return this.getAllShops(page, limit, ShopStatus.PENDING, search);
   }
 
-  async getAllShops(page: number, limit: number, status?: string) {
+  async getAllShops(page: number, limit: number, status?: string, search?: string) {
     const skip = (page - 1) * limit;
-    const where: any = {};
-    if (status) where.status = status;
+    const qb = this.shopRepository
+      .createQueryBuilder('shop')
+      .leftJoinAndSelect('shop.owner', 'owner')
+      .orderBy('shop.createdAt', status === ShopStatus.PENDING ? 'ASC' : 'DESC')
+      .skip(skip)
+      .take(limit);
 
-    const [shops, total] = await this.shopRepository.findAndCount({
-      where,
-      relations: ['owner'],
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    if (status) {
+      qb.andWhere('shop.status = :status', { status });
+    }
 
-    shops.forEach(s => delete s.owner?.password);
+    const term = search?.trim();
+    if (term) {
+      const q = `%${term}%`;
+      qb.andWhere(
+        new Brackets((w) => {
+          w.where('shop.name ILIKE :q', { q })
+            .orWhere('owner.phone ILIKE :q', { q });
+        }),
+      );
+    }
+
+    const [shops, total] = await qb.getManyAndCount();
+
+    shops.forEach((s) => delete s.owner?.password);
     return {
       data: shops,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 },
     };
   }
 
@@ -148,33 +148,42 @@ export class ModerationService {
     return shop;
   }
 
-  async getPendingProducts(page: number, limit: number) {
-    return this.getAllProducts(page, limit, ProductStatus.PENDING);
+  async getPendingProducts(page: number, limit: number, search?: string) {
+    return this.getAllProducts(page, limit, ProductStatus.PENDING, search);
   }
 
-  async getAllProducts(page: number, limit: number, status: string = 'all') {
+  async getAllProducts(page: number, limit: number, status: string = 'all', search?: string) {
     const skip = (page - 1) * limit;
-    const where: { status?: ProductStatus } = {};
+    const qb = this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.shop', 'shop')
+      .orderBy('product.createdAt', status === ProductStatus.PENDING ? 'ASC' : 'DESC')
+      .skip(skip)
+      .take(limit);
 
     if (status && status !== 'all') {
       const validStatuses = Object.values(ProductStatus);
       if (!validStatuses.includes(status as ProductStatus)) {
         throw new BadRequestException(`Invalid product status: ${status}`);
       }
-      where.status = status as ProductStatus;
+      qb.andWhere('product.status = :status', { status });
     }
 
-    const [products, total] = await this.productRepository.findAndCount({
-      where,
-      relations: ['shop'],
-      order: { createdAt: status === ProductStatus.PENDING ? 'ASC' : 'DESC' },
-      skip,
-      take: limit,
-    });
+    const term = search?.trim();
+    if (term) {
+      const q = `%${term}%`;
+      qb.andWhere(
+        new Brackets((w) => {
+          w.where('product.name ILIKE :q', { q }).orWhere('product.sku ILIKE :q', { q });
+        }),
+      );
+    }
+
+    const [products, total] = await qb.getManyAndCount();
 
     return {
       data: products,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 },
     };
   }
 

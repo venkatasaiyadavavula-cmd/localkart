@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, CheckCircle, XCircle, Eye, MoreHorizontal, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -52,7 +52,17 @@ const statusColors: Record<string, string> = {
 export default function AdminSellersPage() {
   const [activeTab, setActiveTab] = useState('pending');
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchQuery(searchInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeTab]);
   const [selectedShop, setSelectedShop] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -146,8 +156,8 @@ export default function AdminSellersPage() {
           <Input
             placeholder="Search shops..."
             className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
       </div>

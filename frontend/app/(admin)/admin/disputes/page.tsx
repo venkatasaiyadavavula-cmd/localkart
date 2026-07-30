@@ -44,6 +44,9 @@ const statusColors: Record<string, string> = {
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
   refunded: 'bg-blue-100 text-blue-800',
+  pickup_scheduled: 'bg-purple-100 text-purple-800',
+  picked_up: 'bg-indigo-100 text-indigo-800',
+  cancelled: 'bg-gray-100 text-gray-800',
 };
 
 export default function AdminDisputesPage() {
@@ -99,10 +102,14 @@ export default function AdminDisputesPage() {
           setPage(1);
         }}
       >
-        <TabsList>
+        <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="pickup_scheduled">Pickup scheduled</TabsTrigger>
+          <TabsTrigger value="picked_up">Picked up</TabsTrigger>
+          <TabsTrigger value="refunded">Refunded</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
       </Tabs>

@@ -77,6 +77,39 @@ export class NotificationsService {
       customerPhone, customerName, orderNumber, status,
     );
   }
+
+  async sendReturnStatusWhatsApp(
+    customerPhone: string,
+    customerName: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ) {
+    await this.whatsappService.sendReturnStatusUpdate(
+      customerPhone, customerName, orderNumber, event, detail,
+    );
+  }
+
+  async sendReturnStatusEmail(
+    email: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ) {
+    const subjects: Record<string, string> = {
+      approved: `Return approved — Order #${orderNumber}`,
+      rejected: `Return not approved — Order #${orderNumber}`,
+      refunded: `Refund initiated — Order #${orderNumber}`,
+    };
+    const bodies: Record<string, string> = {
+      approved: `<p>Your return request for order <strong>#${orderNumber}</strong> has been approved.</p>`,
+      rejected: `<p>Your return request for order <strong>#${orderNumber}</strong> was not approved.${detail ? ` Reason: ${detail}` : ''}</p>`,
+      refunded: `<p>Refund for order <strong>#${orderNumber}</strong> has been initiated. Amount: ₹${detail ?? '—'}. It may take 3–5 business days to reflect.</p>`,
+    };
+    const subject = subjects[event] ?? `Return update — Order #${orderNumber}`;
+    const html = `<h1>LocalKart Return Update</h1>${bodies[event] ?? ''}`;
+    await this.emailService.sendEmail(email, subject, html);
+  }
  
   // ─── WhatsApp: new order alert (seller) ──────────────────────
   async sendNewOrderWhatsApp(

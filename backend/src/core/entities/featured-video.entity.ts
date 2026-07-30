@@ -9,6 +9,7 @@ export enum FeaturedVideoStatus {
   ACTIVE = 'active',
   EXPIRED = 'expired',
   PENDING = 'pending',
+  PAUSED = 'paused',
 }
 
 @Entity('featured_videos')
@@ -40,6 +41,9 @@ export class FeaturedVideo {
 
   @Column({ type: 'enum', enum: FeaturedVideoStatus, default: FeaturedVideoStatus.ACTIVE })
   status: FeaturedVideoStatus;
+
+  @Column({ default: false })
+  pausedByAdmin: boolean;
 
   @Column({ type: 'timestamptz' })
   expiresAt: Date;

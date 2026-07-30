@@ -33,6 +33,9 @@ export function useAdminShops(params: AdminShopsParams = {}) {
       if (params.status && params.status !== 'all') {
         searchParams.append('status', params.status);
       }
+      if (params.search?.trim()) {
+        searchParams.append('search', params.search.trim());
+      }
 
       const endpoint =
         params.status === 'pending'
@@ -40,18 +43,7 @@ export function useAdminShops(params: AdminShopsParams = {}) {
           : `/admin/shops?${searchParams.toString()}`;
 
       const { data } = await apiClient.get(endpoint);
-      const result = unwrapPaginated<Shop>(data);
-
-      if (params.search) {
-        const q = params.search.toLowerCase();
-        result.data = result.data.filter(
-          (s) =>
-            s.name?.toLowerCase().includes(q) ||
-            s.city?.toLowerCase().includes(q),
-        );
-      }
-
-      return result;
+      return unwrapPaginated<Shop>(data);
     },
   });
 

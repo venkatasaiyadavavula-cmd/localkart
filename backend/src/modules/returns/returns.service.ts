@@ -379,7 +379,7 @@ export class ReturnsService {
   async adminUpdateReturnStatus(id: string, dto: UpdateReturnStatusDto) {
     const request = await this.returnRepository.findOne({
       where: { id },
-      relations: ['order'],
+      relations: ['order', 'order.shop', 'customer'],
     });
 
     if (!request) {
@@ -392,6 +392,27 @@ export class ReturnsService {
     }
     await this.returnRepository.save(request);
 
+    const orderNumber = request.order?.orderNumber ?? '';
+    const customer = request.customer;
+
+    if (dto.status === ReturnStatus.REJECTED && request.order) {
+      restoreDeliveredStatus(request.order);
+      await this.orderRepository.save(request.order);
+    }
+
+    if (customer) {
+      if (dto.status === ReturnStatus.APPROVED) {
+        this.notifyReturnCustomer(customer, orderNumber, 'approved').catch((e) =>
+          this.logger.error(`Return approve notification failed: ${e.message}`),
+        );
+      } else if (dto.status === ReturnStatus.REJECTED) {
+        this.notifyReturnCustomer(customer, orderNumber, 'rejected', dto.notes).catch((e) =>
+          this.logger.error(`Return reject notification failed: ${e.message}`),
+        );
+      }
+    }
+
+    delete request.customer?.password;
     return request;
   }
 
@@ -435,13 +456,47 @@ export class ReturnsService {
     request.resolvedAt = new Date();
     await this.returnRepository.save(request);
 
-    await this.notificationsService.sendCustomerNotification(
-      request.customerId,
-      'Refund Processed',
-      `Refund of ₹${request.refundAmount} for order #${order.orderNumber} has been initiated.`,
-    );
+    const customer = await this.userRepository.findOne({ where: { id: request.customerId } });
+    if (customer) {
+      this.notifyReturnCustomer(
+        customer,
+        order.orderNumber,
+        'refunded',
+        String(request.refundAmount),
+      ).catch((e) => this.logger.error(`Refund notification failed: ${e.message}`));
+    }
 
     return { message: 'Refund processed successfully' };
+  }
+
+  private async notifyReturnCustomer(
+    customer: User,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ) {
+    if (customer.phone) {
+      await this.notificationsService.sendReturnStatusWhatsApp(
+        customer.phone,
+        customer.name,
+        orderNumber,
+        event,
+        detail,
+      );
+    }
+    if (customer.email) {
+      await this.notificationsService.sendReturnStatusEmail(
+        customer.email,
+        orderNumber,
+        event,
+        detail,
+      );
+    }
+    await this.notificationsService.sendCustomerNotification(
+      customer.id,
+      `Return ${event}`,
+      `Order #${orderNumber}: ${event}`,
+    );
   }
 
   private async initiateRazorpayRefund(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Search, CheckCircle, XCircle, Eye, MoreHorizontal } from 'lucide-react';
@@ -51,7 +51,17 @@ const statusColors: Record<string, string> = {
 export default function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState('pending');
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchQuery(searchInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeTab]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -131,8 +141,8 @@ export default function AdminProductsPage() {
           <Input
             placeholder="Search products..."
             className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
       </div>

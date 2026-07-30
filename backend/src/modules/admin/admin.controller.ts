@@ -67,10 +67,15 @@ export class AdminController {
 
   // Shop Moderation
   @Get('shops/pending')
-  async getPendingShops(@Query('page') page?: string, @Query('limit') limit?: string) {
+  async getPendingShops(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
     return this.moderationService.getPendingShops(
       parseInt(page || '1'),
       parseInt(limit || '20'),
+      search,
     );
   }
 
@@ -79,11 +84,13 @@ export class AdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
     return this.moderationService.getAllShops(
       parseInt(page || '1'),
       parseInt(limit || '20'),
       status,
+      search,
     );
   }
 
@@ -113,19 +120,26 @@ export class AdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
     return this.moderationService.getAllProducts(
       parseInt(page || '1'),
       parseInt(limit || '20'),
       status || 'all',
+      search,
     );
   }
 
   @Get('products/pending')
-  async getPendingProducts(@Query('page') page?: string, @Query('limit') limit?: string) {
+  async getPendingProducts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
     return this.moderationService.getPendingProducts(
       parseInt(page || '1'),
       parseInt(limit || '20'),
+      search,
     );
   }
 

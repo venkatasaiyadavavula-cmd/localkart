@@ -111,6 +111,25 @@ export class WhatsappService {
     return this.send(customerPhone, msg);
   }
  
+  // ─── Return / dispute resolution — customer ─────────────────
+  async sendReturnStatusUpdate(
+    customerPhone: string,
+    customerName: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ): Promise<boolean> {
+    const EVENT_MSG: Record<string, string> = {
+      approved: `✅ Your return request for order *#${orderNumber}* has been *approved*. The shop will arrange pickup or follow-up steps.`,
+      rejected: `❌ Your return request for order *#${orderNumber}* was *not approved*.${detail ? ` Reason: ${detail}` : ''}`,
+      refunded: `💸 Refund of *₹${detail ?? 'your order amount'}* for order *#${orderNumber}* has been initiated. It may take 3–5 business days to reflect.`,
+    };
+    const text = EVENT_MSG[event];
+    if (!text) return false;
+    const msg = `🛒 *LocalKart Return Update*\n\nHello ${customerName},\n\n${text}`;
+    return this.send(customerPhone, msg);
+  }
+
   // ─── New order alert — seller ─────────────────────────────────
   async sendNewOrderToSeller(
     sellerPhone:  string,

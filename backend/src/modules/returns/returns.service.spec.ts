@@ -28,7 +28,12 @@ describe('ReturnsService.processRefund', () => {
     save: jest.Mock;
   };
   let orderRepo: { save: jest.Mock };
-  let notificationsService: { sendCustomerNotification: jest.Mock };
+  let userRepo: { findOne: jest.Mock };
+  let notificationsService: {
+    sendCustomerNotification: jest.Mock;
+    sendReturnStatusWhatsApp: jest.Mock;
+    sendReturnStatusEmail: jest.Mock;
+  };
   let returnRequest: Record<string, unknown>;
   let order: Record<string, unknown>;
 
@@ -57,8 +62,18 @@ describe('ReturnsService.processRefund', () => {
     orderRepo = {
       save: jest.fn(async (entity) => entity),
     };
+    userRepo = {
+      findOne: jest.fn(async () => ({
+        id: customerId,
+        name: 'Test Customer',
+        phone: '9876512345',
+        email: 'test@example.com',
+      })),
+    };
     notificationsService = {
       sendCustomerNotification: jest.fn().mockResolvedValue(undefined),
+      sendReturnStatusWhatsApp: jest.fn().mockResolvedValue(undefined),
+      sendReturnStatusEmail: jest.fn().mockResolvedValue(undefined),
     };
 
     service = new ReturnsService(
@@ -67,7 +82,7 @@ describe('ReturnsService.processRefund', () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any,
+      userRepo as any,
       {} as any,
       notificationsService as any,
     );
@@ -122,6 +137,7 @@ describe('ReturnsService.processRefund', () => {
     await expect(service.processRefund(returnId)).rejects.toBeInstanceOf(BadGatewayException);
     expect(orderRepo.save).not.toHaveBeenCalled();
     expect(returnRepo.save).not.toHaveBeenCalled();
+    expect(notificationsService.sendReturnStatusWhatsApp).not.toHaveBeenCalled();
     expect(notificationsService.sendCustomerNotification).not.toHaveBeenCalled();
   });
 
