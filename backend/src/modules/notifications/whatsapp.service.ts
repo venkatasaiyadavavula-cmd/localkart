@@ -130,6 +130,25 @@ export class WhatsappService {
     return this.send(customerPhone, msg);
   }
 
+  // ─── Return / dispute resolution — seller (shop owner) ────────
+  async sendReturnStatusUpdateToSeller(
+    sellerPhone: string,
+    shopName: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ): Promise<boolean> {
+    const EVENT_MSG: Record<string, string> = {
+      approved: `📋 Admin *approved* the return for order *#${orderNumber}* at *${shopName}*. Arrange pickup and update inventory when items are received. Commission may be adjusted on refund.`,
+      rejected: `📋 Admin *rejected* the return for order *#${orderNumber}* at *${shopName}*. The order remains delivered — no refund.${detail ? ` Note: ${detail}` : ''}`,
+      refunded: `💸 Admin processed a *refund of ₹${detail ?? '—'}* for order *#${orderNumber}* at *${shopName}*. Order is marked returned; check commission bills for settlement impact.`,
+    };
+    const text = EVENT_MSG[event];
+    if (!text) return false;
+    const msg = `🏪 *LocalKart Seller — Return Update*\n\n${text}\n\nOpen the seller app for details.`;
+    return this.send(sellerPhone, msg);
+  }
+
   // ─── New order alert — seller ─────────────────────────────────
   async sendNewOrderToSeller(
     sellerPhone:  string,

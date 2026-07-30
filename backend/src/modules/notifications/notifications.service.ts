@@ -110,6 +110,44 @@ export class NotificationsService {
     const html = `<h1>LocalKart Return Update</h1>${bodies[event] ?? ''}`;
     await this.emailService.sendEmail(email, subject, html);
   }
+
+  async sendReturnStatusWhatsAppToSeller(
+    sellerPhone: string,
+    shopName: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ) {
+    await this.whatsappService.sendReturnStatusUpdateToSeller(
+      sellerPhone,
+      shopName,
+      orderNumber,
+      event,
+      detail,
+    );
+  }
+
+  async sendReturnStatusEmailToSeller(
+    email: string,
+    shopName: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ) {
+    const subjects: Record<string, string> = {
+      approved: `Return approved — Order #${orderNumber} (${shopName})`,
+      rejected: `Return rejected — Order #${orderNumber} (${shopName})`,
+      refunded: `Refund processed — Order #${orderNumber} (${shopName})`,
+    };
+    const bodies: Record<string, string> = {
+      approved: `<p>Admin approved the return for order <strong>#${orderNumber}</strong> at <strong>${shopName}</strong>. Arrange pickup and update stock when items are received. Commission may be adjusted when the refund is processed.</p>`,
+      rejected: `<p>Admin rejected the return for order <strong>#${orderNumber}</strong> at <strong>${shopName}</strong>. The order stays delivered.${detail ? ` Note: ${detail}` : ''}</p>`,
+      refunded: `<p>Admin processed a refund of <strong>₹${detail ?? '—'}</strong> for order <strong>#${orderNumber}</strong> at <strong>${shopName}</strong>. Check commission bills for settlement impact.</p>`,
+    };
+    const subject = subjects[event] ?? `Return update — Order #${orderNumber}`;
+    const html = `<h1>LocalKart Seller Return Update</h1>${bodies[event] ?? ''}`;
+    await this.emailService.sendEmail(email, subject, html);
+  }
  
   // ─── WhatsApp: new order alert (seller) ──────────────────────
   async sendNewOrderWhatsApp(

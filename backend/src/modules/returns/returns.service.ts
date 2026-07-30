@@ -379,7 +379,7 @@ export class ReturnsService {
   async adminUpdateReturnStatus(id: string, dto: UpdateReturnStatusDto) {
     const request = await this.returnRepository.findOne({
       where: { id },
-      relations: ['order', 'order.shop', 'customer'],
+      relations: ['order', 'order.shop', 'order.shop.owner', 'customer'],
     });
 
     if (!request) {
@@ -394,6 +394,8 @@ export class ReturnsService {
 
     const orderNumber = request.order?.orderNumber ?? '';
     const customer = request.customer;
+    const shop = request.order?.shop;
+    const seller = shop?.owner;
 
     if (dto.status === ReturnStatus.REJECTED && request.order) {
       restoreDeliveredStatus(request.order);
@@ -412,14 +414,29 @@ export class ReturnsService {
       }
     }
 
+    if (seller && shop) {
+      if (dto.status === ReturnStatus.APPROVED) {
+        this.notifyReturnSeller(seller, shop.name, orderNumber, 'approved').catch((e) =>
+          this.logger.error(`Seller return approve notification failed: ${e.message}`),
+        );
+      } else if (dto.status === ReturnStatus.REJECTED) {
+        this.notifyReturnSeller(seller, shop.name, orderNumber, 'rejected', dto.notes).catch((e) =>
+          this.logger.error(`Seller return reject notification failed: ${e.message}`),
+        );
+      }
+    }
+
     delete request.customer?.password;
+    if (shop?.owner) {
+      delete shop.owner.password;
+    }
     return request;
   }
 
   async processRefund(id: string) {
     const request = await this.returnRepository.findOne({
       where: { id },
-      relations: ['order'],
+      relations: ['order', 'order.shop', 'order.shop.owner'],
     });
 
     if (!request) {
@@ -466,6 +483,18 @@ export class ReturnsService {
       ).catch((e) => this.logger.error(`Refund notification failed: ${e.message}`));
     }
 
+    const shop = order.shop;
+    const seller = shop?.owner;
+    if (seller && shop) {
+      this.notifyReturnSeller(
+        seller,
+        shop.name,
+        order.orderNumber,
+        'refunded',
+        String(request.refundAmount),
+      ).catch((e) => this.logger.error(`Seller refund notification failed: ${e.message}`));
+    }
+
     return { message: 'Refund processed successfully' };
   }
 
@@ -496,6 +525,38 @@ export class ReturnsService {
       customer.id,
       `Return ${event}`,
       `Order #${orderNumber}: ${event}`,
+    );
+  }
+
+  private async notifyReturnSeller(
+    seller: User,
+    shopName: string,
+    orderNumber: string,
+    event: 'approved' | 'rejected' | 'refunded',
+    detail?: string,
+  ) {
+    if (seller.phone) {
+      await this.notificationsService.sendReturnStatusWhatsAppToSeller(
+        seller.phone,
+        shopName,
+        orderNumber,
+        event,
+        detail,
+      );
+    }
+    if (seller.email) {
+      await this.notificationsService.sendReturnStatusEmailToSeller(
+        seller.email,
+        shopName,
+        orderNumber,
+        event,
+        detail,
+      );
+    }
+    await this.notificationsService.sendSellerNotification(
+      seller.id,
+      `Return ${event}`,
+      `Order #${orderNumber} at ${shopName}: ${event}`,
     );
   }
 
