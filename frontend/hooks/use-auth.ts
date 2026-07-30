@@ -41,6 +41,22 @@ interface AuthStore {
   verifyOtp: (phone: string, otp: string, mode?: string, orderId?: string | null) => Promise<any>;
   setUser: (user: User | null) => void;
   setHasHydrated: (state: boolean) => void;
+  refreshSession: () => Promise<void>;
+}
+
+function mapProfileToUser(profile: Record<string, unknown>): User {
+  const shop = profile.shop as { id?: string } | undefined;
+  return {
+    id: profile.id as string,
+    name: profile.name as string,
+    phone: profile.phone as string,
+    email: profile.email as string | undefined,
+    role: profile.role as User['role'],
+    isPhoneVerified: (profile.isPhoneVerified as boolean) ?? false,
+    profileImage: profile.profileImage as string | undefined,
+    shopId: (profile.shopId as string | undefined) ?? shop?.id,
+    address: profile.address as string | undefined,
+  };
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -52,6 +68,30 @@ export const useAuthStore = create<AuthStore>()(
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
       setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+      refreshSession: async () => {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          try {
+            const { data } = await apiClient.post('/auth/refresh', { refreshToken });
+            const payload = data.data ?? data;
+            if (payload?.accessToken) {
+              localStorage.setItem('accessToken', payload.accessToken);
+              if (payload.refreshToken) {
+                localStorage.setItem('refreshToken', payload.refreshToken);
+              }
+              setAuthCookie(payload.accessToken);
+            }
+          } catch {
+            // Profile fetch below still updates client user state.
+          }
+        }
+
+        const { data } = await apiClient.get('/users/profile');
+        const profile = (data.data ?? data) as Record<string, unknown>;
+        const user = mapProfileToUser(profile);
+        set({ user, isAuthenticated: true, isLoading: false });
+      },
 
       login: async (phone, password, rememberMe = false) => {
         set({ isLoading: true });

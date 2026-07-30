@@ -18,6 +18,7 @@ import {
   getAuthTheme,
   parseAuthIntent,
   preserveAuthQuery,
+  SELLER_ONBOARDING_PATH,
 } from '@/lib/auth-routes';
 
 type LoginFormData = LoginFormWithRememberValues;
@@ -50,6 +51,15 @@ function LoginForm() {
     try {
       await login(data.phone, data.password, data.rememberMe);
       toast.success(intent === 'seller' ? 'Welcome back, Seller!' : 'Welcome back!');
+
+      if (intent === 'seller') {
+        const { user } = useAuthStore.getState();
+        if (user?.role !== 'seller') {
+          router.push(SELLER_ONBOARDING_PATH);
+          return;
+        }
+      }
+
       const redirect =
         redirectParam && redirectParam.startsWith('/')
           ? redirectParam

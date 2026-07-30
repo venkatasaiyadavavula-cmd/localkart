@@ -11,15 +11,9 @@ export function useCreateShop() {
       const { data } = await apiClient.post('/seller/shop', shopData);
       return data?.data ?? data;
     },
-    onSuccess: (shop) => {
-      const { user, setUser } = useAuthStore.getState();
-      if (user) {
-        setUser({
-          ...user,
-          role: 'seller',
-          shopId: shop?.id ?? user.shopId,
-        });
-      }
+    onSuccess: async () => {
+      const { refreshSession } = useAuthStore.getState();
+      await refreshSession();
       router.push('/seller-onboarding');
     },
   });

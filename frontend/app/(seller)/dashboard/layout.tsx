@@ -34,8 +34,8 @@ export default async function SellerDashboardLayout({
     // Defer to client AuthGuard instead of falsely redirecting a logged-in seller.
     authTrace('seller-layout', { action: 'defer-client', reason: 'session-unresolved' });
   } else if (session.user.role !== 'seller') {
-    authTrace('seller-layout', { action: 'redirect-login', role: session.user.role });
-    redirect('/login?intent=seller&redirect=/dashboard');
+    authTrace('seller-layout', { action: 'redirect-onboarding', role: session.user.role });
+    redirect('/seller-onboarding');
   } else {
     const hasShop = !!(session.user.shopId ?? session.user.shop?.id);
     if (!hasShop) {

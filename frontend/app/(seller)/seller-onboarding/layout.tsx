@@ -30,11 +30,7 @@ export default async function SellerOnboardingLayout({
     return <SellerOnboardingGate>{children}</SellerOnboardingGate>;
   }
 
-  if (session.user.role !== 'seller') {
-    authTrace('seller-layout', { action: 'redirect-login', route: 'onboarding', role: session.user.role });
-    redirect('/login?intent=seller&redirect=/seller-onboarding');
-  }
-
+  // Authenticated customers without a shop are expected here — role upgrades after createShop.
   const ctx = resolveSellerShopContext(session.user);
 
   if (shouldAllowDashboard(ctx)) {
