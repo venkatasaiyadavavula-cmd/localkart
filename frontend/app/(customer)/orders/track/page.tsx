@@ -27,6 +27,7 @@ import { unwrapApiData } from '@/lib/utils';
 import { haversineKm, estimateEtaMinutes } from '@/lib/geo';
 import { TrackingHero } from '@/components/orders/tracking-hero';
 import { OrderProgress } from '@/components/orders/order-progress';
+import { ErrorState } from '@/components/ui/error-state';
 import type { TrackedOrder } from '@/types/api';
 
 import { API_URL as API, getApiWebSocketOrigin } from '@/lib/api-config';
@@ -61,11 +62,18 @@ function TrackOrderContent() {
   const [orderStatus, setOrderStatus] = useState('');
   const socketRef = useRef<Socket | null>(null);
 
-  const { data: order, isLoading, refetch } = useQuery<TrackedOrder>({
+  const { data: order, isLoading, isError, refetch } = useQuery<TrackedOrder | null>({
     queryKey: ['order', orderId],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/orders/${orderId}`, { headers: auth() });
-      return unwrapApiData<TrackedOrder>(data);
+      try {
+        const { data } = await axios.get(`${API}/orders/${orderId}`, { headers: auth() });
+        return unwrapApiData<TrackedOrder>(data);
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
     enabled: !!orderId,
     refetchInterval: connected ? false : 15000,
@@ -173,6 +181,18 @@ function TrackOrderContent() {
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <p className="text-sm font-semibold text-gray-500">Loading live tracking...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen" style={{ background: '#F5F7FA' }}>
+        <ErrorState
+          title="Something went wrong loading this order"
+          message="Please check your connection and try again."
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }

@@ -181,23 +181,21 @@ test.describe('Part 1 — Public pages', () => {
     await assertNoConsoleErrors(errors, 'auth pages');
   });
 
-  test('Guest cart and order tracking', async ({ page }) => {
+  test('Guest protected routes redirect to login', async ({ page }) => {
     const errors = await attachConsoleWatcher(page);
 
-    await page.goto('/cart');
-    await assertStyled(page, '/cart');
-    const empty = page.getByRole('heading', { name: /your cart is empty/i });
-    if (await empty.isVisible()) {
-      report('Guest /cart empty state', 'pass');
+    for (const route of ['/cart', '/orders/track', '/wishlist', '/profile', '/orders']) {
+      await page.goto(route);
+      await page.waitForURL(/\/login/, { timeout: 15_000 });
+      const url = new URL(page.url());
+      expect(url.pathname).toBe('/login');
+      const redirect = url.searchParams.get('redirect') ?? '';
+      expect(redirect.startsWith(route), `redirect param for ${route}`).toBeTruthy();
+      await assertStyled(page, `/login (from ${route})`);
+      report(`Guest ${route} → login with redirect`, 'pass');
     }
 
-    await page.goto('/orders/track');
-    await assertStyled(page, '/orders/track');
-    const searchInput = page.locator('input').first();
-    await expect(searchInput).toBeVisible();
-    report('/orders/track search input', 'pass');
-
-    await assertNoConsoleErrors(errors, 'guest cart/track');
+    await assertNoConsoleErrors(errors, 'guest auth redirect');
   });
 
   test('Shop page renders', async ({ page }) => {

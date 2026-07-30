@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { buildLoginUrl } from '@/lib/auth-routes';
+import { isCustomerProtectedRoute } from '@/lib/customer-protected-routes';
 import { authTrace } from '@/lib/auth-trace';
 
 const publicRoutes = [
@@ -13,12 +14,10 @@ const publicRoutes = [
   '/forgot-password',
   '/browse',
   '/shop',
-  '/cart',
   '/videos',
   '/terms',
   '/privacy',
   '/about',
-  '/orders/track',
 ];
 
 const sellerPublicRoutes: string[] = [];
@@ -150,9 +149,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (!isAuthenticated && !isPublicRoute && !isAuthPage) {
       const intent = isSellerIntentPath(pathname) ? 'seller' : 'customer';
+      const redirectPath =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : pathname;
       authTrace('guard-redirect', { pathname, reason: 'unauthenticated', intent });
-      router.push(buildLoginUrl({ intent, redirect: pathname }));
-      setAuthResolved(true);
+      router.push(buildLoginUrl({ intent, redirect: redirectPath }));
       return;
     }
 
@@ -200,11 +202,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const needsCustomerAuth =
+    !isAuthenticated && isCustomerProtectedRoute(pathname);
+
   const awaitingAuth =
     !isPublicRoute &&
     !isAuthPage &&
     !authResolved &&
-    (!_hasHydrated || isLoading);
+    (!_hasHydrated || isLoading || needsCustomerAuth);
 
   if (awaitingAuth) {
     authTrace('guard-await', {

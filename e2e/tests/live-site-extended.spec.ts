@@ -42,8 +42,6 @@ const PUBLIC_ROUTES = [
   '/login',
   '/register',
   '/forgot-password',
-  '/cart',
-  '/orders/track',
 ];
 
 const SELLER_ROUTES = [
@@ -143,7 +141,7 @@ test.describe('Part A — Exhaustive UI clicks', () => {
       await loginCustomer(page);
     });
 
-    for (const route of ['/wishlist', '/profile', '/profile/addresses', '/orders']) {
+    for (const route of ['/cart', '/wishlist', '/profile', '/profile/addresses', '/orders', '/orders/track']) {
       test(`exhaustive customer: ${route}`, async ({ page }) => {
         const errors = await attachConsoleWatcher(page);
         const stats = await exhaustPageClicks(page, route, route, errors);

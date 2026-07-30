@@ -19,6 +19,7 @@ import { useOrder } from '@/hooks/use-order';
 import { formatPrice } from '@/lib/utils';
 import { ReturnReason } from '@/types/return';
 import { API_URL } from '@/lib/api-config';
+import { ErrorState } from '@/components/ui/error-state';
 
 const returnSchema = z.object({
   reason: z.nativeEnum(ReturnReason),
@@ -32,7 +33,7 @@ export default function ReturnRequestPage() {
   const router = useRouter();
   const orderId = params.orderId as string;
 
-  const { data: order, isLoading } = useOrder(orderId);
+  const { data: order, isLoading, isError, refetch } = useOrder(orderId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -113,6 +114,18 @@ export default function ReturnRequestPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="container py-8">
+        <ErrorState
+          title="Something went wrong loading this order"
+          message="Please check your connection and try again."
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }

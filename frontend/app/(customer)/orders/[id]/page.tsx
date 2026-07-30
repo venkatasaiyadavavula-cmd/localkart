@@ -42,13 +42,14 @@ import { OrderProgress } from '@/components/orders/order-progress';
 import { canTrackLive } from '@/lib/order-tracking';
 import { OrderStatus, statusColors, statusLabels } from '@/types/order';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
 
-  const { data: order, isLoading, refetch } = useOrder(orderId);
+  const { data: order, isLoading, isError, refetch } = useOrder(orderId);
   const { cancelOrder, isLoading: isCancelling } = useCancelOrder();
 
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -93,6 +94,18 @@ export default function OrderDetailPage() {
 
   if (isLoading) {
     return <OrderDetailSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="container py-8">
+        <ErrorState
+          title="Something went wrong loading this order"
+          message="Please check your connection and try again."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
   }
 
   if (!order) {
