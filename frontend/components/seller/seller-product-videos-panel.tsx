@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { Loader2, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,14 +17,12 @@ import {
   MAX_VIDEOS_DEFAULT,
   ProductVideosUploadSection,
 } from '@/components/forms/product-media-upload';
+import { ErrorState } from '@/components/ui/error-state';
+import { useSellerProducts } from '@/hooks/use-seller-products';
 import { useUpdateProduct } from '@/hooks/use-update-product';
-import { API_URL } from '@/lib/api-config';
-import { normalizeList } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { uploadMediaFiles } from '@/lib/utils/media';
 import type { Product } from '@/types/product';
-
-const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : '');
 
 export function SellerProductVideosPanel({
   className,
@@ -42,16 +38,12 @@ export function SellerProductVideosPanel({
   const [newVideoUrls, setNewVideoUrls] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const { updateProduct } = useUpdateProduct();
-
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ['seller-products-for-videos'],
-    queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/catalog/seller/products?limit=100`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      return normalizeList<Product>(data);
-    },
-  });
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    isError: productsError,
+    refetch: refetchProducts,
+  } = useSellerProducts({ limit: 100 });
 
   const approvedProducts = useMemo(
     () => products.filter((p) => p.status === 'approved'),
@@ -143,44 +135,57 @@ export function SellerProductVideosPanel({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Select value={productId} onValueChange={onSelectProduct}>
-          <SelectTrigger className="rounded-xl">
-            <SelectValue placeholder="Select approved product..." />
-          </SelectTrigger>
-          <SelectContent>
-            {approvedProducts.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {productId ? (
-          <>
-            <ProductVideosUploadSection
-              variant="plain"
-              layout="grid"
-              existingUrls={existingVideos}
-              newPreviewUrls={newVideoUrls}
-              onUpload={handleVideoUpload}
-              onRemoveExisting={removeExistingVideo}
-              onRemoveNew={removeNewVideo}
-            />
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving}
-              className="w-full rounded-xl bg-violet-600 font-bold hover:bg-violet-700"
-            >
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save videos to product
-            </Button>
-          </>
+        {productsError ? (
+          <ErrorState title="Could not load products" onRetry={() => refetchProducts()} />
+        ) : productsLoading ? (
+          <div className="flex items-center justify-center py-8 text-muted-foreground">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Loading products…
+          </div>
         ) : (
-          <p className="py-6 text-center text-xs text-muted-foreground">
-            Pick a product to upload or manage videos
-          </p>
+          <>
+            <Select value={productId} onValueChange={onSelectProduct}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Select approved product..." />
+              </SelectTrigger>
+              <SelectContent>
+                {approvedProducts.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {productId ? (
+              <>
+                <ProductVideosUploadSection
+                  variant="plain"
+                  layout="grid"
+                  existingUrls={existingVideos}
+                  newPreviewUrls={newVideoUrls}
+                  onUpload={handleVideoUpload}
+                  onRemoveExisting={removeExistingVideo}
+                  onRemoveNew={removeNewVideo}
+                />
+                <Button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!hasChanges || isSaving}
+                  className="w-full rounded-xl bg-violet-600 font-bold hover:bg-violet-700"
+                >
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Save videos to product
+                </Button>
+              </>
+            ) : (
+              <p className="py-6 text-center text-xs text-muted-foreground">
+                {approvedProducts.length === 0
+                  ? 'No approved products yet — list a product and wait for approval.'
+                  : 'Pick a product to upload or manage videos'}
+              </p>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

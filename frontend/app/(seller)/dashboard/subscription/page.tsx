@@ -17,6 +17,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSubscription } from '@/hooks/use-subscription';
 import { formatPrice } from '@/lib/utils';
 import { SUBSCRIPTION_PLANS } from '@/types/subscription';
@@ -39,8 +49,19 @@ const plans = SUBSCRIPTION_PLANS.map((p) => ({
 declare global { interface Window { Razorpay: any; } }
 
 export default function SubscriptionPage() {
-  const { data: subscription, isLoading, isError, refetch, subscribe, verifyPayment, invalidate } = useSubscription();
+  const {
+    data: subscription,
+    isLoading,
+    isError,
+    refetch,
+    subscribe,
+    verifyPayment,
+    cancelSubscription,
+    invalidate,
+    isCancelling,
+  } = useSubscription();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [paymentPhase, setPaymentPhase] = useState<'idle' | 'checkout' | 'verifying'>('idle');
 
@@ -147,6 +168,21 @@ export default function SubscriptionPage() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    try {
+      await cancelSubscription();
+      toast.success('Subscription cancelled. You are now on the Starter plan.');
+      setShowCancelDialog(false);
+      await invalidate();
+    } catch (error: unknown) {
+      const message =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      toast.error(message || 'Failed to cancel subscription. Please try again.');
+    }
+  };
+
   if (isError) {
     return (
       <div className="space-y-6">
@@ -173,6 +209,8 @@ export default function SubscriptionPage() {
   const productCount = subscription?.productCount || 0;
   const productLimit = subscription?.productLimit || SUBSCRIPTION_PLANS[0].productLimit;
   const busy = isSubscribing || paymentPhase !== 'idle';
+  const hasPaidSubscription =
+    currentPlan !== 'starter' && (subscription?.price ?? 0) > 0;
 
   return (
     <div className="space-y-6">
@@ -233,6 +271,22 @@ export default function SubscriptionPage() {
             Paid plans renew monthly via Razorpay checkout (manual payment each month). Auto-recurring
             billing is planned as a fast-follow.
           </p>
+          {hasPaidSubscription && (
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Need to step down? You can cancel your paid plan and return to Starter.
+              </p>
+              <Button
+                variant="outline"
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                disabled={busy || isCancelling}
+                onClick={() => setShowCancelDialog(true)}
+              >
+                {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Cancel Subscription
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -319,6 +373,39 @@ export default function SubscriptionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={(open) => !isCancelling && setShowCancelDialog(open)}>
+        <AlertDialogContent className="rounded-2xl mx-4">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span>
+                Your paid plan will be cancelled immediately. You will revert to the free Starter
+                plan (40 product listings) right away — any remaining time on your current billing
+                period is not kept active.
+              </span>
+              <span className="block">
+                If you have more than 40 live products, you may need to remove listings before adding
+                new ones.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Keep plan</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isCancelling}
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelSubscription();
+              }}
+            >
+              {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Yes, cancel subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -86,4 +86,20 @@ export class ShopProfileDto {
   @IsString()
   @IsOptional()
   panCard?: string;
+
+  @IsString()
+  @IsOptional()
+  fssaiDocumentUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  gstDocumentUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  panDocumentUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  shopPhotoUrl?: string;
 }

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { shopOnboardingSchema, type ShopOnboardingFormValues } from '@/lib/validators/shop.schema';
 import { motion } from 'framer-motion';
-import { Store, MapPin, Phone, Mail, Upload, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Store, MapPin, Phone, Mail, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCreateShop } from '@/hooks/use-create-shop';
 import { LocationPicker } from '@/components/map/location-picker';
 import { Progress } from '@/components/ui/progress';
+import { SellerDocumentUploadField } from '@/components/forms/seller-document-upload';
 
 type ShopFormData = ShopOnboardingFormValues;
 
@@ -225,21 +226,51 @@ export default function SellerOnboardingPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
+                  className="space-y-6"
                 >
-                  <div className="space-y-2">
-                    <Label htmlFor="fssaiLicense">FSSAI License (Optional)</Label>
-                    <Input id="fssaiLicense" {...register('fssaiLicense')} />
-                  </div>
+                  <SellerDocumentUploadField
+                    label="Shop photo"
+                    hint="A clear photo of your storefront helps customers recognize your shop."
+                    value={watch('shopPhotoUrl') || undefined}
+                    onChange={(url) => setValue('shopPhotoUrl', url ?? '')}
+                  />
 
                   <div className="space-y-2">
-                    <Label htmlFor="gstNumber">GST Number (Optional)</Label>
-                    <Input id="gstNumber" {...register('gstNumber')} />
+                    <Label htmlFor="fssaiLicense">FSSAI License number (optional)</Label>
+                    <Input id="fssaiLicense" placeholder="14-digit FSSAI number" {...register('fssaiLicense')} />
                   </div>
+                  <SellerDocumentUploadField
+                    label="FSSAI certificate (optional)"
+                    hint="Upload your FSSAI registration certificate if you sell food products."
+                    value={watch('fssaiDocumentUrl') || undefined}
+                    onChange={(url) => setValue('fssaiDocumentUrl', url ?? '')}
+                  />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gstNumber">GST number (optional)</Label>
+                    <Input id="gstNumber" placeholder="15-character GSTIN" {...register('gstNumber')} />
+                    {errors.gstNumber && <p className="text-xs text-destructive">{errors.gstNumber.message}</p>}
+                  </div>
+                  <SellerDocumentUploadField
+                    label="GST certificate (optional)"
+                    value={watch('gstDocumentUrl') || undefined}
+                    onChange={(url) => setValue('gstDocumentUrl', url ?? '')}
+                  />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="panCard">PAN (optional)</Label>
+                    <Input id="panCard" placeholder="ABCDE1234F" {...register('panCard')} />
+                    {errors.panCard && <p className="text-xs text-destructive">{errors.panCard.message}</p>}
+                  </div>
+                  <SellerDocumentUploadField
+                    label="PAN card scan (optional)"
+                    value={watch('panDocumentUrl') || undefined}
+                    onChange={(url) => setValue('panDocumentUrl', url ?? '')}
+                  />
 
                   <div className="rounded-lg bg-muted/30 p-4">
                     <p className="text-sm text-muted-foreground">
-                      You can add these documents later. They help build trust with customers.
+                      Documents are optional but speed up verification. You can add or update them later in shop settings.
                     </p>
                   </div>
                 </motion.div>
@@ -262,6 +293,14 @@ export default function SellerOnboardingPage() {
                     {location && (
                       <p className="mt-2 text-sm text-green-600">
                         <CheckCircle className="mr-1 inline h-4 w-4" /> Location verified
+                      </p>
+                    )}
+                    {watchAddress.gstNumber && (
+                      <p className="text-sm text-muted-foreground">GST: {watchAddress.gstNumber}</p>
+                    )}
+                    {(watch('shopPhotoUrl') || watch('fssaiDocumentUrl') || watch('gstDocumentUrl')) && (
+                      <p className="mt-2 text-sm text-green-600">
+                        <CheckCircle className="mr-1 inline h-4 w-4" /> Documents attached
                       </p>
                     )}
                   </div>

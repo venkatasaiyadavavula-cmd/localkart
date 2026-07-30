@@ -51,6 +51,16 @@ export function useSubscription() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post('/seller/subscription/cancel');
+      return unwrapApiData(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'subscription'] });
+    },
+  });
+
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['seller', 'subscription'] });
 
@@ -61,7 +71,9 @@ export function useSubscription() {
     refetch: query.refetch,
     subscribe: subscribeMutation.mutateAsync,
     verifyPayment: verifyMutation.mutateAsync,
+    cancelSubscription: cancelMutation.mutateAsync,
     isVerifying: verifyMutation.isPending,
+    isCancelling: cancelMutation.isPending,
     invalidate,
   };
 }

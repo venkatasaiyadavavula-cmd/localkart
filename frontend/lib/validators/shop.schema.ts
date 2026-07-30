@@ -38,9 +38,13 @@ export const shopOnboardingSchema = shopSchema.omit({
   closingTime: true,
   deliveryCharge: true,
   freeDeliveryAbove: true,
-  panCard: true,
 }).extend({
   gstNumber: z.string().optional(),
+  panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, 'Invalid PAN number').optional().or(z.literal('')),
+  fssaiDocumentUrl: z.string().url().optional().or(z.literal('')),
+  gstDocumentUrl: z.string().url().optional().or(z.literal('')),
+  panDocumentUrl: z.string().url().optional().or(z.literal('')),
+  shopPhotoUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export type ShopFormValues = z.infer<typeof shopSchema>;

@@ -138,6 +138,18 @@ export class Shop {
   @Column({ nullable: true })
   panCard: string;
 
+  @Column({ nullable: true })
+  fssaiDocumentUrl: string;
+
+  @Column({ nullable: true })
+  gstDocumentUrl: string;
+
+  @Column({ nullable: true })
+  panDocumentUrl: string;
+
+  @Column({ nullable: true })
+  shopPhotoUrl: string;
+
   @OneToOne(() => User, (user) => user.shop)
   @JoinColumn()
   owner: User;
