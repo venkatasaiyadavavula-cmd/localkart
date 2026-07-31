@@ -324,31 +324,4 @@ export class CatalogService {
       remaining: Math.max(0, limit - used),
     };
   }
-
-  // Admin methods
-  async approveProduct(productId: string) {
-    const product = await this.productRepository.findOne({
-      where: { id: productId },
-    });
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-    product.status = ProductStatus.APPROVED;
-    product.rejectionReason = null;
-    await this.productRepository.save(product);
-    return product;
-  }
-
-  async rejectProduct(productId: string, reason: string) {
-    const product = await this.productRepository.findOne({
-      where: { id: productId },
-    });
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-    product.status = ProductStatus.REJECTED;
-    product.rejectionReason = reason;
-    await this.productRepository.save(product);
-    return product;
-  }
 }

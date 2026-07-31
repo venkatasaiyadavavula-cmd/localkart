@@ -241,18 +241,4 @@ export class CatalogController {
   ) {
     return this.bulkUploadService.processUpload(user.id, file);
   }
-
-  // ==================== ADMIN ENDPOINTS ====================
-
-  @Put('admin/products/:id/approve')
-  @Roles(UserRole.ADMIN)
-  async approveProduct(@Param('id') id: string) {
-    return this.catalogService.approveProduct(id);
-  }
-
-  @Put('admin/products/:id/reject')
-  @Roles(UserRole.ADMIN)
-  async rejectProduct(@Param('id') id: string, @Body('reason') reason: string) {
-    return this.catalogService.rejectProduct(id, reason);
-  }
 }

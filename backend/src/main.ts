@@ -2,7 +2,7 @@ import { webcrypto } from 'crypto';
 if (!(global as any).crypto) { (global as any).crypto = webcrypto; }
 
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -14,6 +14,7 @@ import * as fs from 'fs';
 dotenv.config();
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   let httpsOptions = undefined;
   
   if (process.env.SSL_CERT && process.env.SSL_KEY) {
@@ -23,7 +24,7 @@ async function bootstrap() {
         key: fs.readFileSync(process.env.SSL_KEY),
       };
     } catch(e) {
-      console.log('SSL files not found, running HTTP');
+      logger.warn('SSL files not found, running HTTP');
     }
   }
 
@@ -60,7 +61,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 443;
   await app.listen(port);
-  console.log(`♦ LocalKart API running on port ${port}/api/v1`);
+  logger.log(`LocalKart API running on port ${port}/api/v1`);
 }
 
 bootstrap();

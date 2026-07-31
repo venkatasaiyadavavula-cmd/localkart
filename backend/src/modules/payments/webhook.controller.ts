@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Res, Headers, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Req, Res, Headers, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
 import * as crypto from 'crypto';
 import { PaymentsService } from './payments.service';
@@ -19,6 +19,8 @@ function timingSafeEqualHex(a: string, b: string): boolean {
 
 @Controller('webhooks')
 export class WebhookController {
+  private readonly logger = new Logger(WebhookController.name);
+
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Public()
@@ -63,7 +65,7 @@ export class WebhookController {
     res.status(200).json({ received: true });
 
     this.paymentsService.processRazorpayWebhook(event).catch((err) => {
-      console.error('Webhook processing error:', err);
+      this.logger.error('Webhook processing error', err instanceof Error ? err.stack : String(err));
     });
   }
 }

@@ -3,6 +3,7 @@
  * APPLY merge — run ONLY after dry-run is approved.
  * Set CONFIRM_MERGE=yes to execute writes.
  */
+import { Logger } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { DataSource } from 'typeorm';
@@ -13,9 +14,11 @@ import {
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const logger = new Logger('MergeDailyBillsApply');
+
 async function main() {
   if (process.env.CONFIRM_MERGE !== 'yes') {
-    console.error('Refusing to run: set CONFIRM_MERGE=yes after reviewing dry-run report.');
+    logger.error('Refusing to run: set CONFIRM_MERGE=yes after reviewing dry-run report.');
     process.exit(1);
   }
 
@@ -85,11 +88,11 @@ async function main() {
     }
   });
 
-  console.log(`Merged ${previews.length} weekly group(s).`);
+  logger.log(`Merged ${previews.length} weekly group(s).`);
   await ds.destroy();
 }
 
 main().catch((err) => {
-  console.error('Merge failed:', err.message);
+  logger.error(`Merge failed: ${err.message}`);
   process.exit(1);
 });

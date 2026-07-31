@@ -30,14 +30,14 @@
 **Cause:** `NEXT_PUBLIC_*` vars are inlined at `npm run build`, not read at runtime. `.env.production` lacked the key and deploy did not export it before build.
 **Fix:** Document build-time requirement in `.env.production`, sync `RAZORPAY_KEY_ID` from `backend/.env` in `.github/workflows/deploy.yml`, Commission page falls back to `key` from `POST /commission/pay/:billId`.
 
-### E. Duplicate admin product approve/reject routes (known — reconcile separately)
-**Location:** `PUT /admin/products/:id/approve|reject` (moderation.service — notifications + `totalProducts` bump) vs `PUT /catalog/admin/products/:id/approve|reject` (catalog.service — weaker).
-**Status:** Admin panel uses `/admin/products/*`. Catalog routes are legacy duplicates; do not use for moderation until consolidated.
+### E. Duplicate admin product approve/reject routes — resolved (Jul 2026)
+**Was:** `PUT /admin/products/:id/approve|reject` (moderation.service) vs duplicate `PUT /catalog/admin/products/:id/approve|reject` (catalog.service).
+**Fix:** Frontend and e2e use `/admin/products/*`. Legacy catalog admin approve/reject routes and `catalog.service.approveProduct` / `rejectProduct` removed.
 
 ### F. Admin Commissions page disconnected from weekly `CommissionBill` billing (Jul 2026)
 **Symptom:** `/admin/commissions` showed seller payout “settlements” (`/admin/commissions/*`, `TransactionType.SETTLEMENT`) while sellers pay commission via weekly Razorpay bills (`/commission/my-bills`, `CommissionBill` entity).
 **Cause:** Two parallel systems: (1) legacy admin settlement ledger with in-memory rate config and no real payouts; (2) live weekly billing in `payments/commission.service.ts`.
-**Fix:** Admin Commissions UI rebuilt on `/commission/admin/*` (bills list, summary, mark-paid, generate bills, apply fines). Legacy settlement endpoints remain in `admin/commission.service.ts` for a future seller-payout feature but are no longer called from the frontend.
+**Fix:** Admin Commissions UI rebuilt on `/commission/admin/*` (bills list, summary, mark-paid, generate bills, apply fines). Legacy settlement endpoints (`GET /admin/commissions/summary`, `GET /admin/commissions/transactions`, `POST /admin/commissions/settle/:shopId`) removed — weekly `CommissionBill` billing is the sole admin commission flow. Commission rate config remains at `GET/PUT /admin/commissions/rates` and `/admin/commissions/category/:type`.
 **Migration:** `016_commission_bill_admin_fields.ts` adds `adminPaymentRef` and `adminNote` on `commission_bills` for manual reconciliation.
 
 ### G. Commission rates in-memory / hardcoded — not persisted (Jul 2026)

@@ -82,12 +82,7 @@ describe('Commission rate admin → order charge', () => {
 
     const ratesService = new CommissionRatesService(categoryRepository as any);
 
-    const adminCommission = new CommissionService(
-      {} as any,
-      {} as any,
-      {} as any,
-      ratesService,
-    );
+    const adminCommission = new CommissionService(ratesService);
 
     await adminCommission.updateCategoryCommission('groceries', 9);
 

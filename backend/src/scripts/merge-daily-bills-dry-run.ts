@@ -2,6 +2,7 @@
 /**
  * DRY-RUN ONLY — reads commission_bills via raw SQL, prints merge preview. Does NOT write.
  */
+import { Logger } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,6 +14,8 @@ import {
 } from '../modules/payments/merge-daily-bills.util';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+const logger = new Logger('MergeDailyBillsDryRun');
 
 async function main() {
   const ds = new DataSource({
@@ -53,23 +56,23 @@ async function main() {
     for (const row of shopRows) shopNames.set(row.id, row.name);
   }
 
-  console.log(`Loaded ${bills.length} commission bill(s) from database`);
+  logger.log(`Loaded ${bills.length} commission bill(s) from database`);
 
   const previews = previewMergeDailyBillsIntoWeekly(bills as any, shopNames);
   const report = formatDryRunReport(previews);
-  console.log('\n' + report);
+  logger.log('\n' + report);
 
   const outPath =
     process.env.DRY_RUN_OUTPUT ||
     path.join(__dirname, '../../../commission-merge-dry-run.txt');
   fs.writeFileSync(outPath, report);
-  console.log(`\nReport written to ${outPath}`);
-  console.log('NO DATA WAS MODIFIED — this is a dry run.');
+  logger.log(`Report written to ${outPath}`);
+  logger.log('NO DATA WAS MODIFIED — this is a dry run.');
 
   await ds.destroy();
 }
 
 main().catch((err) => {
-  console.error('Dry-run failed:', err.message);
+  logger.error(`Dry-run failed: ${err.message}`);
   process.exit(1);
 });

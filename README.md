@@ -207,30 +207,64 @@ npm run start
 docker-compose up -d
 ```
 
-## 📝 API Endpoints
+## 📝 API Overview
 
-### Authentication
-- `POST /api/v1/auth/register` - User registration
-- `POST /api/v1/auth/login` - User login
-- `POST /api/v1/auth/verify-otp` - Verify phone number
-- `POST /api/v1/auth/send-otp` - Resend OTP
+Base URL: `http://localhost:3001/api/v1` (production: `https://localkart.store/api/v1`)
 
-### Catalog
-- `GET /api/v1/catalog/products` - List products
-- `GET /api/v1/catalog/products/:slug` - Get product details
-- `GET /api/v1/catalog/categories` - List categories
-- `POST /api/v1/catalog/products` - Create product (seller)
+### Backend modules (`backend/src/modules/`)
 
-### Orders
-- `POST /api/v1/orders` - Create order
-- `GET /api/v1/orders/:id` - Get order details
-- `POST /api/v1/orders/:id/verify-otp` - Verify delivery OTP
-- `GET /api/v1/orders/track/:orderNumber` - Track order
+| Module | Route prefix | Purpose |
+|--------|--------------|---------|
+| **auth** | `/auth` | Register, login, OTP, password reset, JWT refresh |
+| **users** | `/users` | Profile read/update |
+| **addresses** | `/addresses` | Saved delivery addresses (CRUD, default) |
+| **catalog** | `/catalog` | Products, categories, search, seller catalog, likes, today-offers |
+| **cart** | `/cart` | Guest and authenticated cart |
+| **orders** | `/orders` | Order create, status, OTP delivery, admin list |
+| **payments** | `/payments` | Razorpay create/verify |
+| **commission** | `/commission` | Weekly commission bills (seller pay, admin manage) |
+| **webhooks** | `/webhooks` | Razorpay webhook handler |
+| **returns** | `/returns` | Return/dispute requests and admin resolution |
+| **reviews** | `/reviews` | Product reviews and helpful votes |
+| **wishlist** | `/wishlist` | Wishlist toggle and list |
+| **seller** | `/seller` | Shop profile, subscriptions, ad campaigns, earnings |
+| **seller/staff** | `/seller/staff` | Staff employee management |
+| **staff/work** | `/staff/work` | Staff panel (products, orders) |
+| **admin** | `/admin` | Dashboard, moderation, commission rates, fraud, ad campaigns |
+| **location** | `/location` | Nearby shops, delivery charge |
+| **media** | `/media` | Image/video upload (S3 presigned URLs) |
+| **ai** | `/ai` | AI-assisted product descriptions |
+| **notifications** | — | Internal SMS, email, WhatsApp services (no public HTTP routes) |
 
-### Payments
-- `POST /api/v1/payments/create` - Create payment order
-- `POST /api/v1/payments/verify` - Verify payment
-- `POST /api/v1/payments/webhook` - Razorpay webhook
+### Example endpoints
+
+**Authentication**
+- `POST /auth/register` — User registration
+- `POST /auth/login` — User login
+- `POST /auth/verify-otp` — Verify phone number
+- `POST /auth/send-otp` — Resend OTP
+
+**Catalog & browse**
+- `GET /catalog/products` — List/search products (filters, pagination)
+- `GET /catalog/products/:slug` — Product detail by slug
+- `POST /catalog/products/:id/like` — Toggle product like (JWT)
+- `GET /catalog/categories` — List categories
+- `GET /catalog/today-offers` — Daily offers near location
+
+**Orders & payments**
+- `POST /orders` — Create order
+- `GET /orders/:id` — Order details
+- `POST /orders/:id/verify-otp` — Verify delivery OTP
+- `POST /payments/create` — Create Razorpay order
+- `POST /payments/verify` — Verify payment
+
+**Admin**
+- `GET /admin/dashboard` — Dashboard stats
+- `PUT /admin/products/:id/approve` — Approve product listing
+- `GET /admin/fraud/suspicious-orders` — Fraud monitoring
+- `GET /commission/admin/bills` — Weekly commission bills
+
+See Swagger at `/api/docs` when enabled for the full route list.
 
 ## 🤝 Contributing
 

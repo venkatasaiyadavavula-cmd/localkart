@@ -153,23 +153,7 @@ export class AdminController {
     return this.moderationService.rejectProduct(id, reason);
   }
 
-  // Commission Management
-  @Get('commissions/summary')
-  async getCommissionSummary(@Query('period') period?: string) {
-    return this.commissionService.getCommissionSummary(period);
-  }
-
-  @Get('commissions/transactions')
-  async getCommissionTransactions(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.commissionService.getCommissionTransactions(
-      parseInt(page || '1'),
-      parseInt(limit || '20'),
-    );
-  }
-
+  // Commission rate configuration (weekly bills live under /commission/admin/*)
   @Get('commissions/rates')
   async getCategoryCommissionRates() {
     return this.commissionService.getCategoryCommissionRates();
@@ -181,11 +165,6 @@ export class AdminController {
     @Body('rate') rate: number,
   ) {
     return this.commissionService.updateCategoryCommission(categoryType, rate);
-  }
-
-  @Post('commissions/settle/:shopId')
-  async settleShopEarnings(@Param('shopId') shopId: string) {
-    return this.commissionService.settleShopEarnings(shopId);
   }
 
   // Fraud Detection

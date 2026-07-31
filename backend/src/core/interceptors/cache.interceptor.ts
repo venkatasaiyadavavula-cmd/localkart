@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -16,6 +16,8 @@ export const CacheTTL = (ttl: number) => SetMetadata(CACHE_TTL_METADATA, ttl);
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(CacheInterceptor.name);
+
   constructor(
     @InjectRedis() private readonly redis: Redis,
     private readonly reflector: Reflector,
@@ -45,21 +47,21 @@ export class CacheInterceptor implements NestInterceptor {
     try {
       const cachedData = await this.redis.get(cacheKey);
       if (cachedData) {
-        console.log(`✅ CACHE HIT: ${cacheKey}`);
+        this.logger.debug(`CACHE HIT: ${cacheKey}`);
         return of(JSON.parse(cachedData));
       }
 
-      console.log(`❌ CACHE MISS: ${cacheKey}`);
+      this.logger.debug(`CACHE MISS: ${cacheKey}`);
       return next.handle().pipe(
         tap(async (data) => {
           if (data) {
             await this.redis.setex(cacheKey, ttl, JSON.stringify(data));
-            console.log(`💾 CACHED: ${cacheKey} (TTL: ${ttl}s)`);
+            this.logger.debug(`CACHED: ${cacheKey} (TTL: ${ttl}s)`);
           }
         }),
       );
     } catch (error) {
-      console.error('Redis error, skipping cache:', error.message);
+      this.logger.warn(`Redis error, skipping cache: ${(error as Error).message}`);
       return next.handle();
     }
   }

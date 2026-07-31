@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { Logger } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../core/entities/user.entity';
@@ -7,6 +8,8 @@ import { Category } from '../core/entities/category.entity';
 import { Product, ProductStatus, ProductCategoryType } from '../core/entities/product.entity';
 
 dotenv.config();
+
+const logger = new Logger('SeedKadapa');
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -21,7 +24,7 @@ const AppDataSource = new DataSource({
 
 async function seed() {
   await AppDataSource.initialize();
-  console.log('🌱 Seeding Kadapa data...');
+  logger.log('Seeding Kadapa data...');
 
   const userRepo = AppDataSource.getRepository(User);
   const shopRepo = AppDataSource.getRepository(Shop);
@@ -40,7 +43,7 @@ async function seed() {
       isPhoneVerified: true,
     });
     await userRepo.save(admin);
-    console.log('✅ Admin created');
+    logger.log('Admin created');
   }
 
   // Create Categories
@@ -59,7 +62,7 @@ async function seed() {
       await categoryRepo.save(categoryRepo.create(cat));
     }
   }
-  console.log('✅ Categories seeded');
+  logger.log('Categories seeded');
 
   // Kadapa Shops
   const kadapaShops = [
@@ -143,7 +146,7 @@ async function seed() {
         location: `ST_SetSRID(ST_MakePoint(${shopData.shop.longitude}, ${shopData.shop.latitude}), 4326)` as any,
       });
       await shopRepo.save(shop);
-      console.log(`✅ Shop "${shop.name}" created`);
+      logger.log(`Shop "${shop.name}" created`);
     }
   }
 
@@ -168,11 +171,14 @@ async function seed() {
         }));
       }
     }
-    console.log('✅ Sample products added');
+    logger.log('Sample products added');
   }
 
-  console.log('🎉 Kadapa seeding completed!');
+  logger.log('Kadapa seeding completed!');
   await AppDataSource.destroy();
 }
 
-seed().catch(console.error);
+seed().catch((err) => {
+  logger.error('Seed failed', err instanceof Error ? err.stack : String(err));
+  process.exit(1);
+});

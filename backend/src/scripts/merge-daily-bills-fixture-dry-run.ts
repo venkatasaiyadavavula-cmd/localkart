@@ -2,6 +2,7 @@
  * Fixture-based dry-run sample (no DB required) — mirrors production merge preview format.
  * Run: npx ts-node src/scripts/merge-daily-bills-fixture-dry-run.ts
  */
+import { Logger } from '@nestjs/common';
 import { CommissionBillStatus } from '../core/entities/commission-bill.entity';
 import {
   formatDryRunReport,
@@ -99,8 +100,10 @@ const shopNames = new Map([
   [shopB, 'City Electronics'],
 ]);
 
+const logger = new Logger('MergeDailyBillsFixtureDryRun');
+
 const previews = previewMergeDailyBillsIntoWeekly(fixtureBills as any, shopNames, {
   today: new Date('2025-07-20T12:00:00+05:30'),
 });
 
-console.log(formatDryRunReport(previews));
+logger.log(formatDryRunReport(previews));

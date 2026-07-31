@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Shop, ShopStatus } from '../../core/entities/shop.entity';
@@ -12,6 +12,8 @@ import {
 
 @Injectable()
 export class LocationService {
+  private readonly logger = new Logger(LocationService.name);
+
   constructor(
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
@@ -99,7 +101,7 @@ export class LocationService {
 
   const total = await queryBuilder.getCount();
 
-  console.log('RAW DISTANCES:', raw);
+  this.logger.debug(`Nearby shops query returned ${entities.length} shops (raw distance rows: ${raw.length})`);
 
   const shopsWithDistance = entities.map(
     (shop: any, index) =>
