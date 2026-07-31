@@ -30,6 +30,7 @@ import { DailyOffer } from './core/entities/daily-offer.entity';
 import { Review } from './core/entities/review.entity';
 import { ReviewHelpfulVote } from './core/entities/review-helpful-vote.entity';
 import { Wishlist } from './core/entities/wishlist.entity';
+import { ProductLike } from './core/entities/product-like.entity';
 import { SavedAddress } from './core/entities/saved-address.entity';
 import { StaffMember } from './core/entities/staff-member.entity';
 import { CommissionBill } from './core/entities/commission-bill.entity';
@@ -57,6 +58,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ThrottlerModule.forRoot([
       { name: 'default', ttl: 60000, limit: 120 },
       { name: 'auth', ttl: 60000, limit: 10 },
+      { name: 'read', ttl: 60000, limit: 300 },
     ]),
 
     ConfigModule.forRoot({
@@ -78,7 +80,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         entities: [
           User, Shop, Product, Category, Order, OrderItem,
           Subscription, Transaction, ReturnRequest, SponsoredProduct,
-          DailyOffer, Review, ReviewHelpfulVote, Wishlist, SavedAddress, StaffMember, CommissionBill,
+          DailyOffer, Review, ReviewHelpfulVote, Wishlist, ProductLike, SavedAddress, StaffMember, CommissionBill,
           FeaturedVideo, VideoUploadCharge, AdCampaignCharge, ProductVariant,
         ],
         synchronize: false,

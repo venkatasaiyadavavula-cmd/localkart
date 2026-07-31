@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Percent, Settings } from 'lucide-react';
+import { Percent, Settings, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -27,11 +29,23 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/error-state';
 import { useAdminCommissionRates, type CategoryCommissionRate } from '@/hooks/use-admin-commission-rates';
+import { useAdminFraud, type SuspiciousOrder } from '@/hooks/use-admin-fraud';
+import { formatPrice } from '@/lib/utils';
 
 export default function AdminSettingsPage() {
   const { rates, isLoading, isError, refetch, updateRate, isUpdating } = useAdminCommissionRates();
+  const {
+    suspiciousOrders,
+    isLoading: fraudLoading,
+    isError: fraudError,
+    refetch: refetchFraud,
+    blacklistUser,
+    isBlacklisting,
+  } = useAdminFraud();
   const [editing, setEditing] = useState<CategoryCommissionRate | null>(null);
   const [newRate, setNewRate] = useState('');
+  const [blacklistTarget, setBlacklistTarget] = useState<SuspiciousOrder | null>(null);
+  const [blacklistReason, setBlacklistReason] = useState('');
 
   const openEdit = (row: CategoryCommissionRate) => {
     setEditing(row);
@@ -51,6 +65,22 @@ export default function AdminSettingsPage() {
       setEditing(null);
     } catch {
       toast.error('Failed to update commission rate');
+    }
+  };
+
+  const handleBlacklist = async () => {
+    if (!blacklistTarget?.customer?.id) return;
+    if (!blacklistReason.trim()) {
+      toast.error('Enter a reason for blacklisting');
+      return;
+    }
+    try {
+      await blacklistUser(blacklistTarget.customer.id, blacklistReason.trim());
+      toast.success('User blacklisted');
+      setBlacklistTarget(null);
+      setBlacklistReason('');
+    } catch {
+      toast.error('Failed to blacklist user');
     }
   };
 
@@ -127,10 +157,91 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5" />
+            Fraud monitoring
+          </CardTitle>
+          <CardDescription>
+            High-value COD orders from the last 24 hours. Review and blacklist suspicious customers.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {fraudError ? (
+            <div className="p-6">
+              <ErrorState title="Could not load suspicious orders" onRetry={() => refetchFraud()} compact />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fraudLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5}>
+                        <Skeleton className="h-8 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : suspiciousOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                      No suspicious orders in the last 24 hours
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  suspiciousOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{order.customer?.name ?? '—'}</p>
+                          <p className="text-xs text-muted-foreground">{order.customer?.phone}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatPrice(order.totalAmount)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {order.status}
+                        <span className="block text-xs">
+                          {format(new Date(order.createdAt), 'dd MMM HH:mm')}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {order.customer?.id && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              setBlacklistTarget(order);
+                              setBlacklistReason('');
+                            }}
+                          >
+                            Blacklist
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             Other settings
           </CardTitle>
-          <CardDescription>Notification and platform controls coming soon.</CardDescription>
+          <CardDescription>Additional platform controls.</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -169,6 +280,36 @@ export default function AdminSettingsPage() {
             </Button>
             <Button onClick={handleSave} disabled={isUpdating}>
               {isUpdating ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!blacklistTarget} onOpenChange={(open) => !open && setBlacklistTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Blacklist customer</DialogTitle>
+            <DialogDescription>
+              This disables the account and records a 30-day Redis blacklist entry for{' '}
+              {blacklistTarget?.customer?.name ?? 'this user'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="blacklist-reason">Reason</Label>
+            <Textarea
+              id="blacklist-reason"
+              placeholder="e.g. Multiple high-value COD orders, suspected fraud"
+              value={blacklistReason}
+              onChange={(e) => setBlacklistReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlacklistTarget(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBlacklist} disabled={isBlacklisting}>
+              {isBlacklisting ? 'Blacklisting…' : 'Confirm blacklist'}
             </Button>
           </DialogFooter>
         </DialogContent>

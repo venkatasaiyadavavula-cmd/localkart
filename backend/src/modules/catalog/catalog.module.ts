@@ -4,6 +4,8 @@ import { CatalogController } from './catalog.controller';
 import { CatalogService } from './catalog.service';
 import { SearchService } from './search.service';
 import { BulkUploadService } from './bulk-upload.service';
+import { ProductLike } from '../../core/entities/product-like.entity';
+import { ProductLikeService } from './product-like.service';
 import { Product } from '../../core/entities/product.entity';
 import { Category } from '../../core/entities/category.entity';
 import { Shop } from '../../core/entities/shop.entity';
@@ -15,11 +17,11 @@ import { ProductVariantService } from './product-variant.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription, ProductVariant]),
+    TypeOrmModule.forFeature([Product, Category, Shop, DailyOffer, Subscription, ProductVariant, ProductLike]),
     FeaturedVideoModule,
   ],
   controllers: [CatalogController],
-  providers: [CatalogService, SearchService, BulkUploadService, ProductVariantService],
-  exports: [CatalogService],
+  providers: [CatalogService, SearchService, BulkUploadService, ProductVariantService, ProductLikeService],
+  exports: [CatalogService, ProductLikeService],
 })
 export class CatalogModule {}

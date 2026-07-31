@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Star, ThumbsUp, CheckCircle2, Camera, Loader2 } from 'lucide-react';
+import { Star, ThumbsUp, CheckCircle2, Camera, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, unwrapApiData } from '@/lib/utils';
+import { uploadMediaFiles } from '@/lib/utils/media';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -24,7 +25,11 @@ export function ProductReviews({ productId }: Props) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [comment, setComment] = useState('');
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const MAX_REVIEW_PHOTOS = 3;
 
   const { data: reviewData, isLoading } = useQuery<ProductReviewsData>({
     queryKey: ['reviews', productId],
@@ -52,22 +57,53 @@ export function ProductReviews({ productId }: Props) {
     if (rating === 0) { toast.error('Please select a rating'); return; }
     setSubmitting(true);
     try {
+      let images: string[] = [];
+      if (photoFiles.length > 0) {
+        images = await uploadMediaFiles(photoFiles, 'review');
+      }
       await axios.post(`${API}/reviews`, {
         productId,
         orderId: canReviewData?.orderId,
         rating,
         comment,
+        images: images.length > 0 ? images : undefined,
       }, { headers: auth() });
       toast.success('Review submitted! Thank you 🎉');
       setShowForm(false);
       setRating(0);
       setComment('');
+      setPhotoFiles([]);
+      setPhotoPreviews([]);
       queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const remaining = MAX_REVIEW_PHOTOS - photoFiles.length;
+    const toAdd = files.slice(0, remaining);
+    if (files.length > remaining) {
+      toast.error(`Maximum ${MAX_REVIEW_PHOTOS} photos per review`);
+    }
+    setPhotoFiles((prev) => [...prev, ...toAdd]);
+    toAdd.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoPreviews((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const helpfulMutation = useMutation({
@@ -169,6 +205,38 @@ export function ProductReviews({ productId }: Props) {
             className="rounded-xl resize-none mb-3"
           />
 
+          <div className="mb-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <Camera className="h-4 w-4" /> Add photos (optional, max {MAX_REVIEW_PHOTOS})
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {photoPreviews.map((src, i) => (
+                <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border">
+                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ))}
+              {photoFiles.length < MAX_REVIEW_PHOTOS && (
+                <label className="h-16 w-16 flex items-center justify-center rounded-lg border border-dashed border-gray-300 cursor-pointer hover:bg-gray-50">
+                  <Camera className="h-5 w-5 text-gray-400" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handlePhotoSelect}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -224,6 +292,18 @@ export function ProductReviews({ productId }: Props) {
               </div>
               {review.comment && (
                 <p className="text-sm text-gray-600 leading-relaxed mb-2">{review.comment}</p>
+              )}
+              {review.images?.length > 0 && (
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  {review.images.map((img: string, i: number) => (
+                    <img
+                      key={i}
+                      src={img}
+                      alt=""
+                      className="h-14 w-14 rounded-lg object-cover border"
+                    />
+                  ))}
+                </div>
               )}
               <button
                 onClick={() => helpfulMutation.mutate(review.id)}

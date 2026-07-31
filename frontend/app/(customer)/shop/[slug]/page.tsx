@@ -27,11 +27,7 @@ export default function ShopPage() {
     limit: 20,
   });
 
-  const productList = Array.isArray(productsData)
-    ? productsData
-    : (productsData as { products?: unknown[]; data?: unknown[] })?.products
-      ?? (productsData as { products?: unknown[]; data?: unknown[] })?.data
-      ?? [];
+  const productList = productsData?.data ?? [];
 
   if (shopLoading) {
     return <ShopSkeleton />;

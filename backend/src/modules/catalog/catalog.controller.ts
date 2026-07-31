@@ -34,6 +34,8 @@ import { Public } from '../../core/decorators/public.decorator';
 import { UserRole } from '../../core/entities/user.entity';
 import { Product } from '../../core/entities/product.entity';
 import { DailyOffer } from '../../core/entities/daily-offer.entity';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
+import { ProductLikeService } from './product-like.service';
 
 @Controller('catalog')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,23 +49,37 @@ export class CatalogController {
     @InjectRepository(DailyOffer)
     private offerRepository: Repository<DailyOffer>,
     private readonly featuredVideoService: FeaturedVideoService,
+    private readonly productLikeService: ProductLikeService,
   ) {}
 
   // ==================== PUBLIC ENDPOINTS ====================
 
   @Public()
+  @ReadThrottle()
   @Get('products')
   async getProducts(@Query() query: SearchQueryDto) {
     return this.catalogService.getProducts(query);
   }
 
   @Public()
+  @ReadThrottle()
   @Get('products/:slug')
   async getProductBySlug(@Param('slug') slug: string) {
     return this.catalogService.getProductBySlug(slug);
   }
 
+  @Post('products/:id/like')
+  async toggleProductLike(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.productLikeService.toggle(user.id, id);
+  }
+
+  @Get('likes/ids')
+  async getLikedProductIds(@CurrentUser() user: any) {
+    return this.productLikeService.getLikedProductIds(user.id);
+  }
+
   @Public()
+  @ReadThrottle()
   @Get('sponsored')
   async getSponsored(
     @Query('lat') lat?: string,
@@ -76,18 +92,21 @@ export class CatalogController {
   }
 
   @Public()
+  @ReadThrottle()
   @Get('categories')
   async getCategories() {
     return this.catalogService.getCategories();
   }
 
   @Public()
+  @ReadThrottle()
   @Get('categories/:slug')
   async getCategoryBySlug(@Param('slug') slug: string) {
     return this.catalogService.getCategoryBySlug(slug);
   }
 
   @Public()
+  @ReadThrottle()
   @Get('search')
   async search(@Query('q') q: string, @Query('lat') lat?: string, @Query('lng') lng?: string) {
     return this.searchService.searchProducts(
@@ -105,12 +124,14 @@ export class CatalogController {
   }
 
   @Public()
+  @ReadThrottle()
   @Get('shop/:shopId/products')
   async getShopProducts(@Param('shopId') shopId: string, @Query() query: SearchQueryDto) {
     return this.catalogService.getShopProducts(shopId, query);
   }
 
   @Public()
+  @ReadThrottle()
   @Get('today-offers')
   async getTodayOffers(@Query('lat') lat?: string, @Query('lng') lng?: string) {
     const now = new Date();
@@ -150,6 +171,7 @@ export class CatalogController {
   }
 
   @Public()
+  @ReadThrottle()
   @Get('featured-videos')
   async getFeaturedVideos(@Query('limit') limit?: string) {
     const videos = await this.featuredVideoService.getActiveFeaturedVideos(

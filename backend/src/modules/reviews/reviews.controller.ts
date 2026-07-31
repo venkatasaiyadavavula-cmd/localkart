@@ -7,6 +7,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Public } from '../../core/decorators/public.decorator';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('reviews')
 @UseGuards(JwtAuthGuard)
@@ -22,6 +23,7 @@ export class ReviewsController {
   }
 
   @Public()
+  @ReadThrottle()
   @Get('product/:productId')
   async getProductReviews(
     @Param('productId') productId: string,

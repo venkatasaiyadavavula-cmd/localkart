@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice, normalizeList, getProductUrl } from '@/lib/utils';
+import { getAccessToken } from '@/lib/api/client';
+import { productLikesApi } from '@/lib/api/product-likes';
 
 import type { Product } from '@/types/product';
 
@@ -19,6 +21,7 @@ export default function VideoFeedPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const [liked, setLiked] = useState<Set<string>>(new Set());
+  const [likeLoading, setLikeLoading] = useState<string | null>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +34,13 @@ export default function VideoFeedPage() {
       return normalizeList<Product>(data).filter((p) => (p.videos?.length ?? 0) > 0);
     },
   });
+
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    productLikesApi.getProductIds()
+      .then((ids) => setLiked(new Set(ids)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const videos = videoRefs.current;
@@ -54,6 +64,27 @@ export default function VideoFeedPage() {
     }
   };
 
+  const handleLike = async (productId: string) => {
+    if (!getAccessToken()) {
+      toast.error('Please log in to like videos');
+      return;
+    }
+    setLikeLoading(productId);
+    try {
+      const result = await productLikesApi.toggle(productId);
+      setLiked((prev) => {
+        const next = new Set(prev);
+        if (result.liked) next.add(productId);
+        else next.delete(productId);
+        return next;
+      });
+    } catch {
+      toast.error('Could not update like');
+    } finally {
+      setLikeLoading(null);
+    }
+  };
+
   // Touch swipe handling
   const touchStart = useRef(0);
   const onTouchStart = (e: React.TouchEvent) => { touchStart.current = e.touches[0].clientY; };
@@ -62,7 +93,7 @@ export default function VideoFeedPage() {
     if (Math.abs(diff) > 50) handleScroll(diff > 0 ? 'down' : 'up');
   };
 
-  const handleShare = async (product: any) => {
+  const handleShare = async (product: Product) => {
     const url = `${window.location.origin}${getProductUrl(product)}`;
     const text = `${product.name} - ${formatPrice(product.price)} - LocalKart lo check cheyyandi!`;
     if (navigator.share) {
@@ -98,7 +129,7 @@ export default function VideoFeedPage() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {products.map((product: any, index: number) => (
+      {products.map((product, index) => (
         <div
           key={product.id}
           className="absolute inset-0 transition-transform duration-300"
@@ -107,7 +138,7 @@ export default function VideoFeedPage() {
           {/* Video */}
           <video
             ref={el => { videoRefs.current[index] = el; }}
-            src={product.videos[0]}
+            src={product.videos![0]}
             className="w-full h-full object-cover"
             loop
             muted={muted}
@@ -132,11 +163,8 @@ export default function VideoFeedPage() {
           {/* Right actions */}
           <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6">
             <button
-              onClick={() => {
-                const newLiked = new Set(liked);
-                newLiked.has(product.id) ? newLiked.delete(product.id) : newLiked.add(product.id);
-                setLiked(newLiked);
-              }}
+              onClick={() => handleLike(product.id)}
+              disabled={likeLoading === product.id}
               className="flex flex-col items-center gap-1"
             >
               <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
@@ -209,7 +237,7 @@ export default function VideoFeedPage() {
 
       {/* Progress dots */}
       <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1">
-        {products.slice(0, 8).map((_: any, i: number) => (
+        {products.slice(0, 8).map((_, i: number) => (
           <div key={i} className={`w-1 rounded-full transition-all ${
             i === currentIndex ? 'h-6 bg-white' : 'h-2 bg-white/30'
           }`} />

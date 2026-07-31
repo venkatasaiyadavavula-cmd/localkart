@@ -27,6 +27,7 @@ export class ReviewsService {
     orderId: string;
     rating: number;
     comment?: string;
+    images?: string[];
   }) {
     // Only delivered orders can be reviewed
     const order = await this.orderRepo.findOne({
@@ -57,6 +58,7 @@ export class ReviewsService {
       orderId:            dto.orderId,
       rating:             dto.rating,
       comment:            dto.comment,
+      images:             dto.images,
       isVerifiedPurchase: true,
     });
 
@@ -90,6 +92,7 @@ export class ReviewsService {
         id:                 r.id,
         rating:             r.rating,
         comment:            r.comment,
+        images:             r.images ?? [],
         isVerifiedPurchase: r.isVerifiedPurchase,
         helpfulCount:       r.helpfulCount,
         createdAt:          r.createdAt,

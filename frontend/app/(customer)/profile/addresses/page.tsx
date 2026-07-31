@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
   MapPin, Plus, Trash2, Star, Home, Briefcase,
-  MoreHorizontal, Loader2, ChevronLeft, Check,
+  Loader2, ChevronLeft, Check, Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, unwrapApiData } from '@/lib/utils';
@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { ErrorState } from '@/components/ui/error-state';
 import { useRouter } from 'next/navigation';
 
 import { API_URL as API } from '@/lib/api-config';
@@ -24,16 +25,23 @@ const ADDRESS_TYPES = [
   { value: 'other', label: 'Other', icon: MapPin, color: 'text-gray-600', bg: 'bg-gray-100' },
 ];
 
+const emptyForm = {
+  type: 'home',
+  label: 'Home',
+  fullAddress: '',
+  landmark: '',
+  pincode: '',
+  isDefault: false,
+};
+
 export default function AddressesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({
-    type: 'home', label: 'Home',
-    fullAddress: '', landmark: '', pincode: '', isDefault: false,
-  });
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
-  const { data: addresses, isLoading } = useQuery({
+  const { data: addresses, isLoading, isError, refetch } = useQuery({
     queryKey: ['addresses'],
     queryFn: async () => {
       const { data } = await axios.get(`${API}/addresses`, { headers: auth() });
@@ -41,15 +49,39 @@ export default function AddressesPage() {
     },
   });
 
-  const addMutation = useMutation({
+  const openAdd = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setSheetOpen(true);
+  };
+
+  const openEdit = (address: any) => {
+    setEditingId(address.id);
+    setForm({
+      type: address.type || 'other',
+      label: address.label || 'Other',
+      fullAddress: address.fullAddress || '',
+      landmark: address.landmark || '',
+      pincode: address.pincode || '',
+      isDefault: address.isDefault || false,
+    });
+    setSheetOpen(true);
+  };
+
+  const saveMutation = useMutation({
     mutationFn: async () => {
-      await axios.post(`${API}/addresses`, form, { headers: auth() });
+      if (editingId) {
+        await axios.put(`${API}/addresses/${editingId}`, form, { headers: auth() });
+      } else {
+        await axios.post(`${API}/addresses`, form, { headers: auth() });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['addresses'] });
-      setAddOpen(false);
-      setForm({ type: 'home', label: 'Home', fullAddress: '', landmark: '', pincode: '', isDefault: false });
-      toast.success('Address saved!');
+      setSheetOpen(false);
+      setEditingId(null);
+      setForm(emptyForm);
+      toast.success(editingId ? 'Address updated!' : 'Address saved!');
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to save'),
   });
@@ -84,7 +116,7 @@ export default function AddressesPage() {
             </button>
             <h1 className="text-xl font-bold text-gray-900">Saved Addresses</h1>
           </div>
-          <Button size="sm" onClick={() => setAddOpen(true)} className="rounded-xl gap-1">
+          <Button size="sm" onClick={openAdd} className="rounded-xl gap-1">
             <Plus className="h-4 w-4" /> Add
           </Button>
         </div>
@@ -95,12 +127,14 @@ export default function AddressesPage() {
           Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="bg-white rounded-2xl p-4 h-24 animate-pulse" />
           ))
+        ) : isError ? (
+          <ErrorState title="Could not load addresses" onRetry={() => refetch()} />
         ) : addresses?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <MapPin className="h-16 w-16 text-gray-200 mb-4" />
             <p className="text-lg font-bold text-gray-600">No saved addresses</p>
             <p className="text-sm text-gray-400 mt-1">Add your home, work or other addresses</p>
-            <Button onClick={() => setAddOpen(true)} className="mt-4 rounded-xl">
+            <Button onClick={openAdd} className="mt-4 rounded-xl">
               <Plus className="h-4 w-4 mr-1.5" /> Add Address
             </Button>
           </div>
@@ -135,6 +169,12 @@ export default function AddressesPage() {
                 </div>
 
                 <div className="flex gap-2 mt-3 pt-3 border-t">
+                  <button
+                    onClick={() => openEdit(address)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </button>
                   {!address.isDefault && (
                     <button
                       onClick={() => defaultMutation.mutate(address.id)}
@@ -156,15 +196,15 @@ export default function AddressesPage() {
         )}
       </div>
 
-      {/* Add Address Sheet */}
-      <Sheet open={addOpen} onOpenChange={setAddOpen}>
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl pb-8 max-h-[90vh] overflow-y-auto">
           <SheetHeader className="mb-5">
-            <SheetTitle className="text-xl font-bold">Add New Address</SheetTitle>
+            <SheetTitle className="text-xl font-bold">
+              {editingId ? 'Edit Address' : 'Add New Address'}
+            </SheetTitle>
           </SheetHeader>
 
           <div className="space-y-4">
-            {/* Type selector */}
             <div>
               <Label className="text-sm font-semibold text-gray-700 mb-2 block">Address Type</Label>
               <div className="flex gap-2">
@@ -237,13 +277,13 @@ export default function AddressesPage() {
             </button>
 
             <Button
-              onClick={() => addMutation.mutate()}
-              disabled={!form.fullAddress || addMutation.isPending}
+              onClick={() => saveMutation.mutate()}
+              disabled={!form.fullAddress || saveMutation.isPending}
               className="w-full h-12 rounded-xl font-bold text-base"
             >
-              {addMutation.isPending ? (
+              {saveMutation.isPending ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
-              ) : 'Save Address'}
+              ) : editingId ? 'Update Address' : 'Save Address'}
             </Button>
           </div>
         </SheetContent>

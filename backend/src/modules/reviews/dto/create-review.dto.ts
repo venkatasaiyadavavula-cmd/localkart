@@ -7,6 +7,8 @@ import {
   Max,
   IsOptional,
   MaxLength,
+  IsArray,
+  ArrayMaxSize,
 } from 'class-validator';
 
 export class CreateReviewDto {
@@ -28,4 +30,10 @@ export class CreateReviewDto {
   @IsOptional()
   @MaxLength(1000)
   comment?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(5)
+  images?: string[];
 }
