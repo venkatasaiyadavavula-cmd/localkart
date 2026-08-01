@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { ServiceWorkerRegistrar } from '@/components/pwa/service-worker-registrar';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -96,6 +97,7 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased">
         <Providers>
+          <ServiceWorkerRegistrar />
           <AuthGuard>
             {children}
           </AuthGuard>
