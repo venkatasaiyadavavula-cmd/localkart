@@ -12,7 +12,7 @@ import { User } from '../../core/entities/user.entity';
     TypeOrmModule.forFeature([Product, Shop, User]),
     RedisModule.forRoot({
       type: 'single',
-      url: 'redis://localhost:6379',
+      url: 'redis://127.0.0.1:6379',
     }),
   ],
   controllers: [CartController],
