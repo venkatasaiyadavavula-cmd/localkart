@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "store.localkart.twa",
+        "sha256_cert_fingerprints": ["5D:76:21:A4:24:BA:93:E9:D5:E6:D7:E1:1D:39:56:57:83:3D:3F:AC:79:52:47:34:B6:98:C3:70:EA:FF:0C:36"]
+      }
+    }]
