@@ -311,8 +311,8 @@ echo ""
 # ── PART 4: Admin ────────────────────────────────────────────────
 echo "--- Admin APIs ---"
 for ep in /admin/dashboard /admin/shops/pending /admin/shops /admin/products/pending \
-  /admin/commissions/summary /admin/commissions/transactions /admin/fraud/suspicious-orders \
-  /returns/admin/all; do
+  /admin/commissions/rates /commission/admin/summary /commission/admin/bills \
+  /admin/fraud/suspicious-orders /returns/admin/all; do
   code=$(http_code "$API$ep" -H "Authorization: Bearer $ADMIN_TOKEN")
   [ "$code" = "200" ] && ok "admin $ep" || bad "admin $ep ($code)"
 done
