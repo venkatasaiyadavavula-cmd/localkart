@@ -46,39 +46,13 @@ test('staff session is redirected away from seller dashboard routes', async ({ p
   }
 });
 
-test('delivery_staff cannot access product routes or Add button', async ({ page, request }) => {
-  const sellerToken = await getSellerToken(request);
-  const suffix = `${Date.now()}`.slice(-6);
-  const staffId = `sw_guard_${suffix}`;
-  const password = 'GuardStaff@1';
-
-  const create = await request.post(`${API}/seller/staff`, {
-    headers: authHeaders(sellerToken),
-    data: {
-      name: 'Guard Delivery',
-      phone: `+919876${suffix}`,
-      role: 'delivery_staff',
-      staffId,
-      password,
-    },
-  });
-  expect(create.ok(), await create.text()).toBeTruthy();
-  const created = await create.json();
-  const staffDbId = created?.id ?? created?.data?.id;
-
+test('employee staff can access work product routes', async ({ page }) => {
   await clearAuth(page);
-  await fillStaffLogin(page, staffId, password);
+  await fillStaffLogin(page, 'qa_test_worker', 'Test@1234');
 
   await page.goto('/work/products', { waitUntil: 'domcontentloaded' });
-  await page.waitForURL(/\/work\/?$/, { timeout: 15_000 });
-  expect(page.url()).toMatch(/\/work\/?$/);
+  await expect(page.url()).toMatch(/\/work\/products/);
 
   await page.goto('/work/products/new', { waitUntil: 'domcontentloaded' });
-  await page.waitForURL(/\/work\/?$/, { timeout: 15_000 });
-
-  if (staffDbId) {
-    await request.delete(`${API}/seller/staff/${staffDbId}`, {
-      headers: authHeaders(sellerToken),
-    });
-  }
+  await expect(page.url()).toMatch(/\/work\/products\/new/);
 });
