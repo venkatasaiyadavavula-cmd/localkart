@@ -148,10 +148,18 @@ export default function NewProductPage() {
       toast.success('Product created successfully. Awaiting approval.');
       router.push('/dashboard/products');
     } catch (error: unknown) {
+      const apiMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+          ? (error as { response: { data: { message: string } } }).response.data.message
+          : undefined;
       const message =
-        error instanceof Error && error.message.includes('storage')
+        apiMessage ??
+        (error instanceof Error && error.message.includes('storage')
           ? 'Video upload failed while saving to storage. Please try again.'
-          : 'Failed to create product';
+          : 'Failed to create product');
       toast.error(message);
     }
   };

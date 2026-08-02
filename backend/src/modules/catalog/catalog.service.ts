@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Between, FindOptionsWhere, Not, IsNull } from 'typeorm';
@@ -26,6 +27,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, number> = {
 
 @Injectable()
 export class CatalogService {
+  private readonly logger = new Logger(CatalogService.name);
+
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -134,11 +137,14 @@ export class CatalogService {
 
   // Seller methods
   async createProduct(userId: string, createProductDto: CreateProductDto) {
-    const shop = await this.shopRepository.findOne({
-      where: { ownerId: userId, status: ShopStatus.APPROVED },
-    });
+    const shop = await this.shopRepository.findOne({ where: { ownerId: userId } });
     if (!shop) {
-      throw new ForbiddenException('You need an approved shop to add products');
+      throw new ForbiddenException('Please complete shop onboarding before adding products');
+    }
+    if (shop.status !== ShopStatus.APPROVED) {
+      throw new ForbiddenException(
+        'Your shop must be approved by admin before you can add products',
+      );
     }
 
     // Check product limit based on active subscription plan
@@ -160,14 +166,14 @@ export class CatalogService {
       );
     }
 
-    const slug = slugify(createProductDto.name, { lower: true, strict: true });
-
-    const existingProduct = await this.productRepository.findOne({
-      where: { slug, shopId: shop.id },
+    const duplicateName = await this.productRepository.findOne({
+      where: { shopId: shop.id, name: createProductDto.name },
     });
-    if (existingProduct) {
-      throw new BadRequestException('Product with this name already exists');
+    if (duplicateName) {
+      throw new BadRequestException('You already have a product with this name');
     }
+
+    const slug = await this.allocateUniqueProductSlug(createProductDto.name);
 
     const { variants, ...createFields } = createProductDto;
 
@@ -178,7 +184,19 @@ export class CatalogService {
       status: ProductStatus.PENDING, // Requires admin approval
     });
 
-    await this.productRepository.save(product);
+    try {
+      await this.productRepository.save(product);
+    } catch (err: unknown) {
+      this.logger.error(
+        `createProduct save failed for shop ${shop.id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      if (isUniqueViolation(err)) {
+        throw new BadRequestException(
+          'A product with a similar name already exists on LocalKart. Try a more specific name.',
+        );
+      }
+      throw err;
+    }
 
     if (variants?.length) {
       await this.productVariantService.replaceVariantsForProduct(product.id, variants);
@@ -205,7 +223,10 @@ export class CatalogService {
     const { variants, ...updateFields } = updateProductDto;
 
     if (updateFields.name) {
-      product.slug = slugify(updateFields.name, { lower: true, strict: true });
+      product.slug = await this.allocateUniqueProductSlug(
+        updateFields.name,
+        product.id,
+      );
     }
 
     const requiresReapproval = productUpdateRequiresReapproval(updateFields, product);
@@ -324,4 +345,40 @@ export class CatalogService {
       remaining: Math.max(0, limit - used),
     };
   }
+
+  /** Allocate a globally unique product URL slug (used by bulk upload). */
+  async allocateProductSlug(name: string, excludeProductId?: string): Promise<string> {
+    return this.allocateUniqueProductSlug(name, excludeProductId);
+  }
+
+  /**
+   * Product slugs are globally unique (URL path /browse/.../product/[slug]).
+   * When another shop already uses the base slug, append -2, -3, …
+   */
+  private async allocateUniqueProductSlug(
+    name: string,
+    excludeProductId?: string,
+  ): Promise<string> {
+    const base = slugify(name, { lower: true, strict: true });
+    let candidate = base;
+    let suffix = 2;
+
+    while (true) {
+      const existing = await this.productRepository.findOne({ where: { slug: candidate } });
+      if (!existing || existing.id === excludeProductId) {
+        return candidate;
+      }
+      candidate = `${base}-${suffix}`;
+      suffix += 1;
+    }
+  }
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === '23505'
+  );
 }

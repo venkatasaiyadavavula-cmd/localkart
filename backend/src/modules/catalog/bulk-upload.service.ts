@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
-import slugify from 'slugify';
 import {
   Product,
   ProductCategoryType,
@@ -143,9 +142,11 @@ export class BulkUploadService {
         const description = [descriptionBase, unit ? `Unit: ${unit}` : ''].filter(Boolean).join(' — ') || undefined;
         const brand = String(row.brand ?? row.Brand ?? '').trim() || undefined;
 
+        const slug = await this.catalogService.allocateProductSlug(name);
+
         const product = this.productRepository.create({
           name,
-          slug: slugify(name, { lower: true, strict: true }),
+          slug,
           description,
           price,
           mrp: mrpVal ? Number(mrpVal) : undefined,
