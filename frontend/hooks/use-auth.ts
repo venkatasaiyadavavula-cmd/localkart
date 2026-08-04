@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, clearLocalAuthSession } from '@/lib/api/client';
 import { useCartStore } from '@/store/cart-store';
 import { authTrace } from '@/lib/auth-trace';
 
@@ -61,7 +61,7 @@ function mapProfileToUser(profile: Record<string, unknown>): User {
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: true,
@@ -112,17 +112,36 @@ export const useAuthStore = create<AuthStore>()(
       register: async (data) => {
         set({ isLoading: true });
         try {
+          const hadSession =
+            typeof window !== 'undefined' &&
+            (localStorage.getItem('accessToken') || get().isAuthenticated);
+
+          if (hadSession) {
+            // Prevents a lingering old session from being used for seller onboarding
+            // (e.g. createShop) under the wrong account after registering a new phone.
+            try {
+              await apiClient.post('/auth/logout', {});
+            } catch {
+              // Best-effort — prior session may already be invalid or wrong user.
+            }
+            clearLocalAuthSession();
+            clearAuthCookie();
+            set({ user: null, isAuthenticated: false });
+          }
+
           const payload = { ...data };
           if (!payload.email) delete payload.email;
           const response = await apiClient.post('/auth/register', payload);
-          // ✅ Response check chestunnam — error vasina throw avutundi
           if (!response.data) {
             throw new Error('Registration failed');
           }
-          set({ isLoading: false });
+
+          // Registration does not log the user in — ensure no stale token remains.
+          clearLocalAuthSession();
+          clearAuthCookie();
+          set({ user: null, isAuthenticated: false, isLoading: false });
         } catch (error: any) {
           set({ isLoading: false });
-          // ✅ Error ni re-throw chestunnam so UI lo correct error vastundi
           throw error;
         }
       },
@@ -132,8 +151,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await apiClient.post('/auth/logout', {});
         } finally {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          clearLocalAuthSession();
           clearAuthCookie();
           set({ user: null, isAuthenticated: false, isLoading: false });
         }

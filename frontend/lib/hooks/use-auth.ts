@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '@/lib/api/auth';
 import { RegisterData } from '@/lib/api/auth';
+import { clearLocalAuthSession } from '@/lib/api/client';
 
 interface User {
   id: string;
@@ -50,8 +51,23 @@ export const useAuthStore = create<AuthStore>()(
       register: async (data) => {
         set({ isLoading: true });
         try {
+          const hadSession =
+            typeof window !== 'undefined' &&
+            (localStorage.getItem('accessToken') || get().isAuthenticated);
+
+          if (hadSession) {
+            try {
+              await authApi.logout();
+            } catch {
+              // Best-effort logout before registering under a different account.
+            }
+            clearLocalAuthSession();
+            set({ user: null, isAuthenticated: false });
+          }
+
           const result = await authApi.register(data);
-          set({ isLoading: false });
+          clearLocalAuthSession();
+          set({ user: null, isAuthenticated: false, isLoading: false });
           return result;
         } catch (error) {
           set({ isLoading: false });
@@ -64,6 +80,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await authApi.logout();
         } finally {
+          clearLocalAuthSession();
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },

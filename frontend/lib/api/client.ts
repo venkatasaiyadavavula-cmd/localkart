@@ -81,8 +81,18 @@ export const setAuthTokens = (accessToken: string, refreshToken?: string) => {
 
 // Helper function to clear auth tokens
 export const clearAuthTokens = () => {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
+  localStorage.removeItem('staffAccessToken');
+  // SSR layouts read accessToken from cookies (see lib/auth.ts).
+  document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
+  document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';
+};
+
+/** Clear tokens, cookies, and persisted client auth without calling the API. */
+export const clearLocalAuthSession = () => {
+  clearAuthTokens();
 };
 
 // Helper function to get stored token

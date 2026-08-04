@@ -20,6 +20,10 @@ const Marker = dynamic(
   () => import('react-leaflet').then(mod => mod.Marker),
   { ssr: false }
 );
+const MapClickHandler = dynamic(
+  () => import('./map-click-handler').then((mod) => mod.MapClickHandler),
+  { ssr: false }
+);
 
 interface LocationPickerProps {
   open: boolean;
@@ -61,7 +65,7 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
     }
   }, [defaultLocation]);
 
-  const fetchAddress = async (lat: number, lng: number) => {
+  const fetchAddress = useCallback(async (lat: number, lng: number) => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
@@ -71,7 +75,15 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
     } catch (error) {
       console.error('Failed to fetch address:', error);
     }
-  };
+  }, []);
+
+  const applyPosition = useCallback(
+    (lat: number, lng: number) => {
+      setPosition([lat, lng]);
+      fetchAddress(lat, lng);
+    },
+    [fetchAddress],
+  );
 
   const handleSearch = async () => {
     if (!searchQuery) return;
@@ -86,7 +98,7 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
       if (data[0]) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
-        setPosition([lat, lng]);
+        applyPosition(lat, lng);
         setAddress(data[0].display_name);
       }
     } catch (error) {
@@ -107,8 +119,7 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        setPosition([latitude, longitude]);
-        fetchAddress(latitude, longitude);
+        applyPosition(latitude, longitude);
         setIsLoading(false);
       },
       () => setIsLoading(false)
@@ -139,6 +150,10 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
             </Button>
           </div>
 
+          <p className="text-xs text-muted-foreground">
+            Click anywhere on the map or drag the pin to fine-tune your location.
+          </p>
+
           <div className="relative h-[400px] w-full overflow-hidden rounded-lg border">
             {isMounted && (
               <MapContainer
@@ -150,7 +165,17 @@ export function LocationPicker({ open, onClose, onSelect, defaultLocation }: Loc
                   attribution='&copy; OpenStreetMap'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={position} />
+                <MapClickHandler onMapClick={applyPosition} />
+                <Marker
+                  position={position}
+                  draggable
+                  eventHandlers={{
+                    dragend: (e) => {
+                      const { lat, lng } = e.target.getLatLng();
+                      applyPosition(lat, lng);
+                    },
+                  }}
+                />
               </MapContainer>
             )}
           </div>
