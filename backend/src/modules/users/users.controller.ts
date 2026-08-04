@@ -16,12 +16,14 @@ import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ReadThrottle()
   @Get('profile')
   async getProfile(@CurrentUser() user: any) {
     return this.usersService.getProfile(user.id);
@@ -35,6 +37,7 @@ export class UsersController {
     return this.usersService.updateProfile(user.id, updateProfileDto);
   }
 
+  @ReadThrottle()
   @Get(':id')
   @Roles(UserRole.ADMIN)
   async getUserById(@Param('id') id: string) {
@@ -54,6 +57,7 @@ export class UsersController {
   }
 
   // Seller can view their own shop profile
+  @ReadThrottle()
   @Get('shop/my')
   @Roles(UserRole.SELLER)
   async getMyShop(@CurrentUser() user: any) {

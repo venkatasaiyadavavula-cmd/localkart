@@ -19,6 +19,7 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
 import { AdCampaignService } from '../seller/ad-campaign.service';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,16 +34,19 @@ export class AdminController {
   ) {}
 
   // Dashboard
+  @ReadThrottle()
   @Get('dashboard')
   async getDashboardStats(@Query('period') period?: string) {
     return this.adminService.getDashboardStats(period);
   }
 
+  @ReadThrottle()
   @Get('dashboard/revenue-chart')
   async getRevenueChart(@Query('period') period: string = 'month') {
     return this.adminService.getRevenueChart(period);
   }
 
+  @ReadThrottle()
   @Get('customers')
   async listCustomers(
     @Query('page') page?: string,
@@ -66,6 +70,7 @@ export class AdminController {
   }
 
   // Shop Moderation
+  @ReadThrottle()
   @Get('shops/pending')
   async getPendingShops(
     @Query('page') page?: string,
@@ -79,6 +84,7 @@ export class AdminController {
     );
   }
 
+  @ReadThrottle()
   @Get('shops')
   async getAllShops(
     @Query('page') page?: string,
@@ -115,6 +121,7 @@ export class AdminController {
   }
 
   // Product Moderation
+  @ReadThrottle()
   @Get('products')
   async getAllProducts(
     @Query('page') page?: string,
@@ -130,6 +137,7 @@ export class AdminController {
     );
   }
 
+  @ReadThrottle()
   @Get('products/pending')
   async getPendingProducts(
     @Query('page') page?: string,
@@ -154,6 +162,7 @@ export class AdminController {
   }
 
   // Commission rate configuration (weekly bills live under /commission/admin/*)
+  @ReadThrottle()
   @Get('commissions/rates')
   async getCategoryCommissionRates() {
     return this.commissionService.getCategoryCommissionRates();
@@ -168,11 +177,13 @@ export class AdminController {
   }
 
   // Fraud Detection
+  @ReadThrottle()
   @Get('fraud/suspicious-orders')
   async getSuspiciousOrders() {
     return this.fraudDetectionService.getSuspiciousOrders();
   }
 
+  @ReadThrottle()
   @Get('fraud/user/:userId/activity')
   async getUserActivity(@Param('userId') userId: string) {
     return this.fraudDetectionService.getUserActivity(userId);
@@ -183,11 +194,13 @@ export class AdminController {
     return this.fraudDetectionService.blacklistUser(userId, reason);
   }
 
+  @ReadThrottle()
   @Get('fraud/cod-risk/:orderId')
   async assessCodRisk(@Param('orderId') orderId: string) {
     return this.fraudDetectionService.assessCodRisk(orderId);
   }
 
+  @ReadThrottle()
   @Get('ad-campaigns')
   async listAdCampaigns(
     @Query('page') page?: string,

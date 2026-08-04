@@ -10,6 +10,8 @@ import { formatPrice, normalizeList } from '@/lib/utils';
 import { formatDeliveryAddress } from '@/lib/utils/api';
 import { DeliveryLocationPanel } from '@/components/seller/delivery-location-panel';
 import { OrderDeliveryOtpDialog } from '@/components/orders/order-delivery-otp-dialog';
+import { SellerPendingOtpCallout } from '@/components/orders/seller-pending-otp-callout';
+import { SellerPendingOtpBanner } from '@/components/orders/seller-pending-otp-banner';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -138,6 +140,10 @@ export default function WorkOrdersPage() {
         })}
       </div>
 
+      {activeTab === 'pending_otp' && otpCount > 0 && (
+        <SellerPendingOtpBanner count={otpCount} />
+      )}
+
       {isLoading ? (
         <div className="space-y-3">{[1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}</div>
       ) : orders.length === 0 ? (
@@ -158,6 +164,13 @@ export default function WorkOrdersPage() {
                   </div>
                   <p className="font-black text-gray-900">{formatPrice(order.totalAmount)}</p>
                 </div>
+
+                {order.status === 'pending_otp' && (
+                  <SellerPendingOtpCallout
+                    className="mt-3"
+                    onEnterOtp={() => setOtpTarget({ orderId: order.id, mode: 'confirm_order' })}
+                  />
+                )}
 
                 <div className="mt-2 space-y-1">
                   {order.items?.slice(0, 3).map((item: any) => (
@@ -194,20 +207,6 @@ export default function WorkOrdersPage() {
                     <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-gray-600 line-clamp-3">
                       {formatDeliveryAddress(order.deliveryAddress)}
-                    </p>
-                  </div>
-                )}
-
-                {order.status === 'pending_otp' && (
-                  <div className="mt-3">
-                    <Button
-                      className="w-full bg-amber-500 hover:bg-amber-600"
-                      onClick={() => setOtpTarget({ orderId: order.id, mode: 'confirm_order' })}
-                    >
-                      🔐 Enter Customer OTP to Confirm
-                    </Button>
-                    <p className="text-[10px] text-gray-400 text-center mt-2">
-                      Ask customer for OTP sent to their phone
                     </p>
                   </div>
                 )}
