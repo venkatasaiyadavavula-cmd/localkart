@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
-import { Shop, ShopStatus } from '../../core/entities/shop.entity';
+import { Shop, ShopStatus, ManualOverride } from '../../core/entities/shop.entity';
 import { Product, ProductStatus } from '../../core/entities/product.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -63,6 +63,8 @@ export class ModerationService {
     }
 
     shop.status = ShopStatus.APPROVED;
+    shop.manualOverride = ManualOverride.NONE;
+    shop.manualOverrideSetAt = null;
     await this.shopRepository.save(shop);
 
     await this.notificationsService.sendSellerNotification(

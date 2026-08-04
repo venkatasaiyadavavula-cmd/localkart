@@ -31,6 +31,8 @@ export default function SellerDashboardPage() {
   const lowStockProducts = data?.lowStockProducts || 0;
   const isCurrentlyOpen = shop?.isCurrentlyOpen ?? data?.isCurrentlyOpen ?? false;
   const statusMessage = shop?.statusMessage ?? data?.statusMessage ?? '';
+  const showClosedToCustomersBanner =
+    shop?.status === 'approved' && !isCurrentlyOpen;
 
   const handleShopToggle = async (open: boolean) => {
     const manualOverride: ManualOverride = open ? 'force_open' : 'force_closed';
@@ -125,6 +127,32 @@ export default function SellerDashboardPage() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
+        {showClosedToCustomersBanner && (
+          <div className="rounded-2xl border-2 border-red-500 bg-red-600 p-4 text-white shadow-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-6 w-6 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold leading-snug">
+                  Your shop is closed to customers — customers cannot browse or order right now.
+                </p>
+                <p className="mt-1 text-xs text-red-100">
+                  {shop?.manualOverride === 'force_closed'
+                    ? 'You manually closed the shop. Open it to start receiving orders again.'
+                    : statusMessage || 'Open your shop or adjust hours in shop settings.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleShopToggle(true)}
+                  disabled={isToggling}
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-60"
+                >
+                  Open shop now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           className={`rounded-2xl border p-4 shadow-sm ${
             isCurrentlyOpen
