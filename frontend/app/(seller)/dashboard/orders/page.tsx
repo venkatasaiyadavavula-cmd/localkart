@@ -17,6 +17,8 @@ import { OrderStatus, statusLabels } from '@/types/order';
 import { DeliveryLocationPanel } from '@/components/seller/delivery-location-panel';
 import { cn } from '@/lib/utils';
 import { ErrorState } from '@/components/ui/error-state';
+import { SellerPendingOtpCallout } from '@/components/orders/seller-pending-otp-callout';
+import { SellerPendingOtpBanner } from '@/components/orders/seller-pending-otp-banner';
 
 const statusFlow: Record<string, { next: OrderStatus; label: string; color: string }> = {
   confirmed:        { next: 'processing',        label: '✅ Accept Order',      color: 'bg-green-500 hover:bg-green-600' },
@@ -128,6 +130,9 @@ export default function SellerOrdersPage() {
       </div>
 
       <div className="px-4 py-3 space-y-3">
+        {activeTab === 'pending_otp' && otpCount > 0 && (
+          <SellerPendingOtpBanner count={otpCount} />
+        )}
         {isError ? (
           <ErrorState title="Could not load orders" onRetry={() => refetch()} />
         ) : isLoading
@@ -167,6 +172,13 @@ export default function SellerOrdersPage() {
                     {statusLabels[order.status as OrderStatus] || order.status}
                   </span>
 
+                  {order.status === 'pending_otp' && (
+                    <SellerPendingOtpCallout
+                      className="mt-3"
+                      onEnterOtp={() => setOtpOrderId(order.id)}
+                    />
+                  )}
+
                   <div className="mt-3 flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary">
                       {order.customer?.name?.[0]?.toUpperCase()}
@@ -199,20 +211,6 @@ export default function SellerOrdersPage() {
                     ))}
                   </div>
                 </div>
-
-                {order.status === 'pending_otp' && (
-                  <div className="px-4 pb-4">
-                    <Button
-                      onClick={() => setOtpOrderId(order.id)}
-                      className="w-full h-11 rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-600 text-white border-0"
-                    >
-                      🔐 Enter Customer OTP to Confirm
-                    </Button>
-                    <p className="text-[10px] text-gray-400 text-center mt-2">
-                      Ask customer for OTP sent to their phone
-                    </p>
-                  </div>
-                )}
 
                 {nextAction && (
                   <div className="px-4 pb-4">
@@ -252,8 +250,8 @@ export default function SellerOrdersPage() {
       <OrderDeliveryOtpDialog
         open={!!otpOrderId}
         onOpenChange={(open) => !open && setOtpOrderId(null)}
-        title="Confirm Order with OTP"
-        description="Enter the OTP sent to the customer's phone to confirm this order."
+        title="Confirm COD order with OTP"
+        description="Enter the 6-digit OTP the customer received when they placed this order. Once verified, the order moves to New and you can accept it."
         confirmLabel="Confirm Order"
         onVerify={async (otp) => {
           if (!otpOrderId) return;

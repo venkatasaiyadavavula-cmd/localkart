@@ -19,6 +19,7 @@ import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Public } from '../../core/decorators/public.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -31,6 +32,7 @@ export class OrdersController {
     return this.ordersService.createOrder(user.id, createOrderDto);
   }
 
+  @ReadThrottle()
   @Get()
   async getMyOrders(
     @CurrentUser() user: any,
@@ -46,6 +48,7 @@ export class OrdersController {
     );
   }
 
+  @ReadThrottle()
   @Get('seller/all')
   @Roles(UserRole.SELLER)
   async getSellerOrders(
@@ -62,6 +65,7 @@ export class OrdersController {
     );
   }
 
+  @ReadThrottle()
   @Get('admin/all')
   @Roles(UserRole.ADMIN)
   async getAllOrders(
@@ -91,6 +95,7 @@ export class OrdersController {
   }
 
   @Public()
+  @ReadThrottle()
   @Get('track/:orderNumber')
   async trackOrder(@Param('orderNumber') orderNumber: string) {
     return this.ordersService.trackOrderByNumber(orderNumber);
@@ -129,6 +134,7 @@ export class OrdersController {
     return this.ordersService.adminUpdateOrderStatus(id, updateOrderStatusDto);
   }
 
+  @ReadThrottle()
   @Get(':id')
   async getOrderById(@CurrentUser() user: any, @Param('id') id: string) {
     return this.ordersService.getOrderById(id, user.id, user.role, user.shopId);

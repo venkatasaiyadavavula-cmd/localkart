@@ -34,6 +34,7 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('seller')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -50,17 +51,20 @@ export class SellerController {
 
   // Shop Profile
   @Public()
+  @ReadThrottle()
   @Get('shop/slug/:slug')
   async getShopBySlug(@Param('slug') slug: string) {
     return this.sellerService.getShopBySlug(slug);
   }
 
   @Public()
+  @ReadThrottle()
   @Get('shop/id/:id')
   async getShopById(@Param('id') id: string) {
     return this.sellerService.getShopById(id);
   }
 
+  @ReadThrottle()
   @Get('shop')
   async getMyShop(@CurrentUser() user: any) {
     return this.sellerService.getShopByOwner(user.id);
@@ -100,6 +104,7 @@ export class SellerController {
   }
 
   // Dashboard Analytics
+  @ReadThrottle()
   @Get('dashboard')
   async getDashboard(@CurrentUser() user: any, @Query('period') period: string = 'week') {
     const stats = await this.sellerService.getDashboardStats(user.id);
@@ -107,18 +112,21 @@ export class SellerController {
     return { ...stats, salesChart };
   }
 
+  @ReadThrottle()
   @Get('dashboard/sales-chart')
   async getSalesChart(@CurrentUser() user: any, @Query('period') period: string = 'week') {
     return this.sellerService.getSalesChart(user.id, period);
   }
 
   // Subscription Management
+  @ReadThrottle()
   @Get('subscription')
   async getCurrentSubscription(@CurrentUser() user: any) {
     return this.subscriptionService.getCurrentSubscription(user.id);
   }
 
   @Public()
+  @ReadThrottle()
   @Get('subscription/plans')
   async getAvailablePlans() {
     return this.subscriptionService.getAvailablePlans();
@@ -143,22 +151,26 @@ export class SellerController {
     return this.subscriptionService.cancelSubscription(user.id);
   }
 
+  @ReadThrottle()
   @Get('subscription/history')
   async getSubscriptionHistory(@CurrentUser() user: any) {
     return this.subscriptionService.getSubscriptionHistory(user.id);
   }
 
+  @ReadThrottle()
   @Get('earnings/weekly')
   async getWeeklyEarnings(@CurrentUser() user: any) {
     return this.earningsService.getWeeklyEarnings(user.id);
   }
 
   // Earnings
+  @ReadThrottle()
   @Get('earnings')
   async getEarnings(@CurrentUser() user: any, @Query('period') period?: string) {
     return this.earningsService.getEarningsSummary(user.id, period);
   }
 
+  @ReadThrottle()
   @Get('earnings/transactions')
   async getEarningsTransactions(
     @CurrentUser() user: any,
@@ -172,12 +184,14 @@ export class SellerController {
     );
   }
 
+  @ReadThrottle()
   @Get('earnings/payouts')
   async getPayouts(@CurrentUser() user: any) {
     return this.earningsService.getPayouts(user.id);
   }
 
   // Ad Campaigns
+  @ReadThrottle()
   @Get('ads')
   async getAdCampaigns(@CurrentUser() user: any) {
     return this.adCampaignService.getCampaigns(user.id);
@@ -207,12 +221,14 @@ export class SellerController {
     return this.adCampaignService.resumeCampaign(user.id, id);
   }
 
+  @ReadThrottle()
   @Get('ads/:id/stats')
   async getAdStats(@CurrentUser() user: any, @Param('id') id: string) {
     return this.adCampaignService.getCampaignStats(user.id, id);
   }
 
   // Featured homepage videos (₹29 / 24h)
+  @ReadThrottle()
   @Get('featured-videos')
   async getFeaturedVideos(@CurrentUser() user: any) {
     return this.featuredVideoService.getSellerFeaturedVideos(user.id);
@@ -224,6 +240,7 @@ export class SellerController {
   }
 
   // Daily Offers
+  @ReadThrottle()
   @Get('daily-offers')
   async getDailyOffers(@CurrentUser() user: any) {
     return this.dailyOfferService.getActiveOffers(user.id);

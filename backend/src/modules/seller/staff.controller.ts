@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { StaffService } from './staff.service';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 import { StaffRole } from '../../core/entities/staff-member.entity';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -41,6 +42,7 @@ class ResetPasswordDto {
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
+  @ReadThrottle()
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)

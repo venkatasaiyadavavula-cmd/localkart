@@ -11,6 +11,7 @@ import { Roles } from '../../core/decorators/roles.decorator';
 import { UserRole } from '../../core/entities/user.entity';
 import { Shop } from '../../core/entities/shop.entity';
 import { assertPaymentsEnabled } from './payments.config';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('commission')
 @UseGuards(JwtAuthGuard)
@@ -29,6 +30,7 @@ export class CommissionController {
   }
 
   // Seller: get my bills
+  @ReadThrottle()
   @Get('my-bills')
   @Roles(UserRole.SELLER)
   @UseGuards(RolesGuard)
@@ -76,6 +78,7 @@ export class CommissionController {
   }
 
   // Admin: overdue shops
+  @ReadThrottle()
   @Get('admin/overdue')
   @Roles(UserRole.ADMIN)
   @UseGuards(RolesGuard)
@@ -84,6 +87,7 @@ export class CommissionController {
   }
 
   // Admin: paginated bills
+  @ReadThrottle()
   @Get('admin/bills')
   @Roles(UserRole.ADMIN)
   @UseGuards(RolesGuard)
@@ -104,6 +108,7 @@ export class CommissionController {
   }
 
   // Admin: platform summary
+  @ReadThrottle()
   @Get('admin/summary')
   @Roles(UserRole.ADMIN)
   @UseGuards(RolesGuard)
@@ -112,6 +117,7 @@ export class CommissionController {
   }
 
   // Admin: per-shop bill history
+  @ReadThrottle()
   @Get('admin/shops/:shopId/bills')
   @Roles(UserRole.ADMIN)
   @UseGuards(RolesGuard)

@@ -11,17 +11,20 @@ import { UpdateProductDto } from '../catalog/dto/update-product.dto';
 import { SearchQueryDto } from '../catalog/dto/search-query.dto';
 import { UpdateOrderStatusDto } from '../orders/dto/update-order-status.dto';
 import { UpdateDeliveryLocationDto } from '../orders/dto/update-delivery-location.dto';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('staff/work')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class StaffWorkController {
   constructor(private readonly staffWorkService: StaffWorkService) {}
 
+  @ReadThrottle()
   @Get('me')
   getProfile(@CurrentUser() user: any) {
     return this.staffWorkService.getProfile(user);
   }
 
+  @ReadThrottle()
   @Get('products')
   @RequirePermissions('products:read')
   getProducts(@CurrentUser() user: any, @Query() query: SearchQueryDto) {
@@ -44,6 +47,7 @@ export class StaffWorkController {
     return this.staffWorkService.updateProduct(user, id, dto);
   }
 
+  @ReadThrottle()
   @Get('orders')
   @RequirePermissions('orders:read')
   getOrders(

@@ -21,6 +21,7 @@ import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Public } from '../../core/decorators/public.decorator';
 import { UserRole } from '../../core/entities/user.entity';
+import { ReadThrottle } from '../../core/decorators/read-throttle.decorator';
 
 @Controller('returns')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,6 +39,7 @@ export class ReturnsController {
     return this.returnsService.createReturnRequest(user.id, dto, files);
   }
 
+  @ReadThrottle()
   @Get()
   async getMyReturnRequests(
     @CurrentUser() user: any,
@@ -51,6 +53,7 @@ export class ReturnsController {
     );
   }
 
+  @ReadThrottle()
   @Get(':id')
   async getReturnRequestById(@CurrentUser() user: any, @Param('id') id: string) {
     return this.returnsService.getReturnRequestById(id, user.id, user.role, user.shopId);
@@ -63,6 +66,7 @@ export class ReturnsController {
   }
 
   // Seller endpoints
+  @ReadThrottle()
   @Get('seller/pending')
   @Roles(UserRole.SELLER)
   async getSellerPendingReturns(@CurrentUser() user: any) {
@@ -102,6 +106,7 @@ export class ReturnsController {
   }
 
   // Admin endpoints
+  @ReadThrottle()
   @Get('admin/all')
   @Roles(UserRole.ADMIN)
   async getAllReturnRequests(

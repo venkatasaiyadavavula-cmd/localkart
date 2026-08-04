@@ -205,24 +205,28 @@ export class CatalogController {
     await this.catalogService.deleteProduct(user.id, id);
   }
 
+  @ReadThrottle()
   @Get('seller/products')
   @Roles(UserRole.SELLER)
   async getSellerProducts(@CurrentUser() user: any, @Query() query: SearchQueryDto) {
     return this.catalogService.getSellerProducts(user.id, query);
   }
 
+  @ReadThrottle()
   @Get('seller/products/:id')
   @Roles(UserRole.SELLER)
   async getSellerProductById(@CurrentUser() user: any, @Param('id') id: string) {
     return this.catalogService.getSellerProductById(user.id, id);
   }
 
+  @ReadThrottle()
   @Get('seller/product-limit')
   @Roles(UserRole.SELLER)
   async getSellerProductLimit(@CurrentUser() user: any) {
     return this.catalogService.getSellerProductLimit(user.id);
   }
 
+  @ReadThrottle()
   @Get('seller/bulk-upload/template')
   @Roles(UserRole.SELLER)
   async downloadBulkTemplate(@Res() res: Response) {
