@@ -17,9 +17,10 @@ export function useCreateShop() {
     onSuccess: async () => {
       const { refreshSession } = useAuthStore.getState();
       await refreshSession();
-      // Gate uses staleTime: 30s — invalidate so pending screen shows immediately after createShop.
-      await queryClient.invalidateQueries({ queryKey: SELLER_ONBOARDING_GATE_QUERY_KEY });
+      // Gate uses staleTime: 30s — refetch so pending screen shows immediately after createShop.
+      await queryClient.refetchQueries({ queryKey: SELLER_ONBOARDING_GATE_QUERY_KEY });
       toast.success('Shop submitted for approval!');
+      router.refresh();
       router.push('/seller-onboarding');
     },
   });

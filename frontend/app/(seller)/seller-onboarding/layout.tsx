@@ -8,7 +8,6 @@ import { authTrace } from '@/lib/auth-trace';
 import {
   resolveSellerShopContext,
   shouldAllowDashboard,
-  shouldShowOnboardingForm,
   shouldShowPendingScreen,
   shouldShowRejectedScreen,
   shouldShowSuspendedScreen,
@@ -55,9 +54,5 @@ export default async function SellerOnboardingLayout({
     return <SellerSuspendedScreen shopName={ctx.shopName} />;
   }
 
-  if (shouldShowOnboardingForm(ctx)) {
-    return <>{children}</>;
-  }
-
-  return <>{children}</>;
+  return <SellerOnboardingGate>{children}</SellerOnboardingGate>;
 }
