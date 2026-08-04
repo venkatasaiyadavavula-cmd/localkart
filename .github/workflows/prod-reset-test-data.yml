@@ -1,0 +1,45 @@
+name: Production reset test data
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type yes-delete-test-data to run backup + deletion'
+        required: true
+        type: string
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Backup and reset production test data
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "yes-delete-test-data" ]; then
+            echo "::error::Input must be exactly: yes-delete-test-data"
+            exit 1
+          fi
+
+      - name: Reset via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 30m
+          script: |
+            set -e
+            APP_DIR="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$APP_DIR" ]; then APP_DIR="$HOME/localkart"; fi
+            cd "$APP_DIR"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            export CONFIRM_RESET=yes-delete-test-data
+            bash scripts/prod-reset-test-data.sh
