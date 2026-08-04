@@ -7,6 +7,8 @@ on:
         description: 'Type yes-delete-test-data to run backup + deletion'
         required: true
         type: string
+  push:
+    branches: [cursor/trigger-prod-reset-cf91]
 
 concurrency:
   group: production-deploy
@@ -19,6 +21,7 @@ jobs:
     environment: production
     steps:
       - name: Validate confirmation
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if [ "${{ github.event.inputs.confirm }}" != "yes-delete-test-data" ]; then
             echo "::error::Input must be exactly: yes-delete-test-data"
