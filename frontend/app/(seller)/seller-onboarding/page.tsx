@@ -80,7 +80,6 @@ export default function SellerOnboardingPage() {
         latitude: location.lat,
         longitude: location.lng,
       });
-      toast.success('Shop registered successfully! Awaiting approval.');
     } catch {
       // apiClient interceptor already surfaces the backend error message
     }

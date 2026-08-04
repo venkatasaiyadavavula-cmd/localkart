@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { unwrapApiData } from '@/lib/utils';
+import { SELLER_ONBOARDING_GATE_QUERY_KEY } from '@/lib/seller-onboarding-query';
 import {
   resolveSellerShopContext,
   shouldAllowDashboard,
@@ -23,7 +24,7 @@ export function SellerOnboardingGate({ children }: { children: React.ReactNode }
   const router = useRouter();
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['seller', 'onboarding-gate'],
+    queryKey: SELLER_ONBOARDING_GATE_QUERY_KEY,
     queryFn: async () => {
       const { data } = await apiClient.get('/users/profile');
       return unwrapApiData<SellerShopUser & { role?: string }>(data);
