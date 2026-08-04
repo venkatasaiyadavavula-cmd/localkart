@@ -1,10 +1,13 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api/client';
+import { SELLER_ONBOARDING_GATE_QUERY_KEY } from '@/lib/seller-onboarding-query';
 import { useAuthStore } from './use-auth';
 
 export function useCreateShop() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (shopData: Record<string, unknown>) => {
@@ -14,6 +17,9 @@ export function useCreateShop() {
     onSuccess: async () => {
       const { refreshSession } = useAuthStore.getState();
       await refreshSession();
+      // Gate uses staleTime: 30s — invalidate so pending screen shows immediately after createShop.
+      await queryClient.invalidateQueries({ queryKey: SELLER_ONBOARDING_GATE_QUERY_KEY });
+      toast.success('Shop submitted for approval!');
       router.push('/seller-onboarding');
     },
   });
