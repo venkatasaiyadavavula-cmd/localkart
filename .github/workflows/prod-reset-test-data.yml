@@ -11,7 +11,7 @@ on:
     branches: [cursor/trigger-prod-reset-cf91]
 
 concurrency:
-  group: production-deploy
+  group: production-reset-test-data
   cancel-in-progress: false
 
 jobs:
