@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Search, ShoppingBag, User, LogOut,
@@ -221,15 +222,13 @@ export function Header() {
 
           {/* ── Logo ── */}
           <Link href="/" className="flex-shrink-0 flex items-center gap-2.5 group" onClick={closeAll}>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:rotate-[-4deg]"
-              style={{
-                background: 'linear-gradient(135deg,#3D5AF1 0%,#6D28D9 100%)',
-                boxShadow:  '0 4px 16px rgba(61,90,241,0.35)',
-              }}
-            >
-              <span className="text-lg leading-none select-none">🛒</span>
-            </div>
+            <Image
+              src="/icons/icon-512.png"
+              alt="LocalKart"
+              width={36}
+              height={36}
+              className="w-9 h-9 rounded-xl flex-shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:rotate-[-4deg]"
+            />
             <div className="leading-none select-none">
               <p
                 className="text-[1.3rem] font-black tracking-tight leading-none"

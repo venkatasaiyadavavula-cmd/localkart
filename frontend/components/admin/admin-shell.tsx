@@ -29,11 +29,11 @@ export function AdminShell({ children }: AdminShellProps) {
               onClick={() => setMobileNavOpen(false)}
             >
               <Image
-                src="/logo.svg"
+                src="/icons/icon-512.png"
                 alt="LocalKart"
-                width={100}
-                height={32}
-                className="h-7 w-auto"
+                width={28}
+                height={28}
+                className="h-7 w-7 rounded-lg flex-shrink-0 object-cover"
               />
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 Admin
