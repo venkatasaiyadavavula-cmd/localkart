@@ -9,7 +9,13 @@ export function AdminSidebar() {
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-card lg:block">
       <div className="flex h-16 items-center border-b px-4">
         <Link href="/admin" className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="LocalKart" width={100} height={32} className="h-7 w-auto" />
+          <Image
+            src="/icons/icon-512.png"
+            alt="LocalKart"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-lg flex-shrink-0 object-cover"
+          />
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
             Admin
           </span>

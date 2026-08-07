@@ -66,8 +66,27 @@ export function Footer() {
       <div className="container py-8 md:py-12">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Link href="/" className="inline-block">
-              <Image src="/logo.svg" alt="LocalKart" width={140} height={40} className="h-8 w-auto" />
+            <Link href="/" className="inline-flex items-center gap-2.5 group">
+              <Image
+                src="/icons/icon-512.png"
+                alt=""
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-xl flex-shrink-0"
+              />
+              <div className="leading-none select-none">
+                <p
+                  className="text-[1.3rem] font-black tracking-tight leading-none font-heading"
+                >
+                  <span style={{ color: '#3D5AF1' }}>Local</span>
+                  <span style={{ color: '#FF6B35' }}>Kart</span>
+                </p>
+                <p
+                  className="text-[9px] font-extrabold tracking-[0.18em] uppercase mt-0.5 text-muted-foreground"
+                >
+                  Shop Local
+                </p>
+              </div>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground max-w-md">
               Shop from trusted local stores in Kadapa. Same-day delivery with Cash on Delivery — pay when your order arrives.
