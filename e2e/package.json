@@ -4,7 +4,8 @@
   "scripts": {
     "test": "playwright test",
     "test:desktop": "playwright test --project=desktop",
-    "test:mobile": "playwright test --project=mobile"
+    "test:mobile": "playwright test --project=mobile",
+    "route-sweep": "playwright test tests/route-sweep.spec.ts --project=desktop --reporter=line"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
